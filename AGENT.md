@@ -145,6 +145,28 @@ utils/
 
 ---
 
+## Project Structure
+
+This project follows Page-Based Architecture.
+
+Each page owns:
+
+- Page component
+- Page styles
+- Page-specific components
+
+Shared reusable components are stored in:
+
+shared/components
+
+All Supabase calls must go through:
+
+shared/services
+
+Do not create global components unless they are reused by at least 2 pages.
+
+---
+
 ## 7. React Standards
 
 Use:
