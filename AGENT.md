@@ -8,21 +8,13 @@ ClubHub is a centralized club management platform for FPT University.
 
 Main objectives:
 
-* Centralize club information.
-* Preserve knowledge between club generations.
-* Improve communication between IC-PDP and club members.
-* Support alumni networking.
-* Provide AI-powered knowledge search.
+- Centralize club information.
+- Preserve knowledge between club generations.
+- Support IC-PDP in managing clubs.
+- Improve student access to club information.
+- Provide an AI Assistant powered by OpenAI using the Club Knowledge Base.
 
 The project is developed as an MVP for SDN302.
-
-Timeline:
-
-2 weeks.
-
-Team size:
-
-4 frontend developers.
 
 Priority:
 
@@ -66,25 +58,41 @@ AI:
 
 ---
 
-## 3. Core Modules
+## 3. Architecture Pattern
 
-Authentication
+- Modular Monolith
+- Domain-based modules
+- RESTful API
+- React Frontend
+- Supabase Backend Services
+- PostgreSQL Database
+- OpenAI API Integration
 
-Club Directory
+No Microservices.
+No Event Bus.
+No Message Queue.
+No Redis.
+No Docker is required for development.
 
-Event Management
+## 4. Core Modules
 
-Knowledge Base
+Business Modules
 
-AI Assistant
-
-Alumni Directory
-
-Announcement Center
+- Auth
+- Club
+- Member
+- Event
+- Announcement
+- Knowledge
+- Workshop
+- Finance
+- Alumni
+- Profile
+- AI Assistant
 
 ---
 
-## 4. User Roles
+## 5. User Roles
 
 Student
 
@@ -96,7 +104,7 @@ IC-PDP
 
 ---
 
-## 5. Architecture Rules
+## 6. Architecture Rules
 
 Always follow:
 
@@ -250,6 +258,18 @@ Do not redesign the architecture without approval.
 Do not generate files that are not necessary.
 
 MVP completion is more important than engineering perfection.
+
+When generating code:
+
+Always follow the Modular Monolith architecture.
+
+Never generate microservices.
+
+Never generate multiple independent backend applications.
+
+Each business domain must be implemented as a module inside the same backend application.
+
+Modules communicate internally through services instead of HTTP.
 
 ## Cursor Instructions
 
