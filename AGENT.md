@@ -221,19 +221,10 @@ Accent:
 
 ## 9. Development Workflow
 
-Create feature branch:
+Do not deploy or react to git
+Deploy and push pull will be manual by user
 
-feature/auth
-
-feature/club
-
-feature/event
-
-feature/knowledge
-
-Use Pull Request before merge.
-
-Never commit directly to main.
+Do not run SQL inside migration folder, Leader already setup supabase, AI Agent can use these files for understanding db structure but do not run.
 
 ---
 
