@@ -166,7 +166,17 @@ Each page owns:
 
 Shared reusable components are stored in:
 
-shared/components
+src/components
+
+All files must be placed insode a corresponding folder
+example:
+/HomePage
+|-/components
+|--/componentsA
+|---componA.tsx
+|---componA.css
+|-HomePage.tsx
+|-HommePage.css
 
 All Supabase calls must go through:
 
