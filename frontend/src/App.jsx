@@ -6,6 +6,9 @@ import { ClubDetailPage } from '@/pages/ClubDetailPage'
 import { EventListPage } from '@/pages/EventListPage'
 import { EventDetailPage } from '@/pages/EventDetailPage'
 import { GalleryPage } from '@/pages/GalleryPage'
+import { MyClubsPage } from '@/pages/MyClubsPage'
+import { MyRegistrationsPage } from '@/pages/MyRegistrationsPage'
+import { CheckInPage } from '@/pages/CheckInPage'
 
 function App() {
   return (
@@ -18,6 +21,9 @@ function App() {
           <Route path="/events" element={<EventListPage />} />
           <Route path="/events/:id" element={<EventDetailPage />} />
           <Route path="/gallery" element={<GalleryPage />} />
+          <Route path="/my-clubs" element={<MyClubsPage />} />
+          <Route path="/my-registrations" element={<MyRegistrationsPage />} />
+          <Route path="/check-in" element={<CheckInPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
