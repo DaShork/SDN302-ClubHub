@@ -12,17 +12,15 @@ export function ClubCard({ club, className }) {
     <Link to={`/clubs/${club.id}`} className="block group">
       <Card className={cn('h-full transition-shadow hover:shadow-card-hover', className)}>
         {/* Banner */}
-        <div className="relative h-32 bg-linear-to-br from-primary-700 to-primary-800 overflow-hidden">
-          {club.banner_url && (
-            <img
-              src={club.banner_url}
-              alt=""
-              className="w-full h-full object-cover"
-            />
-          )}
+        <div className="relative h-44 overflow-visible">
+          <img
+            src={club.banner_url || 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&h=300&fit=crop'}
+            alt=""
+            className="w-full h-full object-cover rounded-lg shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
+          />
           {/* Logo overlay */}
-          <div className="absolute -bottom-6 left-4">
-            <div className="w-14 h-14 rounded-xl bg-card border-2 border-white/10 overflow-hidden shadow-lg">
+          <div className="absolute -bottom-8 left-4 z-10">
+            <div className="w-20 h-20 rounded-2xl bg-card border-2 border-white/20 overflow-hidden shadow-xl">
               <img
                 src={club.logo_url || defaultLogo}
                 alt={club.name}
@@ -41,7 +39,7 @@ export function ClubCard({ club, className }) {
         </div>
 
         {/* Content */}
-        <div className="pt-8 px-4 pb-4">
+        <div className="pt-10 px-4 pb-4">
           <div className="flex items-start justify-between gap-2 mb-2">
             <h3 className="font-semibold text-secondary-100 line-clamp-1">
               {club.name}
