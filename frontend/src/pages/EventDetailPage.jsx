@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { eventService } from '@/services/eventService'
-import { Card, Button, Badge, Loading } from '@/components'
+import { Card, Button, Badge, Loading, toast, ConfirmModal } from '@/components'
+import { useRegistration, registrationStore } from '@/stores/userStore'
 
 function formatDate(dateString) {
   const date = new Date(dateString)
@@ -25,6 +26,11 @@ export function EventDetailPage() {
   const { id } = useParams()
   const [event, setEvent] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [confirmCancel, setConfirmCancel] = useState(false)
+  const [currentCount, setCurrentCount] = useState(0)
+  const { registrations, isRegistered, register, cancel } = useRegistration()
+  const registration = registrations.find((r) => r.eventId === id)
+  const registered = isRegistered(id)
 
   useEffect(() => {
     loadEvent()
@@ -33,8 +39,12 @@ export function EventDetailPage() {
   const loadEvent = async () => {
     try {
       setLoading(true)
-      const data = await eventService.getById(id)
+      const [data, count] = await Promise.all([
+        eventService.getById(id),
+        eventService.getRegistrationCount(id).catch(() => 0),
+      ])
       setEvent(data)
+      setCurrentCount(count)
     } catch (error) {
       console.error('Error loading event:', error)
     } finally {
@@ -196,12 +206,44 @@ export function EventDetailPage() {
                 <Card className="bg-linear-to-br from-primary-800 to-accent-green/20 border-accent-green/30">
                   <div className="p-6 text-center">
                     <h3 className="text-lg font-semibold text-secondary-100 mb-2">
-                      Interested in this event?
+                      {registered
+                        ? registration?.status === 'checked_in'
+                          ? "You're Checked In!"
+                          : "You're Registered!"
+                        : 'Interested in this event?'}
                     </h3>
                     <p className="text-sm text-secondary-200 mb-4">
-                      Register now to secure your spot
+                      {registered
+                        ? 'Manage from My Registrations'
+                        : 'Register now to secure your spot'}
                     </p>
-                    <Button className="w-full">Register Now</Button>
+                    {registered ? (
+                      <Button
+                        variant="destructive"
+                        className="w-full"
+                        onClick={() => setConfirmCancel(true)}
+                      >
+                        {registration?.status === 'checked_in'
+                          ? 'View QR Code'
+                          : 'Cancel Registration'}
+                      </Button>
+                    ) : (
+                      <Button
+                        className="w-full"
+                        onClick={() => {
+                          register(event.id)
+                          setCurrentCount((c) => c + 1)
+                          toast(`Registered for ${event.title}!`, { variant: 'success' })
+                        }}
+                      >
+                        Register Now
+                      </Button>
+                    )}
+                    {event.max_participants && (
+                      <p className="text-xs text-secondary-300 mt-3">
+                        {currentCount} / {event.max_participants} registered
+                      </p>
+                    )}
                   </div>
                 </Card>
               )}
@@ -215,6 +257,21 @@ export function EventDetailPage() {
           </div>
         </div>
       </section>
+
+      <ConfirmModal
+        open={confirmCancel}
+        title="Cancel registration?"
+        description="You can register again later if seats are still available."
+        confirmLabel="Cancel Registration"
+        variant="danger"
+        onCancel={() => setConfirmCancel(false)}
+        onConfirm={() => {
+          cancel(event.id)
+          setCurrentCount((c) => Math.max(0, c - 1))
+          setConfirmCancel(false)
+          toast('Registration cancelled', { variant: 'info' })
+        }}
+      />
     </div>
   )
 }
