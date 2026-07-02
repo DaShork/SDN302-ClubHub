@@ -1,0 +1,119 @@
+.categories {
+  background: #06231D;
+  padding: 100px 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.categories::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(34, 197, 94, 0.08), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(34, 197, 94, 0.05), transparent 40%);
+  pointer-events: none;
+}
+
+.categories__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.categories__head {
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto 64px;
+}
+
+.categories__eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #22C55E;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.categories__title {
+  margin: 0;
+  font-size: clamp(32px, 4vw, 44px);
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1.15;
+  color: #F8F6F2;
+}
+
+.categories__lead {
+  margin: 20px auto 0;
+  max-width: 560px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #B8B0A0;
+}
+
+.categories__grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (min-width: 640px) {
+  .categories__grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .categories__grid {
+    grid-template-columns: repeat(8, 1fr);
+    gap: 16px;
+  }
+}
+
+.categories__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 12px;
+  border-radius: 20px;
+  transition: all 0.25s ease;
+  text-decoration: none;
+}
+
+.categories__item:hover {
+  background: rgba(34, 197, 94, 0.08);
+  transform: translateY(-4px);
+}
+
+.categories__icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #22C55E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  box-shadow: 0 8px 24px rgba(34, 197, 94, 0.30);
+  transition: transform 0.25s ease;
+}
+
+.categories__item:hover .categories__icon {
+  transform: scale(1.08);
+}
+
+.categories__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #F8F6F2;
+  text-align: center;
+  letter-spacing: 0.3px;
+}

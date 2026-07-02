@@ -1,0 +1,150 @@
+.upcoming-events {
+  background: #FFFFFF;
+  padding: 100px 32px;
+}
+
+.upcoming-events__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.upcoming-events__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 48px;
+}
+
+.upcoming-events__eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #22C55E;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.upcoming-events__title {
+  margin: 0;
+  font-size: clamp(28px, 3.5vw, 40px);
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1.15;
+  color: #06231D;
+}
+
+.upcoming-events__view-all {
+  font-size: 14px;
+  font-weight: 600;
+  color: #06231D;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(6, 35, 29, 0.15);
+  transition: all 0.2s ease;
+}
+
+.upcoming-events__view-all:hover {
+  background: #06231D;
+  color: #F8F6F2;
+  border-color: #06231D;
+}
+
+.upcoming-events__grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .upcoming-events__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.upcoming-events__card {
+  background: #F8F6F2;
+  border: 1px solid rgba(6, 35, 29, 0.06);
+  border-radius: 24px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.25s ease;
+}
+
+.upcoming-events__card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(6, 35, 29, 0.08);
+  background: #FFFFFF;
+}
+
+.upcoming-events__card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.upcoming-events__pill {
+  background: #22C55E;
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.upcoming-events__club {
+  font-size: 12px;
+  font-weight: 600;
+  color: #22C55E;
+}
+
+.upcoming-events__card-title {
+  margin: 0 0 20px;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #06231D;
+}
+
+.upcoming-events__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.upcoming-events__meta-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #5A6B62;
+}
+
+.upcoming-events__meta-icon {
+  font-size: 16px;
+}
+
+.upcoming-events__btn {
+  margin-top: auto;
+  display: block;
+  text-align: center;
+  background: #06231D;
+  color: #F8F6F2;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 999px;
+  transition: all 0.2s ease;
+}
+
+.upcoming-events__btn:hover {
+  background: #22C55E;
+  color: #FFFFFF;
+}
