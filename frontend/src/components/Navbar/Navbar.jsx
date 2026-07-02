@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
-import { Menu, X, Search, Bell } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Menu, X, Search, Bell, User, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils.js';
+import { useAuth } from '@/hooks/useAuth.jsx';
 
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
@@ -52,6 +53,34 @@ function NavItem({ link, onClick }) {
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [userOpen, setUserOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const { isAuthenticated, user, profile, loading, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const displayName = profile?.full_name ?? user?.email?.split('@')[0] ?? 'User';
+  const initials = displayName
+    .split(' ')
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setUserOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const handleSignOut = async () => {
+    await signOut();
+    setUserOpen(false);
+    navigate('/');
+  };
 
   return (
     <nav
@@ -75,28 +104,133 @@ export default function Navbar() {
         </ul>
 
         <div className="hidden lg:flex items-center gap-3">
-          <button
-            className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-white/5 transition-colors"
-            style={{ color: '#D2C7B8' }}
-            aria-label="Search"
-          >
-            <Search size={18} />
-          </button>
-          <button
-            className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-white/5 transition-colors relative"
-            style={{ color: '#D2C7B8' }}
-            aria-label="Notifications"
-          >
-            <Bell size={18} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#22C55E]" />
-          </button>
-          <Link
-            to="/login"
-            className="px-5 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]"
-            style={{ background: 'linear-gradient(90deg,#0E4B43,#22C55E)' }}
-          >
-            Sign In
-          </Link>
+          {!loading && (
+            <>
+              {isAuthenticated ? (
+                <>
+                  <button
+                    className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-white/5 transition-colors"
+                    style={{ color: '#D2C7B8' }}
+                    aria-label="Notifications"
+                  >
+                    <Bell size={18} />
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#22C55E]" />
+                  </button>
+
+                  <div className="relative" ref={dropdownRef}>
+                      <button
+                        className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-colors"
+                        onClick={() => setUserOpen((o) => !o)}
+                        aria-expanded={userOpen}
+                        aria-haspopup="true"
+                      >
+                        {profile?.avatar_url ? (
+                          <img
+                            src={profile.avatar_url}
+                            alt={displayName}
+                            className="w-8 h-8 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold"
+                            style={{ background: 'linear-gradient(135deg,#0E4B43,#22C55E)' }}
+                          >
+                            {initials}
+                          </div>
+                        )}
+                        <span
+                          className="text-sm font-medium text-[#D2C7B8] max-w-[120px] truncate"
+                          style={{ maxWidth: 120 }}
+                        >
+                          {displayName}
+                        </span>
+                        <ChevronDown
+                          size={14}
+                          style={{
+                            color: '#D2C7B8',
+                            transform: userOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.2s ease',
+                          }}
+                        />
+                      </button>
+
+                    {userOpen && (
+                      <div
+                        className="absolute right-0 top-full mt-2 w-56 rounded-xl overflow-hidden z-50"
+                        style={{
+                          background: '#ffffff',
+                          border: '1px solid rgba(6,35,29,0.08)',
+                          boxShadow: '0 8px 32px rgba(6,35,29,0.12)',
+                        }}
+                      >
+                        <div
+                          className="px-4 py-3 border-b"
+                          style={{ borderColor: 'rgba(6,35,29,0.08)' }}
+                        >
+                          <p className="text-sm font-semibold" style={{ color: '#06231D' }}>
+                            {displayName}
+                          </p>
+                          <p className="text-xs mt-0.5" style={{ color: '#16685D' }}>
+                            {user?.email}
+                          </p>
+                        </div>
+                        <nav className="py-2">
+                          <Link
+                            to="/profile"
+                            onClick={() => setUserOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-[#F4F1EA] transition-colors"
+                            style={{ color: '#06231D' }}
+                          >
+                            <User size={15} style={{ color: '#16685D' }} />
+                            My Profile
+                          </Link>
+                          <Link
+                            to="/settings"
+                            onClick={() => setUserOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-[#F4F1EA] transition-colors"
+                            style={{ color: '#06231D' }}
+                          >
+                            <Settings size={15} style={{ color: '#16685D' }} />
+                            Settings
+                          </Link>
+                        </nav>
+                        <div
+                          className="py-2 border-t"
+                          style={{ borderColor: 'rgba(6,35,29,0.08)' }}
+                        >
+                          <button
+                            onClick={handleSignOut}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm w-full hover:bg-red-50 transition-colors"
+                            style={{ color: '#B91C1C' }}
+                          >
+                            <LogOut size={15} />
+                            Sign out
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="px-5 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]"
+                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
+                  >
+                    Log in
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="px-5 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]"
+                    style={{ background: 'linear-gradient(90deg,#0E4B43,#22C55E)' }}
+                  >
+                    Sign up
+                  </Link>
+                </>
+              )}
+            </>
+          )}
         </div>
 
         <button
@@ -117,14 +251,55 @@ export default function Navbar() {
           {NAV_LINKS.map((l) => (
             <NavItem key={l.href} link={l} onClick={() => setOpen(false)} />
           ))}
-          <Link
-            to="/login"
-            onClick={() => setOpen(false)}
-            className="mt-2 py-3 rounded-xl text-sm font-semibold text-white text-center"
-            style={{ background: 'linear-gradient(90deg,#0E4B43,#22C55E)' }}
-          >
-            Sign In
-          </Link>
+          {!loading && (
+            <div className="mt-3 pt-3 flex flex-col gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    to="/profile"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 py-2.5 rounded-xl text-sm text-[#D2C7B8] hover:text-white"
+                  >
+                    {profile?.avatar_url ? (
+                      <img
+                        src={profile.avatar_url}
+                        alt={displayName}
+                        className="w-6 h-6 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <User size={15} />
+                    )}
+                    {displayName}
+                  </Link>
+                  <button
+                    onClick={() => { handleSignOut(); setOpen(false); }}
+                    className="flex items-center gap-2 py-2.5 rounded-xl text-sm text-red-400 hover:text-red-300 text-left"
+                  >
+                    <LogOut size={15} />
+                    Sign out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setOpen(false)}
+                    className="py-2.5 rounded-xl text-sm font-semibold text-[#D2C7B8] hover:text-white text-center border border-white/15"
+                  >
+                    Log in
+                  </Link>
+                  <Link
+                    to="/signup"
+                    onClick={() => setOpen(false)}
+                    className="py-2.5 rounded-xl text-sm font-semibold text-white text-center"
+                    style={{ background: 'linear-gradient(90deg,#0E4B43,#22C55E)' }}
+                  >
+                    Sign up
+                  </Link>
+                </>
+              )}
+            </div>
+          )}
         </div>
       )}
     </nav>
