@@ -1,0 +1,221 @@
+.ai-section {
+  background: linear-gradient(135deg, #F8F6F2 0%, #DCFCE7 100%);
+  padding: 100px 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-section::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.15), transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.ai-section__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  gap: 64px;
+  grid-template-columns: 1fr;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 1024px) {
+  .ai-section__inner {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.ai-section__eyebrow {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #06231D;
+  background: #FFFFFF;
+  padding: 8px 16px;
+  border-radius: 999px;
+  letter-spacing: 1px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(6, 35, 29, 0.06);
+}
+
+.ai-section__title {
+  margin: 0;
+  font-size: clamp(32px, 4vw, 44px);
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1.15;
+  color: #06231D;
+}
+
+.ai-section__lead {
+  margin: 20px 0 0;
+  max-width: 480px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #5A6B62;
+}
+
+.ai-section__bullets {
+  list-style: none;
+  margin: 32px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ai-section__bullets li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  color: #06231D;
+}
+
+.ai-section__bullets li span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #22C55E;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.ai-section__btn {
+  display: inline-flex;
+  margin-top: 32px;
+  font-size: 15px;
+  font-weight: 600;
+  background: #06231D;
+  color: #F8F6F2;
+  padding: 14px 28px;
+  border-radius: 999px;
+  transition: all 0.2s ease;
+}
+
+.ai-section__btn:hover {
+  background: #22C55E;
+  transform: translateY(-1px);
+}
+
+.ai-section__chat {
+  background: #FFFFFF;
+  border-radius: 24px;
+  box-shadow: 0 30px 60px rgba(6, 35, 29, 0.12);
+  border: 1px solid rgba(6, 35, 29, 0.06);
+  overflow: hidden;
+}
+
+.ai-section__chat-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(6, 35, 29, 0.06);
+  font-size: 14px;
+  font-weight: 700;
+  color: #06231D;
+}
+
+.ai-section__chat-dot {
+  width: 10px;
+  height: 10px;
+  background: #22C55E;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.20);
+}
+
+.ai-section__chat-status {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: #22C55E;
+  background: #DCFCE7;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.ai-section__chat-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 320px;
+}
+
+.ai-section__msg {
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 85%;
+}
+
+.ai-section__msg--user {
+  background: #06231D;
+  color: #F8F6F2;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+
+.ai-section__msg--bot {
+  background: #F8F6F2;
+  color: #06231D;
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+
+.ai-section__msg--bot ul {
+  margin: 8px 0 0;
+  padding-left: 16px;
+}
+
+.ai-section__msg--bot li {
+  margin-bottom: 4px;
+}
+
+.ai-section__chat-typing {
+  display: inline-flex;
+  gap: 4px;
+  padding: 12px 16px;
+  background: #F8F6F2;
+  border-radius: 16px;
+  border-bottom-left-radius: 4px;
+  align-self: flex-start;
+}
+
+.ai-section__chat-typing span {
+  width: 8px;
+  height: 8px;
+  background: #06231D;
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: typing 1.4s infinite;
+}
+
+.ai-section__chat-typing span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.ai-section__chat-typing span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-4px); }
+}
