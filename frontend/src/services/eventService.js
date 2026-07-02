@@ -1,7 +1,18 @@
 import { supabase } from './supabase'
+import { mockEvents } from '@/mocks/data'
+
+const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'
 
 export const eventService = {
   async getAll({ clubId, status = 'upcoming', limit = 20, offset = 0 } = {}) {
+    if (USE_MOCKS) {
+      let data = [...mockEvents]
+      if (status) data = data.filter((e) => e.status === status)
+      if (clubId) data = data.filter((e) => e.club_id === clubId)
+      data.sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
+      return data.slice(offset, offset + limit)
+    }
+
     let query = supabase
       .from('events')
       .select(`
@@ -25,6 +36,14 @@ export const eventService = {
   },
 
   async getUpcoming(limit = 4) {
+    if (USE_MOCKS) {
+      const data = mockEvents
+        .filter((e) => e.status === 'upcoming' && new Date(e.start_time) >= new Date())
+        .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
+        .slice(0, limit)
+      return data
+    }
+
     const { data, error } = await supabase
       .from('events')
       .select(`
@@ -41,6 +60,12 @@ export const eventService = {
   },
 
   async getById(id) {
+    if (USE_MOCKS) {
+      const data = mockEvents.find((e) => e.id === id)
+      if (!data) throw new Error('Event not found')
+      return data
+    }
+
     const { data, error } = await supabase
       .from('events')
       .select(`
@@ -61,6 +86,14 @@ export const eventService = {
   },
 
   async getByClub(clubId, limit = 10) {
+    if (USE_MOCKS) {
+      const data = mockEvents
+        .filter((e) => e.club_id === clubId)
+        .sort((a, b) => new Date(b.start_time) - new Date(a.start_time))
+        .slice(0, limit)
+      return data
+    }
+
     const { data, error } = await supabase
       .from('events')
       .select(`
@@ -76,6 +109,13 @@ export const eventService = {
   },
 
   async getRegistrationCount(eventId) {
+    if (USE_MOCKS) {
+      // Stable fake count per event for dev
+      const evt = mockEvents.find((e) => e.id === eventId)
+      if (!evt) return 0
+      return Math.min(evt.max_attendees, Math.floor(evt.max_attendees * 0.4))
+    }
+
     const { count, error } = await supabase
       .from('event_registrations')
       .select('id', { count: 'exact', head: true })
