@@ -12,6 +12,8 @@ supabase/
 │   ├── 003_triggers.sql         # Auto-create profile, update timestamps
 │   ├── 004_seed_data.sql        # Default roles & categories
 │   └── 005_storage.sql          # Storage buckets & policies
+├── seeds/
+│   └── sample_data.sql          # Demo data for 9 public tables (DEV only)
 └── README.md
 ```
 
@@ -81,6 +83,18 @@ UPDATE public.profiles p
 SET role_id = (SELECT id FROM public.roles WHERE name = 'Administrator')
 WHERE p.email = 'your-admin@example.com';
 ```
+
+For a partially populated demo database (9 public tables - clubs, club_terms, events, workshops, knowledge_articles, meeting_minutes, documents, announcements, galleries; 8 clubs across 8 categories, 11 terms, 9 events, etc.), run the seed file after the migrations:
+
+1. Go to **Supabase Dashboard -> SQL Editor -> New Query**.
+2. Copy & paste the content of `seeds/sample_data.sql` and execute.
+3. The script is **idempotent** thanks to `ON CONFLICT DO NOTHING` everywhere.
+4. Demo user accounts (auth.users / profiles / memberships / attendance / event_registrations / payments / alumni / notifications / chat_history) are intentionally NOT seeded here - create them by signing up through the running app's SignUp page, or via **Supabase Dashboard -> Authentication -> Users -> Add user**. The `handle_new_user()` trigger will auto-create the corresponding `profiles` row.
+
+> **Why no auth.users seeding?**
+> `auth.users` is owned by `supabase_auth_admin` on Supabase Cloud, so the SQL Editor (which runs as `postgres`) cannot disable / drop its triggers. Trying to do so produces `ERROR: 42501: must be owner of table users`. We avoid touching `auth.*` entirely and rely on Supabase Auth + the trigger to manage users.
+>
+> **Reminder (per `AGENT.md`):** do NOT run this SQL from inside the migration folder automatically - it is meant to be executed manually from the SQL Editor so the dev team can decide when their database is reset.
 
 ## Tables Created
 
