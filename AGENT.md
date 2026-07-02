@@ -94,13 +94,14 @@ Business Modules
 
 ## 5. User Roles
 
-Student
+The system supports six official roles:
 
-Club Member
-
-Club Leader
-
-IC-PDP
+- Student
+- Club Member
+- Club Leader
+- Mentor
+- Manager
+- Administrator
 
 ---
 
@@ -169,7 +170,7 @@ shared/components
 
 All Supabase calls must go through:
 
-shared/services
+src/services
 
 Do not create global components unless they are reused by at least 2 pages.
 
