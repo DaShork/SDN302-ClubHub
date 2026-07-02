@@ -59,9 +59,9 @@ export function EventDetailPage() {
     <div className="min-h-screen">
       {/* Hero Banner */}
       <section className="relative h-64 md:h-80 bg-linear-to-br from-primary-700 to-primary-800">
-        {event.banner_url && (
+        {(event.cover_image_url || event.banner_url) && (
           <img
-            src={event.banner_url}
+            src={event.cover_image_url || event.banner_url}
             alt=""
             className="absolute inset-0 w-full h-full object-cover opacity-50"
           />

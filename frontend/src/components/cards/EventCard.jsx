@@ -32,9 +32,9 @@ export function EventCard({ event, className, showClub = true }) {
       <Card hover className={cn('h-full flex flex-col', className)}>
         {/* Banner */}
         <div className="relative h-40 bg-linear-to-br from-primary-700 to-primary-800 overflow-hidden flex-shrink-0">
-          {event.banner_url ? (
+          {(event.cover_image_url || event.banner_url) ? (
             <img
-              src={event.banner_url}
+              src={event.cover_image_url || event.banner_url}
               alt={event.title}
               className="w-full h-full object-cover"
             />

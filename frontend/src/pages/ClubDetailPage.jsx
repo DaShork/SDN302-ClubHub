@@ -4,7 +4,7 @@ import { clubService } from '@/services/clubService'
 import { eventService } from '@/services/eventService'
 import { galleryService } from '@/services/galleryService'
 import { Card, Button, Badge, Loading } from '@/components'
-import { EventCard } from '@/components/cards/EventCard'
+import { EventCard, EventGrid } from '@/components/cards/EventCard'
 
 const defaultLogo = 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=200&h=200&fit=crop'
 
@@ -214,7 +214,7 @@ export function ClubDetailPage() {
                 </Link>
               </div>
               {events.length > 0 ? (
-                <EventCard event={events[0]} className="max-w-2xl" />
+                <EventGrid events={events} />
               ) : (
                 <Card className="p-12 text-center">
                   <p className="text-secondary-300">No upcoming events</p>
