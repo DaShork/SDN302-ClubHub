@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, BrowserRouter } from 'react-router-dom';
 import HomePage from '@/pages/HomePage/HomePage.jsx';
 import ClubsPage from '@/pages/ClubsPage/ClubsPage.jsx';
 import EventsPage from '@/pages/EventsPage/EventsPage.jsx';
@@ -15,6 +15,15 @@ import ProtectedRoute from '@/components/ProtectedRoute/ProtectedRoute.jsx';
 import GuestRoute from '@/components/GuestRoute/GuestRoute.jsx';
 import '@/components/ProtectedRoute/ProtectedRoute.css';
 
+import { PublicLayout } from '@/layouts/PublicLayout'
+import { ClubDetailPage } from '@/pages/ClubDetailPage'
+import { EventDetailPage } from '@/pages/EventDetailPage'
+import { GalleryPage } from '@/pages/GalleryPage'
+import { MyClubsPage } from '@/pages/MyClubsPage'
+import { MyRegistrationsPage } from '@/pages/MyRegistrationsPage'
+import { CheckInPage } from '@/pages/CheckInPage'
+
+
 export default function App() {
   return (
     <Routes>
@@ -28,6 +37,10 @@ export default function App() {
       <Route path="/ai" element={<AIPage />} />
       <Route path="/announcements" element={<AnnouncementsPage />} />
       <Route path="/announcements/:announcementId" element={<AnnouncementsPage />} />
+      <Route path="/gallery" element={<GalleryPage />} />
+      <Route path="/my-clubs" element={<MyClubsPage />} />
+      <Route path="/my-registrations" element={<MyRegistrationsPage />} />
+      <Route path="/check-in" element={<CheckInPage />} />
       
       {/* Auth routes - only for guests */}
       <Route
