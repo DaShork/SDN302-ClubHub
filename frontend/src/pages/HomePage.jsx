@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { clubService } from '@/services/clubService'
 import { eventService } from '@/services/eventService'
+import { galleryService } from '@/services/galleryService'
 import { Button, Loading } from '@/components'
 import { ClubGrid } from '@/components/cards/ClubCard'
 import { EventGrid } from '@/components/cards/EventCard'
@@ -9,6 +10,7 @@ import { EventGrid } from '@/components/cards/EventCard'
 export function HomePage() {
   const [featuredClubs, setFeaturedClubs] = useState([])
   const [upcomingEvents, setUpcomingEvents] = useState([])
+  const [galleryPreview, setGalleryPreview] = useState([])
   const [stats, setStats] = useState({ totalClubs: 0, totalMembers: 0, upcomingEvents: 0 })
   const [loading, setLoading] = useState(true)
 
@@ -19,14 +21,16 @@ export function HomePage() {
   const loadData = async () => {
     try {
       setLoading(true)
-      const [clubsData, eventsData, statsData] = await Promise.all([
+      const [clubsData, eventsData, statsData, galleryData] = await Promise.all([
         clubService.getFeatured(6),
         eventService.getUpcoming(4),
         clubService.getStats(),
+        galleryService.getFeatured(4),
       ])
       setFeaturedClubs(clubsData || [])
       setUpcomingEvents(eventsData || [])
       setStats(statsData)
+      setGalleryPreview(galleryData || [])
     } catch (error) {
       console.error('Error loading home data:', error)
     } finally {
@@ -196,14 +200,32 @@ export function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="aspect-square rounded-xl bg-linear-to-br from-primary-700 to-primary-800 flex items-center justify-center"
-              >
-                <span className="text-primary-600 text-4xl font-bold">{i}</span>
-              </div>
-            ))}
+            {loading ? (
+              <div className="col-span-full text-center text-secondary-300 py-8">Loading gallery...</div>
+            ) : galleryPreview.length > 0 ? (
+              galleryPreview.map((item) => (
+                <Link
+                  to="/gallery"
+                  key={item.id}
+                  className="aspect-square rounded-xl overflow-hidden bg-card block"
+                >
+                  <img
+                    src={item.image_url}
+                    alt={item.caption || 'Gallery image'}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  />
+                </Link>
+              ))
+            ) : (
+              [1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="aspect-square rounded-xl bg-linear-to-br from-primary-700 to-primary-800 flex items-center justify-center"
+                >
+                  <span className="text-primary-600 text-4xl font-bold">{i}</span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>

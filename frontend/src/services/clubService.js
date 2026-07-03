@@ -32,10 +32,10 @@ export const clubService = {
       .select(`
         *,
         categories (id, name, description),
-        memberships!inner (
+        memberships (
           id,
           position,
-          profiles!inner (
+          profiles (
             id,
             full_name,
             avatar_url,
@@ -50,7 +50,6 @@ export const clubService = {
         )
       `)
       .eq('id', id)
-      .eq('status', 'active')
       .single()
 
     if (error) throw error

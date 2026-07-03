@@ -3,8 +3,9 @@ import { useParams, Link } from 'react-router-dom'
 import { clubService } from '@/services/clubService'
 import { eventService } from '@/services/eventService'
 import { galleryService } from '@/services/galleryService'
-import { Card, Button, Badge, Loading } from '@/components'
-import { EventCard } from '@/components/cards/EventCard'
+import { Card, Button, Badge, Loading, toast, ConfirmModal } from '@/components'
+import { EventCard, EventGrid } from '@/components/cards/EventCard'
+import { useMembership } from '@/stores/userStore'
 
 const defaultLogo = 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=200&h=200&fit=crop'
 
@@ -15,6 +16,9 @@ export function ClubDetailPage() {
   const [gallery, setGallery] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('about')
+  const [confirmLeave, setConfirmLeave] = useState(false)
+  const { isMember, join, leave } = useMembership()
+  const isJoined = !loading && isMember(club?.id)
 
   useEffect(() => {
     loadData()
@@ -100,11 +104,10 @@ export function ClubDetailPage() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`py-4 px-2 text-sm font-medium capitalize transition-colors border-b-2 ${
-                  activeTab === tab
+                className={`py-4 px-2 text-sm font-medium capitalize transition-colors border-b-2 ${activeTab === tab
                     ? 'text-accent-green border-accent-green'
                     : 'text-secondary-300 border-transparent hover:text-secondary-100'
-                }`}
+                  }`}
               >
                 {tab}
               </button>
@@ -169,12 +172,32 @@ export function ClubDetailPage() {
                   <Card className="bg-linear-to-br from-primary-800 to-accent-green/20 border-accent-green/30">
                     <div className="p-6 text-center">
                       <h3 className="text-lg font-semibold text-secondary-100 mb-2">
-                        We're Recruiting!
+                        {isJoined ? "You're a member!" : "We're Recruiting!"}
                       </h3>
                       <p className="text-sm text-secondary-200 mb-4">
-                        Join us and be part of something great
+                        {isJoined
+                          ? 'Manage membership from My Clubs'
+                          : 'Join us and be part of something great'}
                       </p>
-                      <Button className="w-full">Join Club</Button>
+                      {isJoined ? (
+                        <Button
+                          variant="destructive"
+                          className="w-full"
+                          onClick={() => setConfirmLeave(true)}
+                        >
+                          Leave Club
+                        </Button>
+                      ) : (
+                        <Button
+                          className="w-full"
+                          onClick={() => {
+                            join(club.id)
+                            toast(`Joined ${club.name}!`, { variant: 'success' })
+                          }}
+                        >
+                          Join Club
+                        </Button>
+                      )}
                     </div>
                   </Card>
                 )}
@@ -214,7 +237,7 @@ export function ClubDetailPage() {
                 </Link>
               </div>
               {events.length > 0 ? (
-                <EventCard event={events[0]} className="max-w-2xl" />
+                <EventGrid events={events} />
               ) : (
                 <Card className="p-12 text-center">
                   <p className="text-secondary-300">No upcoming events</p>
@@ -303,6 +326,20 @@ export function ClubDetailPage() {
           )}
         </div>
       </section>
+
+      <ConfirmModal
+        open={confirmLeave}
+        title={`Leave ${club?.name}?`}
+        description="You can re-join later if recruitment is still open."
+        confirmLabel="Leave Club"
+        variant="danger"
+        onCancel={() => setConfirmLeave(false)}
+        onConfirm={() => {
+          leave(club.id)
+          setConfirmLeave(false)
+          toast(`Left ${club.name}`, { variant: 'info' })
+        }}
+      />
     </div>
   )
 }
