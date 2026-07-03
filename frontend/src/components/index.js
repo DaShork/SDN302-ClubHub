@@ -1,12 +1,22 @@
-export { Navbar, Footer } from './shared'
-export { ClubCard, ClubGrid } from './cards/ClubCard'
-export { EventCard, EventGrid } from './cards/EventCard'
-export { SearchBar, FilterPanel } from './shared'
-
-export { Button } from './ui/button'
-export { Badge } from './ui/badge'
-export { Loading, Skeleton } from './ui/loading'
-export { Card, CardHeader, CardContent, CardFooter } from './ui/card'
-export { Input } from './ui/input'
-export { Toaster, toast } from './ui/toast'
-export { ConfirmModal } from './ui/confirm-modal'
+export { Navbar, Footer } from './shared';
+export { ClubCard, ClubGrid } from './cards/ClubCard';
+export { EventCard, EventGrid } from './cards/EventCard';
+export { SearchBar, FilterPanel } from './shared';
+export { Button } from './ui/button';
+export { Badge } from './ui/badge';
+export { Loading, Skeleton } from './ui/loading';
+export { Card, CardHeader, CardContent, CardFooter } from './ui/card';
+export { Input } from './ui/input';
+export { Toaster, toast } from './ui/toast';
+export { ConfirmModal } from './ui/confirm-modal';
+export { default as Navbar } from './Navbar/Navbar.jsx';
+export { default as Footer } from './Footer/Footer.jsx';
+export { default as Section } from './Section/Section.jsx';
+export { default as SectionEyebrow } from './SectionEyebrow/SectionEyebrow.jsx';
+export { default as SectionHeader } from './SectionHeader/SectionHeader.jsx';
+export { default as StatusBadge } from './StatusBadge/StatusBadge.jsx';
+export { default as CTABanner } from './CTABanner/CTABanner.jsx';
+export { default as PagePlaceholder } from './PagePlaceholder/PagePlaceholder.jsx';
+export { default as AuthLayout, FormField, TextInput } from './AuthLayout/AuthLayout.jsx';
+export { default as ProtectedRoute } from './ProtectedRoute/ProtectedRoute.jsx';
+export { default as GuestRoute } from './GuestRoute/GuestRoute.jsx';
