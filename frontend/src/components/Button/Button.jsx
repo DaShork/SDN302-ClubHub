@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { cva, type VariantProps } from 'class-variance-authority'
+import { cva } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
@@ -28,13 +28,10 @@ const buttonVariants = cva(
   }
 )
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {}
-
-function Button({ className, variant, size, ...props }: ButtonProps) {
+function Button({ className, variant, size, type = 'button', ...props }) {
   return (
     <button
+      type={type}
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}

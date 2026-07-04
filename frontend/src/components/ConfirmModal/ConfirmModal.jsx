@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Button } from '@/components/ui/button'
+import { Button } from '../Button/Button.jsx'
 
 export function ConfirmModal({
   open,

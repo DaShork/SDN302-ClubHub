@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { galleryService } from '@/services/galleryService'
 import { clubService } from '@/services/clubService'
-import { Loading } from '@/components/ui/loading'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Card } from '@/components/ui/card'
+import { Loading } from '@/components/Loading/Loading.jsx'
+import Badge from '@/components/StatusBadge/StatusBadge.jsx'
+import { Input } from '@/components/Input/Input.jsx'
+import { Card } from '@/components/Card/Card.jsx'
 
 export function GalleryPage() {
   const [searchParams] = useSearchParams()
