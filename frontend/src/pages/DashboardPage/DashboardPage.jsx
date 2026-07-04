@@ -38,7 +38,7 @@ export default function DashboardPage() {
     { name: "Jun", Members: 142 }
   ]);
 
-  const [attendanceData, setAttendanceData] = useState([
+  const [attendanceData] = useState([
     { name: "Orientation", Rate: 94 },
     { name: "Git Seminar", Rate: 82 },
     { name: "React 19 Lab", Rate: 88 },
@@ -237,20 +237,7 @@ export default function DashboardPage() {
     }
   ];
 
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white border border-gray-200 px-3 py-2 rounded-xl text-xs shadow-xl text-[#06231D]">
-          <p className="font-bold">{label}</p>
-          <p className="text-[#22C55E] mt-0.5 font-semibold">
-            {payload[0].name}: <span className="font-bold text-[#06231D]">{payload[0].value}</span>
-            {payload[0].name === "Rate" ? "%" : ""}
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
+
 
   return (
     <div className="space-y-6">
@@ -402,3 +389,18 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white border border-gray-200 px-3 py-2 rounded-xl text-xs shadow-xl text-[#06231D]">
+        <p className="font-bold">{label}</p>
+        <p className="text-[#22C55E] mt-0.5 font-semibold">
+          {payload[0].name}: <span className="font-bold text-[#06231D]">{payload[0].value}</span>
+          {payload[0].name === "Rate" ? "%" : ""}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};

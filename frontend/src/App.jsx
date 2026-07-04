@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, BrowserRouter } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from '@/pages/HomePage/HomePage.jsx';
 import ClubsPage from '@/pages/ClubsPage/ClubsPage.jsx';
 import EventsPage from '@/pages/EventsPage/EventsPage.jsx';
@@ -15,9 +15,6 @@ import ProtectedRoute from '@/components/ProtectedRoute/ProtectedRoute.jsx';
 import GuestRoute from '@/components/GuestRoute/GuestRoute.jsx';
 import '@/components/ProtectedRoute/ProtectedRoute.css';
 
-import { PublicLayout } from '@/layouts/PublicLayout'
-import { ClubDetailPage } from '@/pages/ClubDetailPage'
-import { EventDetailPage } from '@/pages/EventDetailPage'
 import { GalleryPage } from '@/pages/GalleryPage'
 import { MyClubsPage } from '@/pages/MyClubsPage'
 import { MyRegistrationsPage } from '@/pages/MyRegistrationsPage'
