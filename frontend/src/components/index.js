@@ -1,10 +1,10 @@
-export { Button } from './ui/button';
-export { Badge } from './ui/badge';
-export { Loading, Skeleton } from './ui/loading';
-export { Card, CardHeader, CardContent, CardFooter } from './ui/card';
-export { Input } from './ui/input';
-export { Toaster, toast } from './ui/toast';
-export { ConfirmModal } from './ui/confirm-modal';
+export { Button } from './Button/Button.jsx';
+export { default as Badge } from './StatusBadge/StatusBadge.jsx';
+export { Loading, Skeleton } from './Loading/Loading.jsx';
+export { Card, CardHeader, CardContent, CardFooter } from './Card/Card.jsx';
+export { Input } from './Input/Input.jsx';
+export { Toaster, toast } from './Toast/Toast.jsx';
+export { ConfirmModal } from './ConfirmModal/ConfirmModal.jsx';
 export { default as Navbar } from './Navbar/Navbar.jsx';
 export { default as Footer } from './Footer/Footer.jsx';
 export { default as Section } from './Section/Section.jsx';
