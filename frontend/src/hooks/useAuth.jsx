@@ -53,6 +53,7 @@ export function AuthProvider({ children }) {
       session,
       user: session?.user ?? null,
       profile,
+      profileId: profile?.id ?? null,
       loading,
       isAuthenticated: !!session?.user,
       signIn: svcSignIn,
