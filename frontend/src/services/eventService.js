@@ -1,128 +1,153 @@
-import { supabase } from './supabase'
-import { mockEvents } from '@/mocks/data'
-
-const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'
+import { supabase } from "./supabase";
 
 export const eventService = {
-  async getAll({ clubId, status = 'upcoming', limit = 20, offset = 0 } = {}) {
-    if (USE_MOCKS) {
-      let data = [...mockEvents]
-      if (status) data = data.filter((e) => e.status === status)
-      if (clubId) data = data.filter((e) => e.club_id === clubId)
-      data.sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
-      return data.slice(offset, offset + limit)
-    }
+  // Fetch all events for a specific club
+  async getClubEvents(clubId) {
+    const { data, error } = await supabase
+      .from("events")
+      .select("*")
+      .eq("club_id", clubId)
+      .order("start_time", { ascending: false });
 
-    let query = supabase
-      .from('events')
-      .select(`
-        *,
-        clubs (id, name, logo_url)
-      `)
-      .order('start_time', { ascending: true })
-
-    if (status) {
-      query = query.eq('status', status)
-    }
-
-    if (clubId) {
-      query = query.eq('club_id', clubId)
-    }
-
-    const { data, error } = await query.range(offset, offset + limit - 1)
-
-    if (error) throw error
-    return data
+    if (error) throw error;
+    return data;
   },
 
-  async getUpcoming(limit = 4) {
-    if (USE_MOCKS) {
-      const data = mockEvents
-        .filter((e) => e.status === 'upcoming' && new Date(e.start_time) >= new Date())
-        .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
-        .slice(0, limit)
-      return data
-    }
-
+  // Fetch a specific event by ID
+  async getEventById(eventId) {
     const { data, error } = await supabase
-      .from('events')
-      .select(`
-        *,
-        clubs (id, name, logo_url)
-      `)
-      .eq('status', 'upcoming')
-      .gte('start_time', new Date().toISOString())
-      .order('start_time', { ascending: true })
-      .limit(limit)
-
-    if (error) throw error
-    return data
-  },
-
-  async getById(id) {
-    if (USE_MOCKS) {
-      const data = mockEvents.find((e) => e.id === id)
-      if (!data) throw new Error('Event not found')
-      return data
-    }
-
-    const { data, error } = await supabase
-      .from('events')
+      .from("events")
       .select(`
         *,
         clubs (
           id,
           name,
-          logo_url,
-          description,
-          contact_email
+          logo_url
         )
       `)
-      .eq('id', id)
-      .single()
+      .eq("id", eventId)
+      .single();
 
-    if (error) throw error
-    return data
+    if (error) throw error;
+    return data;
   },
 
-  async getByClub(clubId, limit = 10) {
-    if (USE_MOCKS) {
-      const data = mockEvents
-        .filter((e) => e.club_id === clubId)
-        .sort((a, b) => new Date(b.start_time) - new Date(a.start_time))
-        .slice(0, limit)
-      return data
-    }
-
+  // Create a new event
+  async createEvent(eventData) {
     const { data, error } = await supabase
-      .from('events')
+      .from("events")
+      .insert([eventData])
+      .select();
+
+    if (error) throw error;
+    return data[0];
+  },
+
+  // Update event details
+  async updateEvent(eventId, eventData) {
+    const { data, error } = await supabase
+      .from("events")
+      .update({ ...eventData, updated_at: new Date() })
+      .eq("id", eventId)
+      .select();
+
+    if (error) throw error;
+    return data[0];
+  },
+
+  // Delete an event
+  async deleteEvent(eventId) {
+    const { error } = await supabase
+      .from("events")
+      .delete()
+      .eq("id", eventId);
+
+    if (error) throw error;
+    return true;
+  },
+
+  // Register a student for an event
+  async registerForEvent(eventId, profileId) {
+    const { data, error } = await supabase
+      .from("event_registrations")
+      .insert([{ event_id: eventId, profile_id: profileId, status: "registered" }])
+      .select();
+
+    if (error) throw error;
+    return data[0];
+  },
+
+  // Cancel an event registration
+  async cancelRegistration(eventId, profileId) {
+    const { error } = await supabase
+      .from("event_registrations")
+      .delete()
+      .eq("event_id", eventId)
+      .eq("profile_id", profileId);
+
+    if (error) throw error;
+    return true;
+  },
+
+  // Get registrations for a specific event
+  async getEventRegistrations(eventId) {
+    const { data, error } = await supabase
+      .from("event_registrations")
       .select(`
-        *,
-        clubs (id, name, logo_url)
+        id,
+        registered_at,
+        status,
+        profiles (
+          id,
+          full_name,
+          student_code,
+          email,
+          avatar_url
+        )
       `)
-      .eq('club_id', clubId)
-      .order('start_time', { ascending: false })
-      .limit(limit)
+      .eq("event_id", eventId);
 
-    if (error) throw error
-    return data
+    if (error) throw error;
+    return data;
   },
 
-  async getRegistrationCount(eventId) {
-    if (USE_MOCKS) {
-      // Stable fake count per event for dev
-      const evt = mockEvents.find((e) => e.id === eventId)
-      if (!evt) return 0
-      return Math.min(evt.max_attendees, Math.floor(evt.max_attendees * 0.4))
-    }
+  // Record check-in attendance for a member at an event
+  async checkInAttendance(eventId, membershipId, status = "present") {
+    const { data, error } = await supabase
+      .from("attendance")
+      .insert([{
+        event_id: eventId,
+        membership_id: membershipId,
+        status
+      }])
+      .select();
 
-    const { count, error } = await supabase
-      .from('event_registrations')
-      .select('id', { count: 'exact', head: true })
-      .eq('event_id', eventId)
-      .eq('status', 'registered')
-
-    if (error) throw error
-    return count || 0
+    if (error) throw error;
+    return data[0];
   },
-}
+
+  // Fetch attendance records for a specific event
+  async getEventAttendance(eventId) {
+    const { data, error } = await supabase
+      .from("attendance")
+      .select(`
+        id,
+        check_in_time,
+        status,
+        memberships (
+          id,
+          position,
+          profiles (
+            id,
+            full_name,
+            student_code,
+            email
+          )
+        )
+      `)
+      .eq("event_id", eventId);
+
+    if (error) throw error;
+    return data;
+  }
+};

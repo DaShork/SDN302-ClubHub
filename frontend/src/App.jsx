@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, BrowserRouter } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from '@/pages/HomePage/HomePage.jsx';
 import ClubsPage from '@/pages/ClubsPage/ClubsPage.jsx';
 import EventsPage from '@/pages/EventsPage/EventsPage.jsx';
@@ -14,7 +14,6 @@ import SettingsPage from '@/pages/SettingsPage/SettingsPage.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute/ProtectedRoute.jsx';
 import GuestRoute from '@/components/GuestRoute/GuestRoute.jsx';
 import '@/components/ProtectedRoute/ProtectedRoute.css';
-
 import { PublicLayout } from '@/layouts/PublicLayout'
 import { ClubDetailPage } from '@/pages/ClubDetailPage/ClubDetailPage.jsx'
 import { EventDetailPage } from '@/pages/EventDetailPage/EventDetailPage.jsx'
@@ -22,11 +21,15 @@ import { GalleryPage } from '@/pages/GalleryPage/GalleryPage.jsx'
 import { MyClubsPage } from '@/pages/MyClubsPage/MyClubsPage.jsx'
 import { MyRegistrationsPage } from '@/pages/MyRegistrationsPage/MyRegistrationsPage.jsx'
 import { CheckInPage } from '@/pages/CheckInPage/CheckInPage.jsx'
+import AppRoutes from './routes/AppRoutes';
 
 
 export default function App() {
   return (
     <Routes>
+      {/* Club Layout nested routing */}
+      <Route path="/club/:clubId/*" element={<AppRoutes />} />
+
       <Route path="/" element={<HomePage />} />
       <Route path="/clubs" element={<ClubsPage />} />
       <Route path="/clubs/:clubId" element={<ClubsPage />} />
