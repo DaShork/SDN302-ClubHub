@@ -16,12 +16,12 @@ import GuestRoute from '@/components/GuestRoute/GuestRoute.jsx';
 import '@/components/ProtectedRoute/ProtectedRoute.css';
 
 import { PublicLayout } from '@/layouts/PublicLayout'
-import { ClubDetailPage } from '@/pages/ClubDetailPage'
-import { EventDetailPage } from '@/pages/EventDetailPage'
-import { GalleryPage } from '@/pages/GalleryPage'
-import { MyClubsPage } from '@/pages/MyClubsPage'
-import { MyRegistrationsPage } from '@/pages/MyRegistrationsPage'
-import { CheckInPage } from '@/pages/CheckInPage'
+import { ClubDetailPage } from '@/pages/ClubDetailPage/ClubDetailPage.jsx'
+import { EventDetailPage } from '@/pages/EventDetailPage/EventDetailPage.jsx'
+import { GalleryPage } from '@/pages/GalleryPage/GalleryPage.jsx'
+import { MyClubsPage } from '@/pages/MyClubsPage/MyClubsPage.jsx'
+import { MyRegistrationsPage } from '@/pages/MyRegistrationsPage/MyRegistrationsPage.jsx'
+import { CheckInPage } from '@/pages/CheckInPage/CheckInPage.jsx'
 
 
 export default function App() {
