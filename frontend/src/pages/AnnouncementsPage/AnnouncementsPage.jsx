@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { announcementService } from "../../services/announcementService";
 import { resolveClubUuid } from "../../services/supabase";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function AnnouncementsPage() {
   const { clubId } = useParams();

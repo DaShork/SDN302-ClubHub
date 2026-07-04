@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { eventService } from "../../services/eventService";
 import { workshopService } from "../../services/workshopService";
 import { resolveClubUuid } from "../../services/supabase";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function EventsPage() {
   const { clubId } = useParams();

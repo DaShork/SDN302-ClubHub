@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { knowledgeService } from "../../services/knowledgeService";
 import { resolveClubUuid } from "../../services/supabase";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function KnowledgePage() {
   const { clubId } = useParams();
