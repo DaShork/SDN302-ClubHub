@@ -4,7 +4,6 @@ import { clubService } from '@/services/clubService'
 import { eventService } from '@/services/eventService'
 import { galleryService } from '@/services/galleryService'
 import { Card, Button, Badge, Loading, toast, ConfirmModal } from '@/components'
-import { EventCard, EventGrid } from '@/components/cards/EventCard'
 import { useMembership } from '@/stores/userStore'
 
 const defaultLogo = 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=200&h=200&fit=crop'
@@ -237,7 +236,21 @@ export function ClubDetailPage() {
                 </Link>
               </div>
               {events.length > 0 ? (
-                <EventGrid events={events} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {events.map((event) => (
+                    <Card key={event.id} className="p-4">
+                      <h3 className="text-base font-semibold text-secondary-100 mb-2">
+                        {event.title}
+                      </h3>
+                      {event.location && (
+                        <p className="text-sm text-secondary-300 mb-1">{event.location}</p>
+                      )}
+                      <Link to={`/events/${event.id}`}>
+                        <Button size="sm" variant="ghost">View details</Button>
+                      </Link>
+                    </Card>
+                  ))}
+                </div>
               ) : (
                 <Card className="p-12 text-center">
                   <p className="text-secondary-300">No upcoming events</p>

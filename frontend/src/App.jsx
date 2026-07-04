@@ -14,12 +14,15 @@ import SettingsPage from '@/pages/SettingsPage/SettingsPage.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute/ProtectedRoute.jsx';
 import GuestRoute from '@/components/GuestRoute/GuestRoute.jsx';
 import '@/components/ProtectedRoute/ProtectedRoute.css';
-
-import { GalleryPage } from '@/pages/GalleryPage'
-import { MyClubsPage } from '@/pages/MyClubsPage'
-import { MyRegistrationsPage } from '@/pages/MyRegistrationsPage'
-import { CheckInPage } from '@/pages/CheckInPage'
+import { PublicLayout } from '@/layouts/PublicLayout'
+import { ClubDetailPage } from '@/pages/ClubDetailPage/ClubDetailPage.jsx'
+import { EventDetailPage } from '@/pages/EventDetailPage/EventDetailPage.jsx'
+import { GalleryPage } from '@/pages/GalleryPage/GalleryPage.jsx'
+import { MyClubsPage } from '@/pages/MyClubsPage/MyClubsPage.jsx'
+import { MyRegistrationsPage } from '@/pages/MyRegistrationsPage/MyRegistrationsPage.jsx'
+import { CheckInPage } from '@/pages/CheckInPage/CheckInPage.jsx'
 import AppRoutes from './routes/AppRoutes';
+
 
 export default function App() {
   return (

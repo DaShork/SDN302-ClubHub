@@ -1,7 +1,3 @@
-export { Navbar, Footer } from './shared';
-export { ClubCard, ClubGrid } from './cards/ClubCard';
-export { EventCard, EventGrid } from './cards/EventCard';
-export { SearchBar, FilterPanel } from './shared';
 export { Button } from './ui/button';
 export { Badge } from './ui/badge';
 export { Loading, Skeleton } from './ui/loading';
