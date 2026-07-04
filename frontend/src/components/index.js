@@ -9,8 +9,6 @@ export { Card, CardHeader, CardContent, CardFooter } from './ui/card';
 export { Input } from './ui/input';
 export { Toaster, toast } from './ui/toast';
 export { ConfirmModal } from './ui/confirm-modal';
-export { default as Navbar } from './Navbar/Navbar.jsx';
-export { default as Footer } from './Footer/Footer.jsx';
 export { default as Section } from './Section/Section.jsx';
 export { default as SectionEyebrow } from './SectionEyebrow/SectionEyebrow.jsx';
 export { default as SectionHeader } from './SectionHeader/SectionHeader.jsx';

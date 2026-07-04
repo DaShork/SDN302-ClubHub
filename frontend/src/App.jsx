@@ -22,11 +22,14 @@ import { GalleryPage } from '@/pages/GalleryPage'
 import { MyClubsPage } from '@/pages/MyClubsPage'
 import { MyRegistrationsPage } from '@/pages/MyRegistrationsPage'
 import { CheckInPage } from '@/pages/CheckInPage'
-
+import AppRoutes from './routes/AppRoutes';
 
 export default function App() {
   return (
     <Routes>
+      {/* Club Layout nested routing */}
+      <Route path="/club/:clubId/*" element={<AppRoutes />} />
+
       <Route path="/" element={<HomePage />} />
       <Route path="/clubs" element={<ClubsPage />} />
       <Route path="/clubs/:clubId" element={<ClubsPage />} />
