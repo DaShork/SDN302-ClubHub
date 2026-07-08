@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, Building2, UserCog, Activity, Shield, ArrowRight, BarChart3, Settings, Calendar, FileText, MessageSquare, GraduationCap, AlertCircle, TrendingUp, Clock, CheckCircle, XCircle } from 'lucide-react';
-import MainLayout from '@/layouts/MainLayout.jsx';
 import { Card, Button } from '@/components';
 import { supabase } from '@/services/supabase.js';
 import { ROLES, ROLE_META } from '@/auth/rolePermissions.js';

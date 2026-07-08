@@ -1,4 +1,3 @@
-import MainLayout from '@/layouts/MainLayout.jsx';
 import HeroSection from './components/HeroSection/HeroSection.jsx';
 import CategorySection from './components/CategorySection/CategorySection.jsx';
 import ClubsDirectory from '../ClubsPage/components/ClubsDirectory/ClubsDirectory.jsx';
@@ -10,7 +9,7 @@ import { CTABanner } from '@/components';
 
 export default function HomePage() {
   return (
-    <MainLayout>
+    <>
       <HeroSection />
       <AboutSection />
       <CategorySection />
@@ -19,6 +18,6 @@ export default function HomePage() {
       <AISection />
       <KnowledgeSection />
       <CTABanner />
-    </MainLayout>
+    </>
   );
 }

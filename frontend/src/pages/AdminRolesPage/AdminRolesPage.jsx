@@ -1,20 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Shield, Users, CheckCircle2, XCircle, Info } from 'lucide-react';
-import MainLayout from '@/layouts/MainLayout.jsx';
 import { Card, Button, toast } from '@/components';
 import { supabase } from '@/services/supabase.js';
 import { ROLES, ROLE_META, GRANTS } from '@/auth/rolePermissions.js';
 import './AdminRolesPage.css';
 
-export default function AdminRolesPage() {
-  return (
-    <MainLayout>
-      <AdminRolesPageContent />
-    </MainLayout>
-  );
-}
-
-function AdminRolesPageContent() {
+export default function AdminRolesPageContent() {
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
 

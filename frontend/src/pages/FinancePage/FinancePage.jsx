@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Wallet, History, CreditCard, ArrowRight, CheckCircle2, Clock, XCircle, AlertCircle } from 'lucide-react';
-import MainLayout from '@/layouts/MainLayout.jsx';
 import { Card, Button, toast } from '@/components';
 import { useAuth } from '@/hooks/useAuth.jsx';
 import { financeService } from '@/services/financeService.js';
@@ -30,15 +29,7 @@ function formatCurrency(amount) {
   }).format(amount || 0);
 }
 
-export default function FinancePage() {
-  return (
-    <MainLayout>
-      <FinancePageContent />
-    </MainLayout>
-  );
-}
-
-function FinancePageContent() {
+export default function FinancePageContent() {
   const { profile, role } = useAuth();
   const [memberships, setMemberships] = useState([]);
   const [payments, setPayments] = useState([]);

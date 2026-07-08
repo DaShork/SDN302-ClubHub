@@ -1,33 +1,26 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import MainLayout from '@/layouts/MainLayout.jsx'
 import { clubService } from '@/services/clubService'
 import { eventService } from '@/services/eventService'
 import { galleryService } from '@/services/galleryService'
+import { membershipService } from '@/services/membershipService'
 import { Card, Button, Badge, Loading, toast, ConfirmModal } from '@/components'
-import { useMembership } from '@/stores/userStore'
+import { useAuth } from '@/hooks/useAuth.jsx'
 import './ClubDetailPage.css';
 
 const defaultLogo = 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=200&h=200&fit=crop'
 
-export default function ClubDetailPage() {
-  return (
-    <MainLayout>
-      <ClubDetailPageContent />
-    </MainLayout>
-  )
-}
-
-function ClubDetailPageContent() {
+export default function ClubDetailPageContent() {
   const { id } = useParams()
+  const { profileId, isAuthenticated } = useAuth()
   const [club, setClub] = useState(null)
   const [events, setEvents] = useState([])
   const [gallery, setGallery] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('about')
   const [confirmLeave, setConfirmLeave] = useState(false)
-  const { isMember, join, leave } = useMembership()
-  const isJoined = !loading && isMember(club?.id)
+  const [membership, setMembership] = useState(null)
+  const [joining, setJoining] = useState(false)
 
   const loadData = async () => {
     try {
@@ -40,6 +33,11 @@ function ClubDetailPageContent() {
       setClub(clubData)
       setEvents(eventsData || [])
       setGallery(galleryData || [])
+
+      if (profileId) {
+        const mem = await membershipService.getMembership(profileId, id).catch(() => null)
+        setMembership(mem)
+      }
     } catch (error) {
       console.error('Error loading club:', error)
     } finally {
@@ -49,7 +47,39 @@ function ClubDetailPageContent() {
 
   useEffect(() => {
     loadData()
-  }, [id])
+  }, [id, profileId])
+
+  const isJoined = membership?.status === 'active'
+
+  const handleJoin = async () => {
+    if (!profileId) {
+      toast('Please log in to join a club', { variant: 'error' })
+      return
+    }
+    try {
+      setJoining(true)
+      await membershipService.joinClub(id, profileId)
+      toast(`Joined ${club.name}!`, { variant: 'success' })
+      loadData()
+    } catch (err) {
+      console.error('Join club failed:', err)
+      toast('Không thể tham gia CLB', { variant: 'error' })
+    } finally {
+      setJoining(false)
+    }
+  }
+
+  const handleLeave = async () => {
+    try {
+      await membershipService.leaveClub(id, profileId)
+      toast(`Đã rời ${club.name}`, { variant: 'info' })
+      setConfirmLeave(false)
+      loadData()
+    } catch (err) {
+      console.error('Leave club failed:', err)
+      toast('Không thể rời CLB', { variant: 'error' })
+    }
+  }
 
   if (loading) return <Loading fullScreen />
 
@@ -199,12 +229,10 @@ function ClubDetailPageContent() {
                       ) : (
                         <Button
                           className="w-full"
-                          onClick={() => {
-                            join(club.id)
-                            toast(`Joined ${club.name}!`, { variant: 'success' })
-                          }}
+                          onClick={handleJoin}
+                          disabled={joining || !isAuthenticated}
                         >
-                          Join Club
+                          {joining ? 'Joining...' : isAuthenticated ? 'Join Club' : 'Login to Join'}
                         </Button>
                       )}
                     </div>
@@ -357,11 +385,7 @@ function ClubDetailPageContent() {
         confirmLabel="Leave Club"
         variant="danger"
         onCancel={() => setConfirmLeave(false)}
-        onConfirm={() => {
-          leave(club.id)
-          setConfirmLeave(false)
-          toast(`Left ${club.name}`, { variant: 'info' })
-        }}
+        onConfirm={handleLeave}
       />
     </div>
   )

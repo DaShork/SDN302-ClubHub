@@ -1,57 +1,73 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Users, CalendarDays, LogOut, Compass } from 'lucide-react'
-import MainLayout from '@/layouts/MainLayout.jsx'
 import { clubService } from '@/services/clubService'
 import { eventService } from '@/services/eventService'
+import { membershipService } from '@/services/membershipService'
 import { Card, Button, Badge, Loading, toast, ConfirmModal, HeroSection } from '@/components'
-import { useMembership } from '@/stores/userStore'
+import { useAuth } from '@/hooks/useAuth.jsx'
 import './MyClubsPage.css'
 
-export default function MyClubsPage() {
-  return (
-    <MainLayout>
-      <MyClubsPageContent />
-    </MainLayout>
-  )
-}
-
-function MyClubsPageContent() {
-  const { memberships, leave } = useMembership()
+export default function MyClubsPageContent() {
+  const { profileId, isAuthenticated } = useAuth()
+  const [memberships, setMemberships] = useState([])
   const [clubs, setClubs] = useState([])
   const [eventCounts, setEventCounts] = useState({})
   const [loading, setLoading] = useState(true)
   const [confirmLeave, setConfirmLeave] = useState(null)
 
   const loadClubs = async () => {
+    if (!profileId) {
+      setLoading(false)
+      return
+    }
     try {
       setLoading(true)
+      const mems = await membershipService.getProfileMemberships(profileId).catch(() => [])
+      setMemberships(mems)
+
       const results = await Promise.all(
-        memberships.map((m) => clubService.getById(m.clubId).catch(() => null)),
+        mems.map((m) => clubService.getById(m.club_id).catch(() => null)),
       )
       const filtered = results.filter(Boolean)
       setClubs(filtered)
+
       const counts = await Promise.all(
-        memberships.map((m) =>
-          eventService.getByClub(m.clubId, 50).then((ev) => [m.clubId, ev.length]).catch(() => [m.clubId, 0]),
+        mems.map((m) =>
+          eventService
+            .getClubEvents(m.club_id, 50)
+            .then((ev) => [m.club_id, (ev || []).length])
+            .catch(() => [m.club_id, 0]),
         ),
       )
       setEventCounts(Object.fromEntries(counts))
     } catch (error) {
       console.error('Error loading my clubs:', error)
+      toast('Không thể tải danh sách CLB', { variant: 'error' })
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    if (memberships.length === 0) {
-      setClubs([])
+    if (!isAuthenticated) {
       setLoading(false)
       return
     }
     loadClubs()
-  }, [memberships.length])
+  }, [profileId])
+
+  const handleLeave = async (clubId) => {
+    try {
+      await membershipService.leaveClub(clubId, profileId)
+      toast('Đã rời CLB', { variant: 'info' })
+      setConfirmLeave(null)
+      loadClubs()
+    } catch (err) {
+      console.error('Leave club failed:', err)
+      toast('Không thể rời CLB', { variant: 'error' })
+    }
+  }
 
   return (
     <div className="my-clubs-page">
@@ -91,11 +107,7 @@ function MyClubsPageContent() {
         confirmLabel="Leave Club"
         variant="danger"
         onCancel={() => setConfirmLeave(null)}
-        onConfirm={() => {
-          leave(confirmLeave.id)
-          toast(`Left ${confirmLeave.name}`, { variant: 'info' })
-          setConfirmLeave(null)
-        }}
+        onConfirm={() => handleLeave(confirmLeave.id)}
       />
     </div>
   )
@@ -173,6 +185,8 @@ function ClubRow({ club, eventCount, onLeave }) {
     </Card>
   )
 }
+
+const defaultLogo = 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=200&h=200&fit=crop'
 
 function EmptyState() {
   return (

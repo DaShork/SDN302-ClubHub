@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Megaphone, Pin } from "lucide-react";
-import MainLayout from '@/layouts/MainLayout.jsx';
 import { announcementService } from "../../services/announcementService";
 import { resolveClubUuid } from "../../services/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,15 +8,7 @@ import { HeroSection } from "@/components";
 import AnnouncementFormModal from "./components/AnnouncementFormModal/AnnouncementFormModal.jsx";
 import "./AnnouncementsPage.css";
 
-export default function AnnouncementsPage() {
-  return (
-    <MainLayout>
-      <AnnouncementsPageContent />
-    </MainLayout>
-  );
-}
-
-function AnnouncementsPageContent() {
+export default function AnnouncementsPageContent() {
   const { clubId } = useParams();
   const { profileId } = useAuth();
   const [resolvedClubId, setResolvedClubId] = useState(null);

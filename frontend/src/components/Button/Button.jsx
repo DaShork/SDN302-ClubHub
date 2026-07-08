@@ -28,14 +28,17 @@ const buttonVariants = cva(
   }
 )
 
-function Button({ className, variant, size, type = 'button', ...props }) {
+function Button({ className, variant, size, type = 'button', leftIcon, children, ...props }) {
   return (
     <button
       type={type}
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
-    />
+    >
+      {leftIcon}
+      {children}
+    </button>
   )
 }
 

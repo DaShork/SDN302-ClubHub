@@ -10,81 +10,27 @@ import DocumentsPage from '@/pages/DocumentsPage/DocumentsPage.jsx';
 import DashboardPage from '@/pages/DashboardPage/DashboardPage.jsx';
 
 /* Nested routing under /club/:clubId/*. Each subroute is restricted to
-   Club Leader per AGENTS.md §5. Pages at /club/:clubId/knowledge|events|...
-   receive their clubId from useParams() inside each page component.
+   Club Leader per AGENTS.md §5.
 
-   NOTE: Pages inside this group (KnowledgePage, EventsPage, etc.) already
-   wrap themselves in <MainLayout>. Do NOT add another MainLayout here. */
+   IMPORTANT: Pages inside this group render through <Outlet /> of the
+   surrounding DashboardLayout (defined in App.jsx). They must NOT wrap
+   themselves in any layout — DashboardLayout already provides the
+   sidebar + topbar chrome. */
 
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Redirect base URL directly to F-Code club dashboard */}
       <Route path="/" element={<Navigate to="/club/f-code/dashboard" replace />} />
+      <Route path="/club/:clubId" element={<Navigate to="dashboard" replace />} />
 
-      <Route
-        path="/club/:clubId"
-        element={<Navigate to="dashboard" replace />}
-      />
+      <Route path="dashboard" element={<ProtectedRoute requiredRole={ROLES.CLUB_LEADER}><DashboardPage /></ProtectedRoute>} />
+      <Route path="members" element={<ProtectedRoute requiredRole={ROLES.CLUB_LEADER}><MembersPage /></ProtectedRoute>} />
+      <Route path="events" element={<ProtectedRoute requiredRole={ROLES.CLUB_LEADER}><EventsPage /></ProtectedRoute>} />
+      <Route path="workshops" element={<ProtectedRoute requiredRole={ROLES.CLUB_LEADER}><WorkshopsPage /></ProtectedRoute>} />
+      <Route path="knowledge" element={<ProtectedRoute requiredRole={ROLES.CLUB_LEADER}><KnowledgePage /></ProtectedRoute>} />
+      <Route path="documents" element={<ProtectedRoute requiredRole={ROLES.CLUB_LEADER}><DocumentsPage /></ProtectedRoute>} />
+      <Route path="announcements" element={<ProtectedRoute requiredRole={ROLES.CLUB_LEADER}><AnnouncementsPage /></ProtectedRoute>} />
 
-      <Route
-        path="dashboard"
-        element={
-          <ProtectedRoute requiredRole={ROLES.CLUB_LEADER}>
-            <DashboardPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="members"
-        element={
-          <ProtectedRoute requiredRole={ROLES.CLUB_LEADER}>
-            <MembersPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="events"
-        element={
-          <ProtectedRoute requiredRole={ROLES.CLUB_LEADER}>
-            <EventsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="workshops"
-        element={
-          <ProtectedRoute requiredRole={ROLES.CLUB_LEADER}>
-            <WorkshopsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="knowledge"
-        element={
-          <ProtectedRoute requiredRole={ROLES.CLUB_LEADER}>
-            <KnowledgePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="documents"
-        element={
-          <ProtectedRoute requiredRole={ROLES.CLUB_LEADER}>
-            <DocumentsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="announcements"
-        element={
-          <ProtectedRoute requiredRole={ROLES.CLUB_LEADER}>
-            <AnnouncementsPage />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Catch-all for invalid subroutes within a club */}
       <Route path="*" element={<Navigate to="dashboard" replace />} />
     </Routes>
   );

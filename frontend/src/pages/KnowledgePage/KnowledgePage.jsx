@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import MainLayout from '@/layouts/MainLayout.jsx';
 import { knowledgeService } from "../../services/knowledgeService";
 import { resolveClubUuid } from "../../services/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,15 +8,7 @@ import KnowledgeFormModal from "./components/KnowledgeFormModal/KnowledgeFormMod
 import KnowledgeDetailModal from "./components/KnowledgeDetailModal/KnowledgeDetailModal.jsx";
 import "./KnowledgePage.css";
 
-export default function KnowledgePage() {
-  return (
-    <MainLayout>
-      <KnowledgePageContent />
-    </MainLayout>
-  );
-}
-
-function KnowledgePageContent() {
+export default function KnowledgePageContent() {
   const { clubId } = useParams();
   const { profileId } = useAuth();
   const [resolvedClubId, setResolvedClubId] = useState(null);

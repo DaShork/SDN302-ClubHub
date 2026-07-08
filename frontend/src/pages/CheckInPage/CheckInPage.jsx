@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { QrCode, Edit3, Camera, CheckCircle2, AlertTriangle, Lightbulb, History } from 'lucide-react'
-import MainLayout from '@/layouts/MainLayout.jsx'
 import { Card, Button, Badge, toast, HeroSection } from '@/components'
-import { useRegistration, registrationStore } from '@/stores/userStore'
+import { eventService } from '@/services/eventService'
 import './CheckInPage.css'
 
 const RECENT_KEY = 'clubhub.recentCheckIns'
@@ -22,53 +21,66 @@ function saveRecent(list) {
   } catch {}
 }
 
-export default function CheckInPage() {
-  return (
-    <MainLayout>
-      <CheckInPageContent />
-    </MainLayout>
-  )
-}
-
-function CheckInPageContent() {
+export default function CheckInPageContent() {
   const [code, setCode] = useState('')
   const [recent, setRecent] = useState(loadRecent)
   const [result, setResult] = useState(null)
+  const [processing, setProcessing] = useState(false)
 
-  const handleCheckIn = (rawCode) => {
+  const handleCheckIn = async (rawCode) => {
     const trimmed = (rawCode || code).trim().toUpperCase()
     if (!trimmed) {
       toast('Please enter or scan a QR code', { variant: 'error' })
       return
     }
-    const res = registrationStore.checkIn(trimmed)
-    setResult({ code: trimmed, ...res })
+    try {
+      setProcessing(true)
+      const res = await eventService.checkInByQr(trimmed)
+      setResult({ code: trimmed, ...res })
 
-    if (res.ok) {
-      toast('Checked in successfully!', { variant: 'success' })
-      const newRecent = [{ code: trimmed, time: new Date().toISOString() }, ...recent.filter((r) => r.code !== trimmed)]
-      setRecent(newRecent)
-      saveRecent(newRecent)
-    } else if (res.reason === 'already') {
-      toast('Already checked in', { variant: 'info' })
-    } else if (res.reason === 'cancelled') {
-      toast('Registration was cancelled', { variant: 'error' })
-    } else if (res.reason === 'not_registered') {
-      toast('Code not recognised', { variant: 'error' })
+      if (res.ok) {
+        toast('Checked in successfully!', { variant: 'success' })
+        const newRecent = [
+          { code: trimmed, time: new Date().toISOString() },
+          ...recent.filter((r) => r.code !== trimmed),
+        ]
+        setRecent(newRecent)
+        saveRecent(newRecent)
+      } else if (res.reason === 'already') {
+        toast('Already checked in', { variant: 'info' })
+      } else if (res.reason === 'cancelled') {
+        toast('Registration was cancelled', { variant: 'error' })
+      } else if (res.reason === 'not_registered') {
+        toast('Code not recognised', { variant: 'error' })
+      }
+    } catch (err) {
+      console.error('Check-in failed:', err)
+      setResult({ code: trimmed, ok: false, reason: 'error' })
+      toast('Không thể check-in', { variant: 'error' })
+    } finally {
+      setProcessing(false)
+      setCode('')
     }
-    setCode('')
   }
 
-  const handleLookup = () => {
+  const handleLookup = async () => {
     const trimmed = code.trim().toUpperCase()
     if (!trimmed) return
-    const reg = registrationStore.findByQrCode(trimmed)
-    if (!reg) {
-      toast('No registration found', { variant: 'error' })
-      setResult({ code: trimmed, ok: false, reason: 'not_registered' })
-      return
+    try {
+      setProcessing(true)
+      const reg = await eventService.findByQrCode(trimmed)
+      if (!reg) {
+        toast('No registration found', { variant: 'error' })
+        setResult({ code: trimmed, ok: false, reason: 'not_registered' })
+        return
+      }
+      setResult({ code: trimmed, lookup: true, reg })
+    } catch (err) {
+      console.error('Lookup failed:', err)
+      toast('Không thể tra cứu', { variant: 'error' })
+    } finally {
+      setProcessing(false)
     }
-    setResult({ code: trimmed, lookup: true, reg })
   }
 
   return (
@@ -118,17 +130,21 @@ function CheckInPageContent() {
               <input
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                placeholder="CHB-EVT-1-XXXXXX"
+                placeholder="CHB-EVT-XXXXXX"
                 className="checkin-page__input"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleCheckIn()
                 }}
               />
               <div className="checkin-page__actions">
-                <Button className="checkin-page__action-primary" onClick={() => handleCheckIn()}>
+                <Button
+                  className="checkin-page__action-primary"
+                  onClick={() => handleCheckIn()}
+                  disabled={processing}
+                >
                   Check In
                 </Button>
-                <Button variant="secondary" onClick={handleLookup}>
+                <Button variant="secondary" onClick={handleLookup} disabled={processing}>
                   Lookup
                 </Button>
               </div>
@@ -191,7 +207,7 @@ function ResultBox({ result }) {
         <div className="checkin-result__head">
           <p className="checkin-result__title">Found registration</p>
           <Badge variant={result.reg.status === 'checked_in' ? 'success' : result.reg.status === 'cancelled' ? 'danger' : 'info'}>
-            {result.reg.status.replace('_', ' ')}
+            {result.reg.status?.replace('_', ' ') || 'registered'}
           </Badge>
         </div>
         <p className="checkin-result__code">{result.code}</p>
@@ -213,6 +229,7 @@ function ResultBox({ result }) {
     not_registered: 'Code not recognised',
     cancelled: 'Registration was cancelled',
     already: 'Already checked in',
+    error: 'Unable to check in',
   }[result.reason] || 'Unable to check in'
   return (
     <div className="checkin-result checkin-result--error">

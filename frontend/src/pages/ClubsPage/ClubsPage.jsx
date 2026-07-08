@@ -1,10 +1,9 @@
-import MainLayout from '@/layouts/MainLayout.jsx';
 import { HeroSection, CTABanner } from '@/components';
 import ClubsDirectory from './components/ClubsDirectory/ClubsDirectory.jsx';
 
 export default function ClubsPage() {
   return (
-    <MainLayout>
+    <>
       <HeroSection
         variant="clubs"
         eyebrow="42 active clubs"
@@ -23,6 +22,6 @@ export default function ClubsPage() {
         primaryCta={{ label: 'Apply for a New Club', href: '/signup' }}
         secondaryCta={{ label: 'Read the Guide', href: '/knowledge' }}
       />
-    </MainLayout>
+    </>
   );
 }

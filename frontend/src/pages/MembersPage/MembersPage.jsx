@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import MainLayout from '@/layouts/MainLayout.jsx';
 import { membershipService } from "../../services/membershipService";
 import { resolveClubUuid, supabase } from "../../services/supabase";
 import { HeroSection } from "@/components";
@@ -8,15 +7,7 @@ import MemberFormModal from "./components/MemberFormModal/MemberFormModal.jsx";
 import MemberDetailModal from "./components/MemberDetailModal/MemberDetailModal.jsx";
 import "./MembersPage.css";
 
-export default function MembersPage() {
-  return (
-    <MainLayout>
-      <MembersPageContent />
-    </MainLayout>
-  );
-}
-
-function MembersPageContent() {
+export default function MembersPageContent() {
   const { clubId } = useParams();
   const [resolvedClubId, setResolvedClubId] = useState(null);
   const [loading, setLoading] = useState(true);

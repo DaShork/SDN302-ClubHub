@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import MainLayout from '@/layouts/MainLayout.jsx';
 import { documentService } from "../../services/documentService";
 import { resolveClubUuid } from "../../services/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,15 +7,7 @@ import { HeroSection } from "@/components";
 import DocumentUploadModal from "./components/DocumentUploadModal/DocumentUploadModal.jsx";
 import "./DocumentsPage.css";
 
-export default function DocumentsPage() {
-  return (
-    <MainLayout>
-      <DocumentsPageContent />
-    </MainLayout>
-  );
-}
-
-function DocumentsPageContent() {
+export default function DocumentsPageContent() {
   const { clubId } = useParams();
   const { profileId } = useAuth();
   const [resolvedClubId, setResolvedClubId] = useState(null);

@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import MainLayout from '@/layouts/MainLayout.jsx'
 import { eventService } from '@/services/eventService'
 import { Card, Button, Badge, Loading, toast, ConfirmModal } from '@/components'
-import { useRegistration } from '@/stores/userStore'
+import { useAuth } from '@/hooks/useAuth.jsx'
 import './EventDetailPage.css';
 
 function formatDate(dateString) {
@@ -24,23 +23,15 @@ function formatTime(dateString) {
   })
 }
 
-export default function EventDetailPage() {
-  return (
-    <MainLayout>
-      <EventDetailPageContent />
-    </MainLayout>
-  )
-}
-
-function EventDetailPageContent() {
+export default function EventDetailPageContent() {
   const { id } = useParams()
+  const { profileId, isAuthenticated } = useAuth()
   const [event, setEvent] = useState(null)
   const [loading, setLoading] = useState(true)
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [currentCount, setCurrentCount] = useState(0)
-  const { registrations, isRegistered, register, cancel } = useRegistration()
-  const registration = registrations.find((r) => r.eventId === id)
-  const registered = isRegistered(id)
+  const [registration, setRegistration] = useState(null)
+  const [registering, setRegistering] = useState(false)
 
   const loadEvent = async () => {
     try {
@@ -51,6 +42,11 @@ function EventDetailPageContent() {
       ])
       setEvent(data)
       setCurrentCount(count)
+
+      if (profileId) {
+        const reg = await eventService.isUserRegistered(id, profileId).catch(() => null)
+        setRegistration(reg)
+      }
     } catch (error) {
       console.error('Error loading event:', error)
     } finally {
@@ -60,7 +56,39 @@ function EventDetailPageContent() {
 
   useEffect(() => {
     loadEvent()
-  }, [id])
+  }, [id, profileId])
+
+  const handleRegister = async () => {
+    if (!profileId) {
+      toast('Please log in to register', { variant: 'error' })
+      return
+    }
+    try {
+      setRegistering(true)
+      const reg = await eventService.register(id, profileId)
+      setRegistration(reg)
+      setCurrentCount((c) => c + 1)
+      toast(`Registered for ${event.title}!`, { variant: 'success' })
+    } catch (err) {
+      console.error('Register failed:', err)
+      toast('Không thể đăng ký sự kiện', { variant: 'error' })
+    } finally {
+      setRegistering(false)
+    }
+  }
+
+  const handleCancel = async () => {
+    try {
+      await eventService.cancelRegistrationByUser(id, profileId)
+      setRegistration((prev) => (prev ? { ...prev, status: 'cancelled' } : null))
+      setCurrentCount((c) => Math.max(0, c - 1))
+      setConfirmCancel(false)
+      toast('Registration cancelled', { variant: 'info' })
+    } catch (err) {
+      console.error('Cancel registration failed:', err)
+      toast('Không thể hủy đăng ký', { variant: 'error' })
+    }
+  }
 
   if (loading) return <Loading fullScreen />
 
@@ -74,6 +102,9 @@ function EventDetailPageContent() {
       </div>
     )
   }
+
+  const registered = registration && registration.status !== 'cancelled'
+  const checkedIn = registration?.status === 'checked_in'
 
   return (
     <div className="min-h-screen">
@@ -148,7 +179,6 @@ function EventDetailPageContent() {
                 <div className="p-6 space-y-4">
                   <h3 className="text-lg font-semibold text-secondary-100">Event Details</h3>
 
-                  {/* Date */}
                   <div className="flex items-start gap-3">
                     <div className="p-2 rounded-lg bg-accent-green/20">
                       <svg className="h-5 w-5 text-accent-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -163,7 +193,6 @@ function EventDetailPageContent() {
                     </div>
                   </div>
 
-                  {/* Time */}
                   <div className="flex items-start gap-3">
                     <div className="p-2 rounded-lg bg-accent-green/20">
                       <svg className="h-5 w-5 text-accent-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -179,7 +208,6 @@ function EventDetailPageContent() {
                     </div>
                   </div>
 
-                  {/* Location */}
                   {event.location && (
                     <div className="flex items-start gap-3">
                       <div className="p-2 rounded-lg bg-accent-green/20">
@@ -195,7 +223,6 @@ function EventDetailPageContent() {
                     </div>
                   )}
 
-                  {/* Participants */}
                   {event.max_participants && (
                     <div className="flex items-start gap-3">
                       <div className="p-2 rounded-lg bg-accent-green/20">
@@ -216,10 +243,10 @@ function EventDetailPageContent() {
                 <Card className="event-detail-cta">
                   <div className="p-6 text-center">
                     <h3 className="text-lg font-semibold text-secondary-100 mb-2">
-                      {registered
-                        ? registration?.status === 'checked_in'
-                          ? "You're Checked In!"
-                          : "You're Registered!"
+                      {checkedIn
+                        ? "You're Checked In!"
+                        : registered
+                        ? "You're Registered!"
                         : 'Interested in this event?'}
                     </h3>
                     <p className="text-sm text-secondary-200 mb-4">
@@ -233,25 +260,25 @@ function EventDetailPageContent() {
                         className="w-full"
                         onClick={() => setConfirmCancel(true)}
                       >
-                        {registration?.status === 'checked_in'
-                          ? 'View QR Code'
-                          : 'Cancel Registration'}
+                        {checkedIn ? 'View QR Code' : 'Cancel Registration'}
                       </Button>
                     ) : (
                       <Button
                         className="w-full"
-                        onClick={() => {
-                          register(event.id)
-                          setCurrentCount((c) => c + 1)
-                          toast(`Registered for ${event.title}!`, { variant: 'success' })
-                        }}
+                        onClick={handleRegister}
+                        disabled={registering || !isAuthenticated}
                       >
-                        Register Now
+                        {registering ? 'Registering...' : isAuthenticated ? 'Register Now' : 'Login to Register'}
                       </Button>
                     )}
                     {event.max_participants && (
                       <p className="text-xs text-secondary-300 mt-3">
                         {currentCount} / {event.max_participants} registered
+                      </p>
+                    )}
+                    {registered && registration?.qr_code && (
+                      <p className="text-xs text-secondary-200 mt-3 font-mono">
+                        {registration.qr_code}
                       </p>
                     )}
                   </div>
@@ -275,12 +302,7 @@ function EventDetailPageContent() {
         confirmLabel="Cancel Registration"
         variant="danger"
         onCancel={() => setConfirmCancel(false)}
-        onConfirm={() => {
-          cancel(event.id)
-          setCurrentCount((c) => Math.max(0, c - 1))
-          setConfirmCancel(false)
-          toast('Registration cancelled', { variant: 'info' })
-        }}
+        onConfirm={handleCancel}
       />
     </div>
   )

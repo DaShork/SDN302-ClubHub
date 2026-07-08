@@ -1,0 +1,17 @@
+/* PublicLayout — top nav + content + footer */
+
+.public-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: #F4F1EA;
+  color: #06231D;
+}
+
+.public-layout__main {
+  flex: 1 1 auto;
+  /* Navbar is fixed at 80px high; reserve that space so page content
+     is not covered. Footer is in normal flow at the bottom. */
+  padding-top: 80px;
+  width: 100%;
+}

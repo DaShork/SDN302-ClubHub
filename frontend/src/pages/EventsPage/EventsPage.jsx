@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import MainLayout from '@/layouts/MainLayout.jsx';
 import { eventService } from "../../services/eventService";
 import { workshopService } from "../../services/workshopService";
 import { resolveClubUuid } from "../../services/supabase";
@@ -9,15 +8,7 @@ import { HeroSection } from "@/components";
 import EventFormModal from "./components/EventFormModal/EventFormModal.jsx";
 import "./EventsPage.css";
 
-export default function EventsPage() {
-  return (
-    <MainLayout>
-      <EventsPageContent />
-    </MainLayout>
-  );
-}
-
-function EventsPageContent() {
+export default function EventsPageContent() {
   const { clubId } = useParams();
   const { profileId } = useAuth();
   const [resolvedClubId, setResolvedClubId] = useState(null);

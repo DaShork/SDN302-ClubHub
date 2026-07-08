@@ -1,21 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import MainLayout from '@/layouts/MainLayout.jsx';
 import { workshopService } from "../../services/workshopService";
 import { resolveClubUuid } from "../../services/supabase";
 import { HeroSection } from "@/components";
 import WorkshopFormModal from "./components/WorkshopFormModal/WorkshopFormModal.jsx";
 import "./WorkshopsPage.css";
 
-export default function WorkshopsPage() {
-  return (
-    <MainLayout>
-      <WorkshopsPageContent />
-    </MainLayout>
-  );
-}
-
-function WorkshopsPageContent() {
+export default function WorkshopsPageContent() {
   const { clubId } = useParams();
   const [resolvedClubId, setResolvedClubId] = useState(null);
   const [loading, setLoading] = useState(true);

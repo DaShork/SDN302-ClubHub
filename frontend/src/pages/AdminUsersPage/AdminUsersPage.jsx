@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Search, Filter, MoreVertical, UserCheck, UserX, Mail, Edit2, Trash2 } from 'lucide-react';
-import MainLayout from '@/layouts/MainLayout.jsx';
 import { Card, Button, toast, ConfirmModal } from '@/components';
 import { supabase } from '@/services/supabase.js';
 import { ROLES, ROLE_META } from '@/auth/rolePermissions.js';
@@ -8,15 +7,7 @@ import './AdminUsersPage.css';
 
 const PAGE_SIZE = 20;
 
-export default function AdminUsersPage() {
-  return (
-    <MainLayout>
-      <AdminUsersPageContent />
-    </MainLayout>
-  );
-}
-
-function AdminUsersPageContent() {
+export default function AdminUsersPageContent() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

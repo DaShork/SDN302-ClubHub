@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, NavLink } from "react-router-dom";
-import { LayoutDashboard, Users, Calendar, BookOpen, FileText, Megaphone, Files, Settings, ChevronRight, Activity, CreditCard } from "lucide-react";
-import MainLayout from '@/layouts/MainLayout.jsx';
+import { useParams } from "react-router-dom";
 import { membershipService } from "@/services/membershipService";
 import { eventService } from "@/services/eventService";
 import { documentService } from "@/services/documentService";
@@ -21,30 +19,10 @@ import {
 } from "recharts";
 import "./DashboardPage.css";
 
-const CLUB_SIDEBAR_LINKS = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "" },
-  { icon: Users, label: "Members", path: "/members" },
-  { icon: Calendar, label: "Events", path: "/events" },
-  { icon: BookOpen, label: "Workshops", path: "/workshops" },
-  { icon: FileText, label: "Knowledge", path: "/knowledge" },
-  { icon: Files, label: "Documents", path: "/documents" },
-  { icon: Megaphone, label: "Announcements", path: "/announcements" },
-];
-
-const CLUB_MANAGEMENT_LINKS = [
-  { icon: CreditCard, label: "Finance", path: "/finance" },
-  { icon: Settings, label: "Settings", path: "/settings" },
-];
+/* Sidebar and outer chrome are provided by DashboardLayout (see App.jsx).
+   This page renders only its own content into the <Outlet />. */
 
 export default function DashboardPage() {
-  return (
-    <MainLayout>
-      <DashboardPageContent />
-    </MainLayout>
-  );
-}
-
-function DashboardPageContent() {
   const { clubId } = useParams();
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -97,7 +75,6 @@ function DashboardPageContent() {
         setDocumentsCount(docsData.length || 0);
         setAnnouncementsCount(annsData.length || 0);
 
-        // Parse membership dates for growth chart
         if (membersData.length > 0) {
           const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
           const monthCounts = {};
@@ -119,7 +96,6 @@ function DashboardPageContent() {
           setGrowthData(newGrowth);
         }
 
-        // Build timeline
         const dynamicTimeline = [];
         if (membersData.length > 0) {
           membersData.slice(0, 2).forEach(m => {
@@ -227,223 +203,140 @@ function DashboardPageContent() {
 
   return (
     <div className="dashboard-page">
-      <div className="dashboard-layout">
-        {/* Sidebar - Dark Theme */}
-        <aside className="dashboard-layout__sidebar">
-          {/* Header with Logo */}
-          <div className="dashboard-layout__sidebar-header">
-            <div className="dashboard-layout__sidebar-logo">
-              <img src="./assets/ClubHub_Logo_White.png" alt="Logo" />
+      <div className="dashboard-page__hero-wrapper">
+        <div className="dashboard-hero">
+          <div className="dashboard-hero__eyebrow">Leader Operations</div>
+          <h1 className="dashboard-hero__title">
+            Operational <span className="dashboard-hero__gradient">Dashboard</span>
+          </h1>
+          <p className="dashboard-hero__subtitle">
+            Real-time metrics and activity overview for club administrators.
+          </p>
+        </div>
+      </div>
+
+      <div className="events-page__body dashboard-page__body">
+        <div className="events-page__container dashboard-page__container">
+          <div className="dashboard-page__header">
+            <div>
+              <h2 className="dashboard-page__title">Club Overview</h2>
+              <p className="dashboard-page__subtitle">Live status of members, events, documents and notices.</p>
             </div>
-            <div className="dashboard-layout__sidebar-brand">
-              <span className="dashboard-layout__sidebar-title">ClubHub</span>
-              <span className="dashboard-layout__sidebar-subtitle">Club Management</span>
-            </div>
-          </div>
-
-          {/* Main Navigation */}
-          <div className="dashboard-layout__sidebar-section">
-            <span className="dashboard-layout__sidebar-section-title">Main Menu</span>
-            <nav className="dashboard-layout__sidebar-nav">
-              {CLUB_SIDEBAR_LINKS.map((item) => {
-                const Icon = item.icon;
-                const to = `/club/${clubId}${item.path}`;
-                return (
-                  <NavLink
-                    key={item.path}
-                    to={to}
-                    end={item.path === ""}
-                    className={({ isActive }) =>
-                      `dashboard-layout__sidebar-link ${isActive ? "dashboard-layout__sidebar-link--active" : ""}`
-                    }
-                  >
-                    <Icon size={18} />
-                    <span>{item.label}</span>
-                  </NavLink>
-                );
-              })}
-            </nav>
-          </div>
-
-          <div className="dashboard-layout__sidebar-divider" />
-
-          {/* Management Section */}
-          <div className="dashboard-layout__sidebar-section">
-            <span className="dashboard-layout__sidebar-section-title">Management</span>
-            <nav className="dashboard-layout__sidebar-nav">
-              {CLUB_MANAGEMENT_LINKS.map((item) => {
-                const Icon = item.icon;
-                const to = item.path;
-                return (
-                  <NavLink
-                    key={item.path}
-                    to={to}
-                    className={({ isActive }) =>
-                      `dashboard-layout__sidebar-link ${isActive ? "dashboard-layout__sidebar-link--active" : ""}`
-                    }
-                  >
-                    <Icon size={18} />
-                    <span>{item.label}</span>
-                  </NavLink>
-                );
-              })}
-            </nav>
-          </div>
-
-          {/* Footer */}
-          <div className="dashboard-layout__sidebar-footer">
-            <NavLink
-              to="/my-clubs"
-              className="dashboard-layout__sidebar-link"
-            >
-              <Activity size={18} />
-              <span>Back to My Clubs</span>
-            </NavLink>
-          </div>
-        </aside>
-
-        {/* Main Content */}
-        <main className="dashboard-layout__content">
-          <div className="dashboard-page__hero-wrapper">
-            <div className="dashboard-hero">
-              <div className="dashboard-hero__eyebrow">Leader Operations</div>
-              <h1 className="dashboard-hero__title">
-                Operational <span className="dashboard-hero__gradient">Dashboard</span>
-              </h1>
-              <p className="dashboard-hero__subtitle">
-                Real-time metrics and activity overview for club administrators.
-              </p>
+            <div className="dashboard-page__status">
+              {errorMsg && (
+                <span className="dashboard-page__warn">⚠️ {errorMsg}</span>
+              )}
+              {loading && (
+                <span className="dashboard-page__loading-badge">
+                  <span className="dashboard-page__spinner-mini" />
+                  Connecting Supabase…
+                </span>
+              )}
             </div>
           </div>
 
-          <div className="events-page__body dashboard-page__body">
-            <div className="events-page__container dashboard-page__container">
-              {/* Header Row */}
-              <div className="dashboard-page__header">
+          <div className="dashboard-page__stats-grid">
+            {stats.map((s, idx) => (
+              <div key={idx} className="stat-card">
                 <div>
-                  <h2 className="dashboard-page__title">Club Overview</h2>
-                  <p className="dashboard-page__subtitle">Live status of members, events, documents and notices.</p>
-                </div>
-                <div className="dashboard-page__status">
-                  {errorMsg && (
-                    <span className="dashboard-page__warn">⚠️ {errorMsg}</span>
-                  )}
-                  {loading && (
-                    <span className="dashboard-page__loading-badge">
-                      <span className="dashboard-page__spinner-mini" />
-                      Connecting Supabase…
+                  <span className="stat-card__title">{s.title}</span>
+                  <h3 className="stat-card__value">{s.value}</h3>
+                  <div className="stat-card__change-row">
+                    <span className={`stat-card__change ${s.isPositive ? "stat-card__change--pos" : "stat-card__change--neg"}`}>
+                      {s.change}
                     </span>
-                  )}
+                  </div>
+                </div>
+                <div className={`stat-card__icon-box ${s.bgClass}`}>
+                  {s.icon}
                 </div>
               </div>
+            ))}
+          </div>
 
-              {/* Stats Grid */}
-              <div className="dashboard-page__stats-grid">
-                {stats.map((s, idx) => (
-                  <div key={idx} className="stat-card">
-                    <div>
-                      <span className="stat-card__title">{s.title}</span>
-                      <h3 className="stat-card__value">{s.value}</h3>
-                      <div className="stat-card__change-row">
-                        <span className={`stat-card__change ${s.isPositive ? "stat-card__change--pos" : "stat-card__change--neg"}`}>
-                          {s.change}
-                        </span>
-                      </div>
-                    </div>
-                    <div className={`stat-card__icon-box ${s.bgClass}`}>
-                      {s.icon}
-                    </div>
-                  </div>
-                ))}
+          <div className="dashboard-page__charts-grid">
+            <div className="dashboard-panel">
+              <div className="dashboard-panel__head">
+                <h3 className="dashboard-panel__title">📈 Member Growth</h3>
+                <p className="dashboard-panel__subtitle">Monthly active member registrations over the last 6 months.</p>
               </div>
-
-              {/* Charts */}
-              <div className="dashboard-page__charts-grid">
-                <div className="dashboard-panel">
-                  <div className="dashboard-panel__head">
-                    <h3 className="dashboard-panel__title">📈 Member Growth</h3>
-                    <p className="dashboard-panel__subtitle">Monthly active member registrations over the last 6 months.</p>
-                  </div>
-                  <div className="dashboard-panel__chart">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={growthData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="colorMembers" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#22C55E" stopOpacity={0.2} />
-                            <stop offset="95%" stopColor="#22C55E" stopOpacity={0.0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(6, 35, 29, 0.03)" vertical={false} />
-                        <XAxis dataKey="name" stroke="#4A5D59" fontSize={10} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#4A5D59" fontSize={10} tickLine={false} axisLine={false} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Area type="monotone" dataKey="Members" stroke="#22C55E" strokeWidth={2.5} fillOpacity={1} fill="url(#colorMembers)" />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                <div className="dashboard-panel">
-                  <div className="dashboard-panel__head">
-                    <h3 className="dashboard-panel__title">📊 Event Attendance Rates</h3>
-                    <p className="dashboard-panel__subtitle">Percentage of registered students who checked-in via QR code.</p>
-                  </div>
-                  <div className="dashboard-panel__chart">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={attendanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(6, 35, 29, 0.03)" vertical={false} />
-                        <XAxis dataKey="name" stroke="#4A5D59" fontSize={10} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#4A5D59" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Bar dataKey="Rate" radius={[8, 8, 0, 0]} barSize={28}>
-                          {attendanceData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={index % 2 === 0 ? "url(#primaryGradient)" : "url(#accentGradient)"} />
-                          ))}
-                        </Bar>
-                        <defs>
-                          <linearGradient id="primaryGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#22C55E" />
-                            <stop offset="100%" stopColor="#0E4B43" />
-                          </linearGradient>
-                          <linearGradient id="accentGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#3B82F6" />
-                            <stop offset="100%" stopColor="#1E3A8A" />
-                          </linearGradient>
-                        </defs>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
+              <div className="dashboard-panel__chart">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={growthData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorMembers" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#22C55E" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#22C55E" stopOpacity={0.0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(6, 35, 29, 0.03)" vertical={false} />
+                    <XAxis dataKey="name" stroke="#4A5D59" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#4A5D59" fontSize={10} tickLine={false} axisLine={false} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area type="monotone" dataKey="Members" stroke="#22C55E" strokeWidth={2.5} fillOpacity={1} fill="url(#colorMembers)" />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
+            </div>
 
-              {/* Timeline */}
-              <div className="dashboard-panel dashboard-panel--timeline">
-                <div className="dashboard-panel__head">
-                  <h3 className="dashboard-panel__title">🔔 Recent Activities</h3>
-                  <p className="dashboard-panel__subtitle">Live timeline of recent operations conducted by club members.</p>
-                </div>
-                <div className="timeline">
-                  {recentActivities.length === 0 && !loading && (
-                    <p className="timeline__empty">No recent activities to display.</p>
-                  )}
-                  {recentActivities.map((act, i) => (
-                    <div key={i} className="timeline__item">
-                      <span className="timeline__icon">{act.icon}</span>
-                      <div className="timeline__row">
-                        <div className="timeline__head-row">
-                          <span className="timeline__actor">{act.actor}</span>
-                          <span className="timeline__action">{act.action}</span>
-                          <span className={`timeline__target ${act.tagColorClass || ''}`}>{act.target}</span>
-                        </div>
-                        <span className="timeline__time">{act.time}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            <div className="dashboard-panel">
+              <div className="dashboard-panel__head">
+                <h3 className="dashboard-panel__title">📊 Event Attendance Rates</h3>
+                <p className="dashboard-panel__subtitle">Percentage of registered students who checked-in via QR code.</p>
+              </div>
+              <div className="dashboard-panel__chart">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={attendanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(6, 35, 29, 0.03)" vertical={false} />
+                    <XAxis dataKey="name" stroke="#4A5D59" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#4A5D59" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="Rate" radius={[8, 8, 0, 0]} barSize={28}>
+                      {attendanceData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={index % 2 === 0 ? "url(#primaryGradient)" : "url(#accentGradient)"} />
+                      ))}
+                    </Bar>
+                    <defs>
+                      <linearGradient id="primaryGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#22C55E" />
+                        <stop offset="100%" stopColor="#0E4B43" />
+                      </linearGradient>
+                      <linearGradient id="accentGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3B82F6" />
+                        <stop offset="100%" stopColor="#1E3A8A" />
+                      </linearGradient>
+                    </defs>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </div>
           </div>
-        </main>
+
+          <div className="dashboard-panel dashboard-panel--timeline">
+            <div className="dashboard-panel__head">
+              <h3 className="dashboard-panel__title">🔔 Recent Activities</h3>
+              <p className="dashboard-panel__subtitle">Live timeline of recent operations conducted by club members.</p>
+            </div>
+            <div className="timeline">
+              {recentActivities.length === 0 && !loading && (
+                <p className="timeline__empty">No recent activities to display.</p>
+              )}
+              {recentActivities.map((act, i) => (
+                <div key={i} className="timeline__item">
+                  <span className="timeline__icon">{act.icon}</span>
+                  <div className="timeline__row">
+                    <div className="timeline__head-row">
+                      <span className="timeline__actor">{act.actor}</span>
+                      <span className="timeline__action">{act.action}</span>
+                      <span className={`timeline__target ${act.tagColorClass || ''}`}>{act.target}</span>
+                    </div>
+                    <span className="timeline__time">{act.time}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

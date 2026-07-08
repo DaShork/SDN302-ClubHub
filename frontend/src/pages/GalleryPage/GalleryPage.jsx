@@ -1,22 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Image as ImageIcon, X } from 'lucide-react'
-import MainLayout from '@/layouts/MainLayout.jsx'
 import { galleryService } from '@/services/galleryService'
 import { clubService } from '@/services/clubService'
 import { Loading, HeroSection } from '@/components'
 import Badge from '@/components/StatusBadge/StatusBadge.jsx'
 import './GalleryPage.css'
 
-export default function GalleryPage() {
-  return (
-    <MainLayout>
-      <GalleryPageContent />
-    </MainLayout>
-  )
-}
-
-function GalleryPageContent() {
+export default function GalleryPageContent() {
   const [searchParams] = useSearchParams()
   const clubIdFromUrl = searchParams.get('club')
 

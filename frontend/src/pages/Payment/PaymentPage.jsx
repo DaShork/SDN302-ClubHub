@@ -1,26 +1,21 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import {
-  getMembershipByProfile,
-  listPaymentsByProfile,
-  createSandboxPayment,
-  simulateSandboxPayment,
-} from '../../services/paymentService';
-import { PaymentSummary } from './components/PaymentSummary';
-import { PaymentMethod } from './components/PaymentMethod';
-import { PaymentStatusBadge } from './components/PaymentStatusBadge';
-import { SectionHeader } from '../../components/shared/SectionHeader';
-import { Button } from '../../components/shared/Button';
-import { Card } from '../../components/shared/Card';
-import { Input } from '../../components/shared/Input';
-import { Select } from '../../components/shared/Select';
-import { EmptyState } from '../../components/shared/EmptyState';
-import { Loader } from '../../components/shared/Loader';
-import { toast } from '../../components/shared/ToastProvider';
+  Wallet, CreditCard, Banknote, Building2, Check, Loader as LoaderIcon, ArrowLeft,
+} from 'lucide-react';
+import { Card, Button, Loading, toast } from '@/components';
+import { useAuth } from '@/hooks/useAuth.jsx';
+import {
+  getMembershipByProfile, listPaymentsByProfile,
+  createSandboxPayment, simulateSandboxPayment,
+} from '@/services/paymentService';
+import { PaymentSummary } from './PaymentSummary/PaymentSummary.jsx';
+import { PaymentMethod } from './PaymentMethod/PaymentMethod.jsx';
+import { PaymentStatusBadge } from './PaymentStatusBadge/PaymentStatusBadge.jsx';
+import './PaymentPage.css';
 
 const STEPS = ['membership', 'payment', 'confirmation'];
 
-export default function PaymentPage() {
+export default function PaymentPageContent() {
   const { profile } = useAuth();
   const [step, setStep] = useState(0);
   const [memberships, setMemberships] = useState([]);
@@ -35,7 +30,10 @@ export default function PaymentPage() {
 
   useEffect(() => {
     const load = async () => {
-      if (!profile?.id) { setLoading(false); return; }
+      if (!profile?.id) {
+        setLoading(false);
+        return;
+      }
       const [{ data: mems }, { data: pays }] = await Promise.all([
         getMembershipByProfile(profile.id),
         listPaymentsByProfile(profile.id),
@@ -57,54 +55,49 @@ export default function PaymentPage() {
 
   const handlePayment = async () => {
     if (!selectedMembership || !amount || isNaN(parseFloat(amount))) {
-      toast('Please enter a valid amount', { type: 'error' });
+      toast('Please enter a valid amount', { variant: 'error' });
       return;
     }
     setProcessing(true);
     setStep(2);
 
-    if (paymentMethod === 'sandbox') {
-      const { data, error } = await createSandboxPayment({
-        membershipId: selectedMembership.id,
-        amount: parseFloat(amount),
-        paymentMethod: 'sandbox',
-        note,
-      });
+    const payload = {
+      membershipId: selectedMembership.id,
+      amount: parseFloat(amount),
+      paymentMethod,
+      note,
+    };
 
+    try {
+      const { data, error } = await createSandboxPayment(payload);
       if (error) {
-        toast('Payment failed: ' + error.message, { type: 'error' });
+        toast('Payment failed: ' + error.message, { variant: 'error' });
         setStep(1);
-        setProcessing(false);
         return;
       }
 
-      const result = await simulateSandboxPayment(data.id, { delayMs: 1500 });
-
-      if (result.error || !result.data) {
-        toast('Sandbox processing failed', { type: 'error' });
-        setStep(1);
-      } else {
-        setCompletedPayment(result.data);
-        toast('Payment completed successfully!', { type: 'success' });
-        setRecentPayments((prev) => [result.data, ...prev]);
-      }
-    } else {
-      const { data, error } = await createSandboxPayment({
-        membershipId: selectedMembership.id,
-        amount: parseFloat(amount),
-        paymentMethod,
-        note,
-      });
-      if (error) {
-        toast('Failed to record payment', { type: 'error' });
-        setStep(1);
+      if (paymentMethod === 'sandbox') {
+        const result = await simulateSandboxPayment(data.id, { delayMs: 1500 });
+        if (result.error || !result.data) {
+          toast('Sandbox processing failed', { variant: 'error' });
+          setStep(1);
+        } else {
+          setCompletedPayment(result.data);
+          toast('Payment completed successfully!', { variant: 'success' });
+          setRecentPayments((prev) => [result.data, ...prev]);
+        }
       } else {
         setCompletedPayment(data);
-        toast('Payment recorded successfully!', { type: 'success' });
+        toast('Payment recorded successfully!', { variant: 'success' });
         setRecentPayments((prev) => [data, ...prev]);
       }
+    } catch (err) {
+      console.error('Payment failed:', err);
+      toast('Không thể xử lý thanh toán', { variant: 'error' });
+      setStep(1);
+    } finally {
+      setProcessing(false);
     }
-    setProcessing(false);
   };
 
   const handleReset = () => {
@@ -114,212 +107,92 @@ export default function PaymentPage() {
     setNote('');
   };
 
-  const formatDate = (d) =>
-    d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
-
-  const formatCurrency = (v) =>
-    v ? `${parseFloat(v).toLocaleString()} VND` : '—';
-
   if (loading) {
     return (
-      <div className="w-full max-w-[1280px] mx-auto px-6 py-8 flex justify-center">
-        <Loader size="lg" />
+      <div className="payment-page">
+        <div className="payment-page__loading">
+          <Loading />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-[1280px] mx-auto px-6 py-8">
-      <SectionHeader title="Club Fund" subtitle="Pay membership fees and view payment history" />
+    <div className="payment-page">
+      <header className="payment-page__head">
+        <h1 className="payment-page__title">Club Fund</h1>
+        <p className="payment-page__subtitle">
+          Pay membership fees and view payment history
+        </p>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-        {/* Left: Payment flow */}
-        <div className="lg:col-span-2">
-          <Card className="p-6">
-            {/* Step indicator */}
+      <div className="payment-page__layout">
+        <div className="payment-page__main">
+          <Card className="payment-page__card">
             {step < 2 && (
-              <div className="flex items-center gap-2 mb-6">
-                {STEPS.map((s, i) => (
-                  <div key={s} className="flex items-center gap-2">
-                    <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold"
-                      style={i <= step
-                        ? { background: 'linear-gradient(90deg, #0E4B43, #22C55E)', color: '#fff' }
-                        : { backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(244,241,234,0.3)' }
-                      }
-                    >
-                      {i + 1}
-                    </div>
-                    <span className="text-xs font-medium hidden sm:block" style={{ color: i <= step ? '#F4F1EA' : 'rgba(244,241,234,0.3)' }}>
-                      {s.charAt(0).toUpperCase() + s.slice(1)}
-                    </span>
-                    {i < STEPS.length - 1 && (
-                      <div className="w-6 h-px mx-1" style={{ backgroundColor: i < step ? '#22C55E' : 'rgba(255,255,255,0.1)' }} />
-                    )}
-                  </div>
-                ))}
-              </div>
+              <StepIndicator steps={STEPS} current={step} />
             )}
 
-            {/* Step 0: Select membership */}
             {step === 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-secondary-100 mb-4">Select Membership</h3>
-                {memberships.length === 0 ? (
-                  <EmptyState
-                    title="No active memberships"
-                    description="You need to join a club first before making a payment."
-                  />
-                ) : (
-                  <div className="space-y-3">
-                    {memberships.map((m) => (
-                      <button
-                        key={m.id}
-                        onClick={() => handleSelectMembership(m)}
-                        className="w-full text-left p-4 rounded-xl border transition-all hover:border-accent-green"
-                        style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="text-sm font-semibold text-secondary-100">{m.clubs?.name || 'Club'}</h4>
-                            <p className="text-xs mt-1" style={{ color: 'rgba(244,241,234,0.4)' }}>
-                              {m.position} · Joined {formatDate(m.joined_at)}
-                            </p>
-                          </div>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(244,241,234,0.3)" strokeWidth="2">
-                            <polyline points="9 18 15 12 9 6"/>
-                          </svg>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <SelectMembershipStep
+                memberships={memberships}
+                onSelect={handleSelectMembership}
+              />
             )}
 
-            {/* Step 1: Payment details */}
             {step === 1 && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-secondary-100">Payment Details</h3>
-                  <Button variant="ghost" size="sm" onClick={() => setStep(0)}>Change Club</Button>
-                </div>
-                <PaymentSummary membership={selectedMembership} amount={amount} />
-                <div className="flex flex-col gap-4">
-                  <Input
-                    label="Amount (VND)"
-                    type="number"
-                    min="0"
-                    step="1000"
-                    placeholder="e.g. 100000"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                  />
-                  <PaymentMethod value={paymentMethod} onChange={setPaymentMethod} />
-                  <div>
-                    <label className="text-sm font-medium block mb-1.5" style={{ color: 'rgba(244,241,234,0.7)' }}>Note (optional)</label>
-                    <textarea
-                      className="input-base !h-auto py-3 resize-none"
-                      rows={2}
-                      placeholder="Any additional notes..."
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <Button variant="secondary" onClick={() => setStep(0)}>Back</Button>
-                  <Button className="flex-1" onClick={handlePayment} disabled={!amount}>
-                    Proceed to Payment
-                  </Button>
-                </div>
-              </div>
+              <PaymentDetailsStep
+                selectedMembership={selectedMembership}
+                amount={amount}
+                setAmount={setAmount}
+                paymentMethod={paymentMethod}
+                setPaymentMethod={setPaymentMethod}
+                note={note}
+                setNote={setNote}
+                onBack={() => setStep(0)}
+                onConfirm={handlePayment}
+              />
             )}
 
-            {/* Step 2: Processing / Confirmation */}
             {step === 2 && (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                {processing ? (
-                  <>
-                    <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6" style={{ background: 'linear-gradient(90deg, #0E4B43, #22C55E)' }}>
-                      <Loader size="lg" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-secondary-100 mb-2">Processing Payment...</h3>
-                    <p className="text-sm" style={{ color: 'rgba(244,241,234,0.5)' }}>
-                      Sandbox payment is being processed. Please wait...
-                    </p>
-                  </>
-                ) : completedPayment ? (
-                  <>
-                    <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6" style={{ background: 'rgba(34,197,94,0.1)' }}>
-                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                    </div>
-                    <h3 className="text-xl font-semibold text-secondary-100 mb-2">Payment Successful!</h3>
-                    <p className="text-sm mb-4" style={{ color: 'rgba(244,241,234,0.5)' }}>
-                      Transaction Code: <span className="font-mono text-accent-green">{completedPayment.transaction_code}</span>
-                    </p>
-                    <div className="space-y-2 mb-6 w-full max-w-xs">
-                      <div className="flex justify-between text-sm">
-                        <span style={{ color: 'rgba(244,241,234,0.5)' }}>Amount</span>
-                        <span className="text-secondary-100 font-medium">{formatCurrency(completedPayment.amount)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span style={{ color: 'rgba(244,241,234,0.5)' }}>Status</span>
-                        <PaymentStatusBadge status={completedPayment.status} />
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span style={{ color: 'rgba(244,241,234,0.5)' }}>Date</span>
-                        <span className="text-secondary-100">{formatDate(completedPayment.payment_date)}</span>
-                      </div>
-                    </div>
-                    <Button variant="secondary" onClick={handleReset}>Make Another Payment</Button>
-                  </>
-                ) : (
-                  <>
-                    <h3 className="text-xl font-semibold text-secondary-100 mb-2">Payment Recorded</h3>
-                    <p className="text-sm mb-6" style={{ color: 'rgba(244,241,234,0.5)' }}>
-                      Your payment has been recorded and is awaiting confirmation.
-                    </p>
-                    <Button variant="secondary" onClick={handleReset}>Make Another Payment</Button>
-                  </>
-                )}
-              </div>
+              <ConfirmationStep
+                processing={processing}
+                completedPayment={completedPayment}
+                onReset={handleReset}
+              />
             )}
           </Card>
         </div>
 
-        {/* Right: Payment history */}
-        <div>
-          <h3 className="text-base font-semibold text-secondary-100 mb-4">Recent Payments</h3>
+        <aside className="payment-page__history">
+          <h3 className="payment-page__history-title">Recent Payments</h3>
           {recentPayments.length === 0 ? (
-            <Card className="p-6">
-              <EmptyState
-                title="No payments yet"
-                description="Your payment history will appear here."
-              />
+            <Card className="payment-page__history-empty">
+              <Wallet size={32} color="rgba(244,241,234,0.3)" />
+              <p>No payments yet</p>
+              <span>Your payment history will appear here.</span>
             </Card>
           ) : (
-            <div className="space-y-3">
+            <div className="payment-page__history-list">
               {recentPayments.map((p) => (
-                <Card key={p.id} className="p-4">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-secondary-100 truncate">
+                <Card key={p.id} className="payment-page__history-item">
+                  <div className="payment-page__history-meta">
+                    <div>
+                      <p className="payment-page__history-club">
                         {p.memberships?.clubs?.name || 'Club Payment'}
                       </p>
-                      <p className="text-xs mt-0.5" style={{ color: 'rgba(244,241,234,0.4)' }}>
-                        {formatDate(p.payment_date)}
+                      <p className="payment-page__history-date">
+                        {p.payment_date ? new Date(p.payment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                       </p>
                     </div>
                     <PaymentStatusBadge status={p.status} />
                   </div>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-sm font-semibold text-accent-green">{formatCurrency(p.amount)}</span>
+                  <div className="payment-page__history-bottom">
+                    <span className="payment-page__history-amount">
+                      {parseFloat(p.amount || 0).toLocaleString()} VND
+                    </span>
                     {p.transaction_code && (
-                      <span className="text-xs font-mono" style={{ color: 'rgba(244,241,234,0.3)' }}>
+                      <span className="payment-page__history-code">
                         {p.transaction_code}
                       </span>
                     )}
@@ -328,8 +201,180 @@ export default function PaymentPage() {
               ))}
             </div>
           )}
-        </div>
+        </aside>
       </div>
+    </div>
+  );
+}
+
+function StepIndicator({ steps, current }) {
+  return (
+    <div className="payment-page__steps">
+      {steps.map((s, i) => (
+        <div key={s} className="payment-page__step">
+          <div
+            className={`payment-page__step-num ${i <= current ? 'payment-page__step-num--active' : ''}`}
+          >
+            {i + 1}
+          </div>
+          <span
+            className={`payment-page__step-label ${i <= current ? 'payment-page__step-label--active' : ''}`}
+          >
+            {s.charAt(0).toUpperCase() + s.slice(1)}
+          </span>
+          {i < steps.length - 1 && (
+            <div className={`payment-page__step-line ${i < current ? 'payment-page__step-line--done' : ''}`} />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SelectMembershipStep({ memberships, onSelect }) {
+  return (
+    <div className="payment-page__select">
+      <h3 className="payment-page__section-title">Select Membership</h3>
+      {memberships.length === 0 ? (
+        <div className="payment-page__empty">
+          <Wallet size={32} color="rgba(244,241,234,0.3)" />
+          <p className="payment-page__empty-title">No active memberships</p>
+          <p className="payment-page__empty-desc">
+            You need to join a club first before making a payment.
+          </p>
+        </div>
+      ) : (
+        <div className="payment-page__membership-list">
+          {memberships.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => onSelect(m)}
+              className="payment-page__membership-btn"
+            >
+              <div className="payment-page__membership-info">
+                <h4 className="payment-page__membership-name">{m.clubs?.name || 'Club'}</h4>
+                <p className="payment-page__membership-meta">
+                  {m.position} · Joined {m.joined_at ? new Date(m.joined_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                </p>
+              </div>
+              <ArrowLeft size={16} className="payment-page__membership-arrow" style={{ transform: 'rotate(180deg)' }} />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PaymentDetailsStep({
+  selectedMembership, amount, setAmount, paymentMethod, setPaymentMethod,
+  note, setNote, onBack, onConfirm,
+}) {
+  return (
+    <div className="payment-page__details">
+      <div className="payment-page__details-head">
+        <h3 className="payment-page__section-title">Payment Details</h3>
+        <Button variant="ghost" size="sm" onClick={onBack}>
+          <ArrowLeft size={14} /> Change club
+        </Button>
+      </div>
+
+      <PaymentSummary membership={selectedMembership} amount={amount} />
+
+      <div className="payment-page__form">
+        <label className="payment-page__field">
+          <span className="payment-page__field-label">Amount (VND)</span>
+          <input
+            type="number"
+            min="0"
+            step="1000"
+            placeholder="e.g. 100000"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="payment-page__input"
+          />
+        </label>
+
+        <PaymentMethod value={paymentMethod} onChange={setPaymentMethod} />
+
+        <label className="payment-page__field">
+          <span className="payment-page__field-label">Note (optional)</span>
+          <textarea
+            className="payment-page__textarea"
+            rows={2}
+            placeholder="Any additional notes..."
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+        </label>
+      </div>
+
+      <div className="payment-page__actions">
+        <Button variant="secondary" onClick={onBack}>Back</Button>
+        <Button onClick={onConfirm} disabled={!amount} className="payment-page__submit">
+          Proceed to Payment
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmationStep({ processing, completedPayment, onReset }) {
+  return (
+    <div className="payment-page__confirm">
+      {processing ? (
+        <>
+          <div className="payment-page__confirm-spinner">
+            <LoaderIcon size={28} color="#fff" />
+          </div>
+          <h3 className="payment-page__confirm-title">Processing Payment...</h3>
+          <p className="payment-page__confirm-desc">
+            Sandbox payment is being processed. Please wait...
+          </p>
+        </>
+      ) : completedPayment ? (
+        <>
+          <div className="payment-page__confirm-check">
+            <Check size={36} color="#22C55E" />
+          </div>
+          <h3 className="payment-page__confirm-title">Payment Successful!</h3>
+          {completedPayment.transaction_code && (
+            <p className="payment-page__confirm-code">
+              Transaction Code: <span>{completedPayment.transaction_code}</span>
+            </p>
+          )}
+          <div className="payment-page__confirm-summary">
+            <div className="payment-page__confirm-row">
+              <span>Amount</span>
+              <span className="payment-page__confirm-value">
+                {parseFloat(completedPayment.amount || 0).toLocaleString()} VND
+              </span>
+            </div>
+            <div className="payment-page__confirm-row">
+              <span>Status</span>
+              <PaymentStatusBadge status={completedPayment.status} />
+            </div>
+            <div className="payment-page__confirm-row">
+              <span>Date</span>
+              <span className="payment-page__confirm-value">
+                {completedPayment.payment_date
+                  ? new Date(completedPayment.payment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                  : '—'}
+              </span>
+            </div>
+          </div>
+          <Button variant="secondary" onClick={onReset}>Make Another Payment</Button>
+        </>
+      ) : (
+        <>
+          <h3 className="payment-page__confirm-title">Payment Recorded</h3>
+          <p className="payment-page__confirm-desc">
+            Your payment has been recorded and is awaiting confirmation.
+          </p>
+          <Button variant="secondary" onClick={onReset}>Make Another Payment</Button>
+        </>
+      )}
     </div>
   );
 }

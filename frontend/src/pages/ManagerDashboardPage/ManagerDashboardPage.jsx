@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { LayoutDashboard, Building2, Users, Megaphone, BarChart3, UserCog, Settings, Activity, Calendar, TrendingUp, ChevronRight } from 'lucide-react';
-import MainLayout from '@/layouts/MainLayout.jsx';
 import { Card, Button } from '@/components';
 import { supabase } from '@/services/supabase.js';
 import './ManagerDashboardPage.css';

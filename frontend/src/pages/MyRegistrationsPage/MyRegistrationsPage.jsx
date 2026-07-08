@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { CalendarDays, Clock, MapPin, Ticket, Compass, CheckCircle2 } from 'lucide-react'
-import MainLayout from '@/layouts/MainLayout.jsx'
 import { eventService } from '@/services/eventService'
 import { Card, Button, Badge, Loading, toast, ConfirmModal, HeroSection } from '@/components'
-import { useRegistration } from '@/stores/userStore'
+import { useAuth } from '@/hooks/useAuth.jsx'
 import './MyRegistrationsPage.css'
 
 function formatDate(iso) {
@@ -29,45 +28,52 @@ const TABS = [
   { id: 'cancelled', label: 'Cancelled' },
 ]
 
-export default function MyRegistrationsPage() {
-  return (
-    <MainLayout>
-      <MyRegistrationsPageContent />
-    </MainLayout>
-  )
-}
-
-function MyRegistrationsPageContent() {
-  const { registrations, cancel } = useRegistration()
+export default function MyRegistrationsPageContent() {
+  const { profileId, isAuthenticated } = useAuth()
   const [activeTab, setActiveTab] = useState('upcoming')
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [confirmCancel, setConfirmCancel] = useState(null)
 
-  const loadEvents = async () => {
-    if (registrations.length === 0) {
-      setEvents([])
+  const loadRegistrations = async () => {
+    if (!profileId) {
       setLoading(false)
       return
     }
     try {
       setLoading(true)
-      const results = await Promise.all(
-        registrations.map((r) =>
-          eventService.getById(r.eventId).then((ev) => ({ ...ev, registration: r })).catch(() => null),
-        ),
-      )
-      setEvents(results.filter(Boolean))
+      const rows = await eventService.getUserRegistrations(profileId).catch(() => [])
+      const enriched = rows
+        .filter((r) => r.events)
+        .map((r) => ({ ...r.events, registration: r }))
+      setEvents(enriched)
     } catch (error) {
       console.error('Error loading registrations:', error)
+      toast('Không thể tải danh sách đăng ký', { variant: 'error' })
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    loadEvents()
-  }, [registrations.length])
+    if (!isAuthenticated) {
+      setLoading(false)
+      return
+    }
+    loadRegistrations()
+  }, [profileId])
+
+  const handleCancel = async (event) => {
+    try {
+      await eventService.cancelRegistrationByUser(event.id, profileId)
+      toast('Registration cancelled', { variant: 'info' })
+      setConfirmCancel(null)
+      loadRegistrations()
+    } catch (err) {
+      console.error('Cancel registration failed:', err)
+      toast('Không thể hủy đăng ký', { variant: 'error' })
+    }
+  }
 
   const now = new Date()
   const filtered = events.filter(({ registration: r, start_time }) => {
@@ -137,11 +143,7 @@ function MyRegistrationsPageContent() {
         confirmLabel="Cancel Registration"
         variant="danger"
         onCancel={() => setConfirmCancel(null)}
-        onConfirm={() => {
-          cancel(confirmCancel.id)
-          toast('Registration cancelled', { variant: 'info' })
-          setConfirmCancel(null)
-        }}
+        onConfirm={() => handleCancel(confirmCancel)}
       />
     </div>
   )
@@ -200,7 +202,7 @@ function RegistrationRow({ event, onCancel }) {
               <p className="my-reg-row__qr-label">
                 <Ticket size={12} /> Your QR Code
               </p>
-              <p className="my-reg-row__qr-code">{registration.qrCode}</p>
+              <p className="my-reg-row__qr-code">{registration.qr_code}</p>
             </div>
           </div>
           <div className="my-reg-row__actions">

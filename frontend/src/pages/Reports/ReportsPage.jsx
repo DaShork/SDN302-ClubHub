@@ -1,19 +1,17 @@
 import { useState, useEffect } from 'react';
 import {
-  getOverviewStats,
-  getEventsPerMonth,
-  getAttendanceTrend,
-  getMembersPerClub,
-  getRevenuePerMonth,
-  getCumulativeRevenue,
-} from '../../services/reportService';
-import { StatCard } from './components/StatCard';
-import { BarChartCard } from './components/BarChartCard';
-import { LineChartCard } from './components/LineChartCard';
-import { PieChartCard } from './components/PieChartCard';
-import { SectionHeader } from '../../components/shared/SectionHeader';
-import { Card } from '../../components/shared/Card';
-import { Loader } from '../../components/shared/Loader';
+  Users, CalendarDays, Wallet, BookOpen, TrendingUp, TrendingDown,
+} from 'lucide-react';
+import { Card, Loading } from '@/components';
+import {
+  getOverviewStats, getEventsPerMonth, getAttendanceTrend,
+  getMembersPerClub, getRevenuePerMonth, getCumulativeRevenue,
+} from '@/services/reportService';
+import { StatCard } from './StatCard/StatCard.jsx';
+import { BarChartCard } from './BarChartCard/BarChartCard.jsx';
+import { LineChartCard } from './LineChartCard/LineChartCard.jsx';
+import { PieChartCard } from './PieChartCard/PieChartCard.jsx';
+import './ReportsPage.css';
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
@@ -23,13 +21,15 @@ const TABS = [
 ];
 
 const ICONS = {
-  members: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
-  events: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
-  revenue: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>,
-  articles: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>,
+  members: <Users size={20} />,
+  events: <CalendarDays size={20} />,
+  revenue: <Wallet size={20} />,
+  articles: <BookOpen size={20} />,
 };
 
-export default function ReportsPage() {
+const MEMBER_COLORS = ['#22C55E', '#3B82F6', '#F59E0B', '#8B5CF6', '#EC4899'];
+
+export default function ReportsPageContent() {
   const [tab, setTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
@@ -61,43 +61,47 @@ export default function ReportsPage() {
     load();
   }, []);
 
-  const fmtCurrency = (v) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(v || 0);
+  const fmtCurrency = (v) =>
+    new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      maximumFractionDigits: 0,
+    }).format(v || 0);
 
   return (
-    <div className="w-full max-w-[1280px] mx-auto px-6 py-8">
-      <SectionHeader
-        title="Reports & Analytics"
-        subtitle="Insights into club activity, membership, and finances"
-      />
+    <div className="reports-page">
+      <header className="reports-page__head">
+        <div>
+          <h1 className="reports-page__title">Reports &amp; Analytics</h1>
+          <p className="reports-page__subtitle">
+            Insights into club activity, membership, and finances
+          </p>
+        </div>
+      </header>
 
-      {/* Tab bar */}
-      <div className="flex items-center gap-1 mb-8 p-1 rounded-xl inline-flex" style={{ backgroundColor: 'rgba(255,255,255,0.04)' }}>
-        {TABS.map(({ id, label }) => (
+      <div className="reports-page__tabs" role="tablist">
+        {TABS.map((t) => (
           <button
-            key={id}
-            onClick={() => setTab(id)}
-            className="px-5 py-2 rounded-lg text-sm font-medium transition-all"
-            style={
-              tab === id
-                ? { background: 'linear-gradient(90deg, #0E4B43, #22C55E)', color: '#fff' }
-                : { color: 'rgba(244,241,234,0.5)' }
-            }
+            key={t.id}
+            role="tab"
+            aria-selected={tab === t.id}
+            onClick={() => setTab(t.id)}
+            className={`reports-page__tab ${tab === t.id ? 'reports-page__tab--active' : ''}`}
           >
-            {label}
+            {t.label}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-24">
-          <Loader size="lg" />
+        <div className="reports-page__loading">
+          <Loading />
         </div>
       ) : (
         <>
-          {/* Overview */}
           {tab === 'overview' && (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="reports-page__stats">
                 <StatCard
                   title="Total Members"
                   value={stats?.totalMembers?.toLocaleString() || '—'}
@@ -124,7 +128,7 @@ export default function ReportsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="reports-page__grid reports-page__grid--two">
                 <BarChartCard
                   title="Events This Year"
                   data={eventsData}
@@ -141,9 +145,8 @@ export default function ReportsPage() {
             </>
           )}
 
-          {/* Events */}
           {tab === 'events' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="reports-page__grid reports-page__grid--two">
               <BarChartCard
                 title="Events per Month"
                 data={eventsData}
@@ -161,33 +164,32 @@ export default function ReportsPage() {
             </div>
           )}
 
-          {/* Members */}
           {tab === 'members' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="reports-page__grid reports-page__grid--two">
               <PieChartCard
-                title="Members per Club (Top)"
+                title="Members per Club"
                 data={membersData}
                 dataKey="members"
                 nameKey="club"
                 height={350}
               />
-              <Card className="p-5 !hover:translate-y-0">
-                <h3 className="text-sm font-semibold text-secondary-100 mb-4">Member Count by Club</h3>
-                <div className="flex flex-col gap-3">
+              <Card className="reports-page__member-bars">
+                <h3 className="reports-page__chart-title">Member Count by Club</h3>
+                <div className="reports-page__member-list">
                   {(membersData || []).map((m, i) => {
-                    const max = Math.max(...(membersData || []).map(x => x.members));
+                    const max = Math.max(...(membersData || []).map((x) => x.members));
                     return (
-                      <div key={m.club} className="flex flex-col gap-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-secondary-100">{m.club}</span>
-                          <span className="text-sm font-medium text-accent-green">{m.members}</span>
+                      <div key={m.club} className="reports-page__member-row">
+                        <div className="reports-page__member-meta">
+                          <span className="reports-page__member-name">{m.club}</span>
+                          <span className="reports-page__member-count">{m.members}</span>
                         </div>
-                        <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <div className="reports-page__member-track">
                           <div
-                            className="h-full rounded-full"
+                            className="reports-page__member-fill"
                             style={{
                               width: `${max > 0 ? (m.members / max) * 100 : 0}%`,
-                              background: `linear-gradient(90deg, #0E4B43, #${['22C55E', '3B82F6', 'F59E0B', '8B5CF6', 'EC4899'][i % 5]})`,
+                              background: `linear-gradient(90deg, #0E4B43, ${MEMBER_COLORS[i % MEMBER_COLORS.length]})`,
                             }}
                           />
                         </div>
@@ -199,9 +201,8 @@ export default function ReportsPage() {
             </div>
           )}
 
-          {/* Finance */}
           {tab === 'finance' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="reports-page__grid reports-page__grid--two">
               <BarChartCard
                 title="Revenue per Month (VND)"
                 data={revenueData}
