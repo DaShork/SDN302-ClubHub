@@ -39,10 +39,21 @@ export async function getCurrentProfile() {
   if (!user) return null;
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, student_code, email, avatar_url, faculty, major, status, role_id')
+    .select(
+      `id, full_name, student_code, email, avatar_url, faculty, major, status,
+       role_id,
+       roles:role_id ( name )`
+    )
     .eq('id', user.id)
     .maybeSingle();
   if (error) return null;
+  /* Flatten the joined roles.name so the rest of the app compares strings
+     against ROLES.* (which are the Title Case strings from the seed
+     migration) instead of the raw role_id UUID. */
+  if (data && data.roles) {
+    data.role_name = data.roles.name ?? null;
+    delete data.roles;
+  }
   return data;
 }
 

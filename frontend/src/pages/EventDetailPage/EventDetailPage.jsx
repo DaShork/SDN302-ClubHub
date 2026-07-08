@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import MainLayout from '@/layouts/MainLayout.jsx'
 import { eventService } from '@/services/eventService'
 import { Card, Button, Badge, Loading, toast, ConfirmModal } from '@/components'
-import { useRegistration, registrationStore } from '@/stores/userStore'
+import { useRegistration } from '@/stores/userStore'
+import './EventDetailPage.css';
 
 function formatDate(dateString) {
   const date = new Date(dateString)
@@ -22,7 +24,15 @@ function formatTime(dateString) {
   })
 }
 
-export function EventDetailPage() {
+export default function EventDetailPage() {
+  return (
+    <MainLayout>
+      <EventDetailPageContent />
+    </MainLayout>
+  )
+}
+
+function EventDetailPageContent() {
   const { id } = useParams()
   const [event, setEvent] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -31,10 +41,6 @@ export function EventDetailPage() {
   const { registrations, isRegistered, register, cancel } = useRegistration()
   const registration = registrations.find((r) => r.eventId === id)
   const registered = isRegistered(id)
-
-  useEffect(() => {
-    loadEvent()
-  }, [id])
 
   const loadEvent = async () => {
     try {
@@ -52,6 +58,10 @@ export function EventDetailPage() {
     }
   }
 
+  useEffect(() => {
+    loadEvent()
+  }, [id])
+
   if (loading) return <Loading fullScreen />
 
   if (!event) {
@@ -68,7 +78,7 @@ export function EventDetailPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Banner */}
-      <section className="relative h-64 md:h-80 bg-linear-to-br from-primary-700 to-primary-800">
+      <section className="relative h-64 md:h-80 event-detail-hero">
         {(event.cover_image_url || event.banner_url) && (
           <img
             src={event.cover_image_url || event.banner_url}
@@ -76,7 +86,7 @@ export function EventDetailPage() {
             className="absolute inset-0 w-full h-full object-cover opacity-50"
           />
         )}
-        <div className="absolute inset-0 bg-linear-to-t from-primary-900 to-transparent" />
+        <div className="absolute inset-0 event-detail-hero-overlay" />
         <div className="container relative h-full flex items-end pb-8">
           <div>
             <Badge
@@ -203,7 +213,7 @@ export function EventDetailPage() {
               </Card>
 
               {event.status === 'upcoming' && (
-                <Card className="bg-linear-to-br from-primary-800 to-accent-green/20 border-accent-green/30">
+                <Card className="event-detail-cta">
                   <div className="p-6 text-center">
                     <h3 className="text-lg font-semibold text-secondary-100 mb-2">
                       {registered

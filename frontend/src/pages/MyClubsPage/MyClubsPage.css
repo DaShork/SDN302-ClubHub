@@ -1,0 +1,210 @@
+/* My Clubs page — palette aligned with the homepage's light cream theme. */
+
+.my-clubs-page {
+  min-height: 100vh;
+  background: #F8F6F2;
+  font-family: 'Helvetica', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #06231D;
+}
+
+.my-clubs-page__content {
+  padding: 48px 0 96px;
+}
+
+.my-clubs-page__container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.my-clubs-page__list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.my-clubs-row {
+  padding: 0 !important;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid rgba(6, 35, 29, 0.08);
+  border-radius: 16px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.my-clubs-row:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(6, 35, 29, 0.10);
+}
+
+.my-clubs-row__layout {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .my-clubs-row__layout {
+    flex-direction: row;
+  }
+}
+
+.my-clubs-row__banner {
+  position: relative;
+  width: 100%;
+  height: 160px;
+  background: linear-gradient(135deg, #0E4B43 0%, #16685D 100%);
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .my-clubs-row__banner {
+    width: 256px;
+    height: auto;
+  }
+}
+
+.my-clubs-row__banner-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.my-clubs-row__banner-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.my-clubs-row__banner-logo {
+  height: 64px;
+  width: 64px;
+  opacity: 0.3;
+}
+
+.my-clubs-row__logo {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+
+.my-clubs-row__logo-img {
+  height: 56px;
+  width: 56px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: #ffffff;
+}
+
+.my-clubs-row__body {
+  flex: 1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.my-clubs-row__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.my-clubs-row__name {
+  font-size: 20px;
+  font-weight: 600;
+  color: #06231D;
+  margin: 0;
+  transition: color 0.2s ease;
+}
+
+.my-clubs-row__name:hover {
+  color: #22C55E;
+}
+
+.my-clubs-row__category {
+  font-size: 14px;
+  color: #5A6B62;
+  margin: 4px 0 0;
+}
+
+.my-clubs-row__desc {
+  font-size: 14px;
+  color: #5A6B62;
+  margin: 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.my-clubs-row__stats {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  font-size: 14px;
+  color: #5A6B62;
+  margin-top: 8px;
+}
+
+.my-clubs-row__stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.my-clubs-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.my-clubs-row__leave {
+  color: #EF4444 !important;
+}
+
+.my-clubs-row__leave:hover {
+  color: #DC2626 !important;
+}
+
+.my-clubs-empty {
+  text-align: center;
+  padding: 64px 24px;
+  background: #ffffff;
+  border: 1px solid rgba(6, 35, 29, 0.08);
+  border-radius: 16px;
+}
+
+.my-clubs-empty__icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: rgba(22, 104, 93, 0.07);
+  color: #16685D;
+}
+
+.my-clubs-empty__title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #06231D;
+  margin: 0 0 12px;
+}
+
+.my-clubs-empty__desc {
+  font-size: 14px;
+  color: #5A6B62;
+  margin: 0 auto 24px;
+  max-width: 360px;
+}

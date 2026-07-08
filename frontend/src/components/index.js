@@ -16,3 +16,4 @@ export { default as PagePlaceholder } from './PagePlaceholder/PagePlaceholder.js
 export { default as AuthLayout, FormField, TextInput } from './AuthLayout/AuthLayout.jsx';
 export { default as ProtectedRoute } from './ProtectedRoute/ProtectedRoute.jsx';
 export { default as GuestRoute } from './GuestRoute/GuestRoute.jsx';
+export { default as HeroSection } from './HeroSection/HeroSection.jsx';

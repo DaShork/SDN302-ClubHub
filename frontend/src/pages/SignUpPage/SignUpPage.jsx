@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, User, IdCard, Loader2, CheckCircle2 } from 'lucide-react';
 import { AuthLayout, FormField, TextInput } from '@/components';
 import { useAuth } from '@/hooks/useAuth.jsx';
+import './SignUpPage.css';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -331,8 +332,6 @@ export default function SignUpPage() {
             'Create account'
           )}
         </button>
-
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </form>
     </AuthLayout>
   );

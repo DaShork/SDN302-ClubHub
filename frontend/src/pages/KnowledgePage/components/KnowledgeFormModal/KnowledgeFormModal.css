@@ -1,0 +1,174 @@
+.knowledge-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.knowledge-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 35, 29, 0.40);
+  backdrop-filter: blur(4px);
+}
+
+.knowledge-modal__panel {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid rgba(6, 35, 29, 0.10);
+  border-radius: 16px;
+  max-width: 560px;
+  width: 100%;
+  padding: 24px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(6, 35, 29, 0.30);
+  z-index: 1;
+  font-size: 13px;
+  color: #06231D;
+  animation: knowledge-modal-in 0.18s ease;
+}
+
+@keyframes knowledge-modal-in {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.knowledge-modal__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: #5A6B62;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.knowledge-modal__close:hover {
+  background: rgba(6, 35, 29, 0.05);
+  color: #06231D;
+}
+
+.knowledge-modal__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #06231D;
+  margin: 0 0 16px;
+}
+
+.knowledge-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.knowledge-modal__grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .knowledge-modal__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.knowledge-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.knowledge-modal__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #5A6B62;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.knowledge-modal__input {
+  width: 100%;
+  background: #F4F1EA;
+  border: 1px solid rgba(6, 35, 29, 0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #06231D;
+  transition: border-color 0.15s ease;
+}
+
+.knowledge-modal__input--sm {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.knowledge-modal__input:focus {
+  outline: none;
+  border-color: #22C55E;
+}
+
+.knowledge-modal__textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.knowledge-modal__textarea--noresize {
+  resize: none;
+}
+
+.knowledge-modal__textarea--mono {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+}
+
+.knowledge-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid rgba(6, 35, 29, 0.06);
+  padding-top: 16px;
+  margin-top: 8px;
+}
+
+.knowledge-modal__btn-secondary {
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(6, 35, 29, 0.12);
+  background: transparent;
+  color: #5A6B62;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.knowledge-modal__btn-secondary:hover {
+  background: #F4F1EA;
+  color: #06231D;
+}
+
+.knowledge-modal__btn-primary {
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #0E4B43, #22C55E);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.knowledge-modal__btn-primary:hover {
+  opacity: 0.92;
+}

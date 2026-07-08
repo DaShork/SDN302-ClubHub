@@ -1,0 +1,198 @@
+.ann-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.ann-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 35, 29, 0.40);
+  backdrop-filter: blur(4px);
+}
+
+.ann-modal__panel {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid rgba(6, 35, 29, 0.10);
+  border-radius: 16px;
+  max-width: 500px;
+  width: 100%;
+  padding: 24px;
+  z-index: 1;
+  box-shadow: 0 24px 64px rgba(6, 35, 29, 0.30);
+  animation: ann-modal-in 0.18s ease;
+}
+
+@keyframes ann-modal-in {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ann-modal__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: #5A6B62;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ann-modal__close:hover {
+  background: rgba(6, 35, 29, 0.05);
+  color: #06231D;
+}
+
+.ann-modal__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #06231D;
+  margin: 0 0 16px;
+}
+
+.ann-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ann-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ann-modal__field--pin {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  user-select: none;
+}
+
+.ann-modal__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #5A6B62;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ann-modal__input {
+  width: 100%;
+  background: #F4F1EA;
+  border: 1px solid rgba(6, 35, 29, 0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #06231D;
+  transition: border-color 0.15s ease;
+}
+
+.ann-modal__input--sm {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.ann-modal__input:focus {
+  outline: none;
+  border-color: #22C55E;
+}
+
+.ann-modal__textarea {
+  width: 100%;
+  background: #F4F1EA;
+  border: 1px solid rgba(6, 35, 29, 0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #06231D;
+  resize: vertical;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.ann-modal__textarea:focus {
+  outline: none;
+  border-color: #22C55E;
+}
+
+.ann-modal__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .ann-modal__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ann-modal__checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #22C55E;
+}
+
+.ann-modal__pin-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #5A6B62;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+.ann-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid rgba(6, 35, 29, 0.06);
+  padding-top: 16px;
+  margin-top: 8px;
+}
+
+.ann-modal__btn-secondary {
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(6, 35, 29, 0.12);
+  background: transparent;
+  color: #5A6B62;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ann-modal__btn-secondary:hover {
+  background: #F4F1EA;
+  color: #06231D;
+}
+
+.ann-modal__btn-primary {
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #0E4B43, #22C55E);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.ann-modal__btn-primary:hover {
+  opacity: 0.92;
+}

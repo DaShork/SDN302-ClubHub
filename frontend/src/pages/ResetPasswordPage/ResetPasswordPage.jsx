@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Lock, Loader2, CheckCircle2 } from 'lucide-react';
 import { AuthLayout, FormField, TextInput } from '@/components';
 import { updatePassword } from '@/services/authService';
+import './ResetPasswordPage.css';
 
 const mapAuthError = (msg) => {
   const m = msg.toLowerCase();
@@ -187,8 +188,6 @@ export default function ResetPasswordPage() {
           )}
         </button>
       </form>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </AuthLayout>
   );
 }

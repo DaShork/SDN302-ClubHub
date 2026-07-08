@@ -1,18 +1,30 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import MainLayout from '@/layouts/MainLayout.jsx';
 import { eventService } from "../../services/eventService";
 import { workshopService } from "../../services/workshopService";
 import { resolveClubUuid } from "../../services/supabase";
 import { useAuth } from "@/hooks/useAuth";
+import { HeroSection } from "@/components";
+import EventFormModal from "./components/EventFormModal/EventFormModal.jsx";
+import "./EventsPage.css";
 
 export default function EventsPage() {
+  return (
+    <MainLayout>
+      <EventsPageContent />
+    </MainLayout>
+  );
+}
+
+function EventsPageContent() {
   const { clubId } = useParams();
   const { profileId } = useAuth();
   const [resolvedClubId, setResolvedClubId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  // 1. Initial Mock Data & Live Activities state
+  /* Mock seed data is shown until Supabase returns real rows. */
   const [activities, setActivities] = useState([
     {
       id: "1",
@@ -28,7 +40,7 @@ export default function EventsPage() {
       status: "Upcoming",
       document: "React_19_Seminar_Outline.pdf",
       minutes: "Executive Meeting Minutes 30/06",
-      coverColor: "from-teal-500 to-emerald-700"
+      coverColor: "events-cover--teal"
     },
     {
       id: "2",
@@ -44,7 +56,7 @@ export default function EventsPage() {
       status: "Upcoming",
       document: "Tailwindv4_Workshop_Slides.pdf",
       minutes: "Weekly Planning Minutes 28/06",
-      coverColor: "from-blue-500 to-indigo-700"
+      coverColor: "events-cover--blue"
     }
   ]);
 
@@ -58,11 +70,12 @@ export default function EventsPage() {
         workshopService.getClubWorkshops(uuid).catch(() => [])
       ]);
 
-      const parsedEvents = eventsData.map(e => ({
+      const colors = ["events-cover--teal", "events-cover--blue", "events-cover--violet", "events-cover--amber"];
+      const parsedEvents = eventsData.map((e, idx) => ({
         id: e.id,
         type: "Event",
         title: e.title,
-        speaker: "Nguyễn Hoàng Nam", // Fallback speaker
+        speaker: "Nguyễn Hoàng Nam",
         description: e.description || "",
         startTime: e.start_time ? e.start_time.slice(0, 16) : "",
         endTime: e.end_time ? e.end_time.slice(0, 16) : "",
@@ -72,31 +85,30 @@ export default function EventsPage() {
         status: e.status === "upcoming" ? "Upcoming" : e.status === "ongoing" ? "Ongoing" : "Finished",
         document: "React_19_Seminar_Outline.pdf",
         minutes: "Executive Meeting Minutes 30/06",
-        coverColor: "from-teal-500 to-emerald-700"
+        coverColor: colors[idx % colors.length]
       }));
 
-      const parsedWorkshops = workshopsData.map(w => ({
+      const parsedWorkshops = workshopsData.map((w, idx) => ({
         id: w.id,
         type: "Workshop",
         title: w.title,
-        speaker: w.profiles?.full_name || "Trần Quốc Bảo",
+        speaker: "Trần Quốc Bảo",
         description: w.description || "",
-        startTime: w.events?.start_time ? w.events.start_time.slice(0, 16) : "2026-07-28T08:00",
-        endTime: w.events?.start_time ? w.events.start_time.slice(0, 16) : "2026-07-28T18:00",
-        location: w.events?.location || "ALAGRE Space",
+        startTime: "",
+        endTime: "",
+        location: "TBD",
         maxSlots: 40,
-        remainingSlots: 12,
+        remainingSlots: 40,
         status: "Upcoming",
         document: w.material_url || "Tailwindv4_Workshop_Slides.pdf",
         minutes: "Weekly Planning Minutes 28/06",
-        coverColor: "from-blue-500 to-indigo-700"
+        coverColor: colors[(idx + 1) % colors.length]
       }));
 
-      const combined = [...parsedEvents, ...parsedWorkshops];
-      setActivities(combined);
+      setActivities([...parsedEvents, ...parsedWorkshops]);
     } catch (err) {
-      console.error("Supabase load error in Events Page, using fallback data:", err);
-      setErrorMsg("Không thể tải dữ liệu từ database.");
+      console.warn("Supabase event fetch failed, using local fallback:", err);
+      setErrorMsg("Không thể đồng bộ với Supabase — đang hiển thị dữ liệu mẫu.");
     } finally {
       setLoading(false);
     }
@@ -117,7 +129,6 @@ export default function EventsPage() {
     init();
   }, [clubId]);
 
-  // Mock list of Documents and Minutes for dropdowns in form
   const documentsList = [
     "React_19_Seminar_Outline.pdf",
     "Tailwindv4_Workshop_Slides.pdf",
@@ -134,15 +145,10 @@ export default function EventsPage() {
     "Orientation_Feedback_Minutes"
   ];
 
-  // 2. States for Filtering
-  const [filterType, setFilterType] = useState("All"); // All, Event, Workshop
-  const [filterStatus, setFilterStatus] = useState("All"); // All, Upcoming, Ongoing, Finished
-
-  // 3. States for CRUD Modal
+  const [filterType, setFilterType] = useState("All");
+  const [filterStatus, setFilterStatus] = useState("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
-
-  // Form State
   const [formData, setFormData] = useState({
     type: "Event",
     title: "",
@@ -158,7 +164,6 @@ export default function EventsPage() {
     minutes: ""
   });
 
-  // 4. Handlers
   const handleOpenAddModal = () => {
     setSelectedActivity(null);
     setFormData({
@@ -219,8 +224,8 @@ export default function EventsPage() {
         title: formData.title,
         description: formData.description,
         location: formData.location,
-        start_time: new Date(formData.startTime).toISOString(),
-        end_time: new Date(formData.endTime).toISOString(),
+        start_time: formData.startTime ? new Date(formData.startTime).toISOString() : null,
+        end_time: formData.endTime ? new Date(formData.endTime).toISOString() : null,
         max_participants: formData.maxSlots,
         status: formData.status.toLowerCase(),
         created_by: profileId || null
@@ -238,7 +243,6 @@ export default function EventsPage() {
         mutateLocalState();
       }
     } else {
-      // Workshop Type
       const payload = {
         club_id: resolvedClubId || clubId,
         title: formData.title,
@@ -270,7 +274,7 @@ export default function EventsPage() {
         )
       );
     } else {
-      const colors = ["from-teal-500 to-emerald-700", "from-blue-500 to-indigo-700", "from-purple-500 to-pink-700", "from-amber-500 to-orange-700"];
+      const colors = ["events-cover--teal", "events-cover--blue", "events-cover--violet", "events-cover--amber"];
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
       const newActivity = {
         id: String(activities.length + 1),
@@ -282,7 +286,7 @@ export default function EventsPage() {
   }
 
   const handleDeleteActivity = async (id, type) => {
-    if (confirm(`Are you sure you want to delete this ${type.toLowerCase()}?`)) {
+    if (window.confirm(`Are you sure you want to delete this ${type.toLowerCase()}?`)) {
       try {
         if (type === "Event") {
           await eventService.deleteEvent(id);
@@ -297,7 +301,6 @@ export default function EventsPage() {
     }
   };
 
-  // 5. Filter Logic
   const filteredActivities = activities.filter((act) => {
     const matchesType = filterType === "All" || act.type === filterType;
     const matchesStatus = filterStatus === "All" || act.status === filterStatus;
@@ -305,172 +308,138 @@ export default function EventsPage() {
   });
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-[#06231D] tracking-tight">Events & Workshops</h2>
-          <p className="text-xs text-[#4A5D59]">Plan and organize club events, link resources, and review attendance records.</p>
-        </div>
-        <div className="flex gap-2">
-          {errorMsg && (
-            <span className="bg-amber-50 border border-amber-200 text-amber-700 text-xs px-3 py-2 rounded-xl flex items-center gap-1 font-medium animate-fade-in">
-              ⚠️ {errorMsg}
-            </span>
-          )}
-          <button
-            onClick={handleOpenAddModal}
-            className="py-2.5 px-5 rounded-xl bg-gradient-to-r from-[#0E4B43] to-[#22C55E] text-white font-bold text-xs hover:opacity-90 transition-all flex items-center gap-2 shadow-lg cursor-pointer"
-          >
-            <span>📅</span> Create New
-          </button>
-        </div>
-      </div>
+    <div className="events-page">
+      <HeroSection
+        variant="events"
+        eyebrow="Club Activities"
+        title="Events &"
+        titleGradient="Workshops"
+        subtitle="Plan and organize club events, link resources, and review attendance records."
+      />
 
-      {/* Filter Toolbar */}
-      <div className="p-4 rounded-2xl bg-white border border-[#06231D]/10 shadow-sm flex flex-wrap gap-4 items-center justify-between">
-        {/* Left tabs filter */}
-        <div className="flex gap-1.5 p-1 bg-gray-50 rounded-xl border border-gray-200">
-          {["All", "Event", "Workshop"].map((type) => (
-            <button
-              key={type}
-              onClick={() => setFilterType(type)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                filterType === type ? "bg-[#22C55E] text-[#06231D] font-bold" : "text-[#4A5D59] hover:text-[#06231D]"
-              }`}
-            >
-              {type === "All" ? "All Types" : type + "s"}
-            </button>
-          ))}
-        </div>
-
-        {/* Right select status filter */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-[#4A5D59]">Status:</span>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-[#06231D] focus:outline-none focus:border-[#22C55E]"
-          >
-            <option value="All">All Statuses</option>
-            <option value="Upcoming">Upcoming</option>
-            <option value="Ongoing">Ongoing</option>
-            <option value="Finished">Finished</option>
-          </select>
-        </div>
-      </div>
-
-      {/* 1. List View / Card View */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {loading ? (
-          <div className="col-span-full py-12 text-center text-[#4A5D59] flex flex-col items-center justify-center gap-2 bg-white border border-gray-200 rounded-2xl">
-            <span className="w-6 h-6 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin"></span>
-            <span>Fetching events and workshops...</span>
-          </div>
-        ) : filteredActivities.length > 0 ? (
-          filteredActivities.map((act) => (
-            <div
-              key={act.id}
-              className="rounded-2xl bg-white border border-gray-200 shadow-sm overflow-hidden flex flex-col justify-between hover:translate-y-[-4px] hover:shadow-lg transition-all duration-300"
-            >
-              {/* Card Cover Header */}
-              <div className={`h-36 bg-gradient-to-r ${act.coverColor} p-4 flex flex-col justify-between relative`}>
-                <div className="flex justify-between items-center z-10">
-                  <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wide uppercase bg-black/40 text-white border border-white/10">
-                    {act.type}
-                  </span>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold border ${
-                    act.status === "Upcoming"
-                      ? "bg-[#22C55E]/20 text-[#22C55E] border-[#22C55E]/30 font-extrabold"
-                      : act.status === "Ongoing"
-                      ? "bg-blue-500/20 text-blue-700 border-blue-500/30 font-extrabold"
-                      : "bg-white/20 text-white border-white/10 font-extrabold"
-                  }`}>
-                    {act.status}
-                  </span>
-                </div>
-                <div className="z-10">
-                  <h3 className="font-bold text-white text-base leading-tight truncate-2-lines">{act.title}</h3>
-                </div>
-                <div className="absolute inset-0 bg-black/20 z-0"></div>
-              </div>
-
-              {/* Card Details Body */}
-              <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                <div className="space-y-2.5 text-xs text-[#06231D]">
-                  <p className="text-[#4A5D59] line-clamp-2 leading-relaxed text-[11px]">{act.description}</p>
-                  <div className="border-t border-gray-100 pt-2.5 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#4A5D59] w-4">👤</span>
-                      <span>Speaker: <strong className="text-[#06231D]">{act.speaker}</strong></span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#4A5D59] w-4">📅</span>
-                      <span>
-                        {new Date(act.startTime).toLocaleDateString()} (
-                        {new Date(act.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#4A5D59] w-4">📍</span>
-                      <span className="truncate font-medium">{act.location}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#4A5D59] w-4">🎟️</span>
-                      <span>
-                        {act.remainingSlots === 0 ? (
-                          <span className="text-red-500 font-bold">SOLD OUT</span>
-                        ) : (
-                          <span>Slots left: <strong className="text-[#06231D]">{act.remainingSlots}</strong> / {act.maxSlots}</span>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Sub links inside card */}
-                {(act.document || act.minutes) && (
-                  <div className="p-3 rounded-xl bg-[#F4F1EA]/60 border border-gray-200 space-y-1.5 text-[11px]">
-                    {act.document && (
-                      <div className="flex items-center justify-between text-[#4A5D59]">
-                        <span className="truncate">📁 Document: <span className="text-[#06231D] font-bold">{act.document}</span></span>
-                      </div>
-                    )}
-                    {act.minutes && (
-                      <div className="flex items-center justify-between text-[#4A5D59]">
-                        <span className="truncate">📝 Minutes: <span className="text-[#06231D] font-bold">{act.minutes}</span></span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Card Action footer */}
-                <div className="border-t border-gray-100 pt-3.5 flex gap-2 justify-end">
-                  <button
-                    onClick={() => handleOpenEditModal(act)}
-                    className="text-xs text-[#22C55E] hover:underline font-bold"
-                  >
-                    Edit
-                  </button>
-                  <span className="text-gray-200">|</span>
-                  <button
-                    onClick={() => handleDeleteActivity(act.id, act.type)}
-                    className="text-xs text-red-500 hover:text-red-600 transition-all font-semibold"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
+      <div className="events-page__body">
+        <div className="events-page__container">
+          <div className="events-page__header">
+            <div>
+              <h2 className="events-page__title">Activity Board</h2>
+              <p className="events-page__subtitle">Manage every event and workshop from one place.</p>
             </div>
-          ))
-        ) : (
-          <div className="col-span-full py-12 text-center text-[#4A5D59] bg-white border border-gray-200 rounded-2xl">
-            No events or workshops found for the selected filters.
+            <div className="events-page__header-actions">
+              {errorMsg && (
+                <span className="events-page__warn">⚠️ {errorMsg}</span>
+              )}
+              <button type="button" className="events-page__btn-primary" onClick={handleOpenAddModal}>
+                📅 Create New
+              </button>
+            </div>
           </div>
-        )}
+
+          <div className="events-page__toolbar">
+            <div className="events-page__type-tabs">
+              {["All", "Event", "Workshop"].map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setFilterType(type)}
+                  className={`events-page__type-tab ${filterType === type ? "events-page__type-tab--active" : ""}`}
+                >
+                  {type === "All" ? "All Types" : `${type}s`}
+                </button>
+              ))}
+            </div>
+            <div className="events-page__status">
+              <span className="events-page__status-label">Status:</span>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="events-page__status-select"
+              >
+                <option value="All">All Statuses</option>
+                <option value="Upcoming">Upcoming</option>
+                <option value="Ongoing">Ongoing</option>
+                <option value="Finished">Finished</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="events-page__grid">
+            {loading ? (
+              <div className="events-page__loading">
+                <span className="events-page__spinner" />
+                <span>Fetching events and workshops…</span>
+              </div>
+            ) : filteredActivities.length > 0 ? (
+              filteredActivities.map((act) => (
+                <article key={act.id} className="events-card">
+                  <div className={`events-card__cover ${act.coverColor}`}>
+                    <div className="events-card__cover-head">
+                      <span className="events-card__type">{act.type}</span>
+                      <span className={`events-card__status events-card__status--${act.status.toLowerCase()}`}>
+                        {act.status}
+                      </span>
+                    </div>
+                    <h3 className="events-card__title">{act.title}</h3>
+                    <div className="events-card__cover-overlay" />
+                  </div>
+
+                  <div className="events-card__body">
+                    <p className="events-card__desc">{act.description}</p>
+                    <div className="events-card__meta">
+                      <div className="events-card__meta-row"><span>👤</span><span>Speaker: <strong>{act.speaker}</strong></span></div>
+                      {act.startTime && (
+                        <div className="events-card__meta-row">
+                          <span>📅</span>
+                          <span>
+                            {new Date(act.startTime).toLocaleDateString()} (
+                            {new Date(act.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})
+                          </span>
+                        </div>
+                      )}
+                      <div className="events-card__meta-row"><span>📍</span><span className="events-card__location">{act.location}</span></div>
+                      <div className="events-card__meta-row">
+                        <span>🎟️</span>
+                        <span>
+                          {act.remainingSlots === 0 ? (
+                            <span className="events-card__sold-out">SOLD OUT</span>
+                          ) : (
+                            <>Slots left: <strong>{act.remainingSlots}</strong> / {act.maxSlots}</>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+
+                    {(act.document || act.minutes) && (
+                      <div className="events-card__resources">
+                        {act.document && (
+                          <div className="events-card__resource">📁 Document: <strong>{act.document}</strong></div>
+                        )}
+                        {act.minutes && (
+                          <div className="events-card__resource">📝 Minutes: <strong>{act.minutes}</strong></div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="events-card__footer">
+                      <button type="button" className="events-card__link events-card__link--edit" onClick={() => handleOpenEditModal(act)}>
+                        Edit
+                      </button>
+                      <span className="events-card__divider">|</span>
+                      <button type="button" className="events-card__link events-card__link--delete" onClick={() => handleDeleteActivity(act.id, act.type)}>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))
+            ) : (
+              <div className="events-page__empty">
+                No events or workshops found for the selected filters.
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* 2. CRUD Modal Form */}
       <EventFormModal
         isOpen={isModalOpen}
         selectedActivity={selectedActivity}
@@ -482,247 +451,6 @@ export default function EventsPage() {
         handleInputChange={handleInputChange}
         handleSubmit={handleSubmit}
       />
-    </div>
-  );
-}
-
-function EventFormModal({
-  isOpen,
-  selectedActivity,
-  formData,
-  setFormData,
-  documentsList,
-  minutesList,
-  handleCloseModal,
-  handleInputChange,
-  handleSubmit
-}) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={handleCloseModal}></div>
-
-      <div className="bg-white border border-gray-200 rounded-2xl max-w-lg w-full p-6 z-50 shadow-2xl relative max-h-[90vh] overflow-y-auto animate-fade-in text-sm text-[#06231D]">
-        <button onClick={handleCloseModal} className="absolute top-4 right-4 text-[#4A5D59] hover:text-[#06231D] p-1">
-          ✕
-        </button>
-        <h3 className="text-lg font-bold text-[#06231D] mb-4">
-          {selectedActivity ? `✏️ Edit ${formData.type}` : "➕ Create Event / Workshop"}
-        </h3>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Type Switch */}
-          <div>
-            <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Type</label>
-            <div className="flex gap-2">
-              {["Event", "Workshop"].map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setFormData((prev) => ({ ...prev, type: t }))}
-                  className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                    formData.type === t
-                      ? "bg-[#22C55E]/10 text-[#0E4B43] border-[#22C55E]/30"
-                      : "bg-gray-50 border-gray-200 text-[#4A5D59] hover:text-[#06231D]"
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Title */}
-          <div>
-            <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Title / Name</label>
-            <input
-              type="text"
-              name="title"
-              required
-              value={formData.title}
-              onChange={handleInputChange}
-              placeholder={`e.g. Next-gen UI Workshop`}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-[#06231D] focus:outline-none focus:border-[#22C55E]"
-            />
-          </div>
-
-          {/* Speaker & Location Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Speaker */}
-            <div>
-              <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Speaker / Leader</label>
-              <input
-                type="text"
-                name="speaker"
-                required
-                value={formData.speaker}
-                onChange={handleInputChange}
-                placeholder="Speaker's name"
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-[#06231D] focus:outline-none focus:border-[#22C55E]"
-              />
-            </div>
-            {/* Location */}
-            <div>
-              <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Location</label>
-              <input
-                type="text"
-                name="location"
-                required
-                value={formData.location}
-                onChange={handleInputChange}
-                placeholder="e.g. Room 204 or online"
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-[#06231D] focus:outline-none focus:border-[#22C55E]"
-              />
-            </div>
-          </div>
-
-          {/* Description (Rich Text style textarea) */}
-          <div>
-            <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Detailed Description</label>
-            <div className="border border-gray-200 rounded-xl overflow-hidden bg-gray-50 focus-within:border-[#22C55E] transition-all">
-              {/* Rich text mock toolbar */}
-              <div className="flex gap-1.5 bg-[#F4F1EA]/80 px-3 py-1.5 border-b border-gray-200 text-xs text-[#4A5D59] select-none">
-                <span className="hover:text-[#06231D] cursor-pointer px-1"><b>B</b></span>
-                <span className="hover:text-[#06231D] cursor-pointer px-1"><i>I</i></span>
-                <span className="hover:text-[#06231D] cursor-pointer px-1"><u>U</u></span>
-                <span className="text-gray-300">|</span>
-                <span className="hover:text-[#06231D] cursor-pointer px-1">📝 Quote</span>
-                <span className="hover:text-[#06231D] cursor-pointer px-1">🔗 Link</span>
-              </div>
-              <textarea
-                name="description"
-                required
-                rows="3"
-                value={formData.description}
-                onChange={handleInputChange}
-                placeholder="Explain the workshop agenda, prerequisites, etc."
-                className="w-full px-3 py-2 text-xs text-[#06231D] bg-transparent outline-none border-none resize-none"
-              ></textarea>
-            </div>
-          </div>
-
-          {/* Dates Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Start Time */}
-            <div>
-              <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Start Date & Time</label>
-              <input
-                type="datetime-local"
-                name="startTime"
-                required
-                value={formData.startTime}
-                onChange={handleInputChange}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-[#06231D] focus:outline-none focus:border-[#22C55E]"
-              />
-            </div>
-            {/* End Time */}
-            <div>
-              <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">End Date & Time</label>
-              <input
-                type="datetime-local"
-                name="endTime"
-                required
-                value={formData.endTime}
-                onChange={handleInputChange}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-[#06231D] focus:outline-none focus:border-[#22C55E]"
-              />
-            </div>
-          </div>
-
-          {/* Slots and Status Grid */}
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Max Slots</label>
-              <input
-                type="number"
-                name="maxSlots"
-                min="1"
-                required
-                value={formData.maxSlots}
-                onChange={handleInputChange}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-[#06231D] focus:outline-none focus:border-[#22C55E]"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Slots Left</label>
-              <input
-                type="number"
-                name="remainingSlots"
-                min="0"
-                max={formData.maxSlots}
-                required
-                value={formData.remainingSlots}
-                onChange={handleInputChange}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-[#06231D] focus:outline-none focus:border-[#22C55E]"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Status</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-[#06231D] focus:outline-none focus:border-[#22C55E]"
-              >
-                <option value="Upcoming">Upcoming</option>
-                <option value="Ongoing">Ongoing</option>
-                <option value="Finished">Finished</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Resource Attachments (Documents & Minutes) */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Linked Document */}
-            <div>
-              <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Linked Document</label>
-              <select
-                name="document"
-                value={formData.document}
-                onChange={handleInputChange}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-[#06231D] focus:outline-none focus:border-[#22C55E]"
-              >
-                {documentsList.map((doc, idx) => (
-                  <option key={idx} value={doc}>{doc}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Linked Minutes */}
-            <div>
-              <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Related Minutes</label>
-              <select
-                name="minutes"
-                value={formData.minutes}
-                onChange={handleInputChange}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-[#06231D] focus:outline-none focus:border-[#22C55E]"
-              >
-                {minutesList.map((min, idx) => (
-                  <option key={idx} value={min}>{min}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Submit Action Buttons */}
-          <div className="flex gap-3 justify-end border-t border-gray-100 pt-4 mt-6">
-            <button
-              type="button"
-              onClick={handleCloseModal}
-              className="px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-xs text-[#4A5D59] font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#0E4B43] to-[#22C55E] text-white font-bold text-xs hover:opacity-90 cursor-pointer"
-            >
-              {selectedActivity ? "Save Changes" : "Create Item"}
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   );
 }

@@ -1,10 +1,22 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import MainLayout from '@/layouts/MainLayout.jsx';
 import { documentService } from "../../services/documentService";
 import { resolveClubUuid } from "../../services/supabase";
 import { useAuth } from "@/hooks/useAuth";
+import { HeroSection } from "@/components";
+import DocumentUploadModal from "./components/DocumentUploadModal/DocumentUploadModal.jsx";
+import "./DocumentsPage.css";
 
 export default function DocumentsPage() {
+  return (
+    <MainLayout>
+      <DocumentsPageContent />
+    </MainLayout>
+  );
+}
+
+function DocumentsPageContent() {
   const { clubId } = useParams();
   const { profileId } = useAuth();
   const [resolvedClubId, setResolvedClubId] = useState(null);
@@ -83,14 +95,14 @@ export default function DocumentsPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const extension = formData.type === "PDF" ? ".pdf" : formData.type === "Word" ? ".docx" : ".xlsx";
     const cleanName = formData.name.endsWith(extension) ? formData.name : formData.name + extension;
 
     const payload = {
       club_id: resolvedClubId || clubId,
       title: cleanName,
-      file_url: `https://thdlyzafslwymzvnutfv.supabase.co/storage/v1/object/public/documents/${cleanName}`,
+      file_url: `https://placeholder.supabase.co/storage/v1/object/public/documents/${cleanName}`,
       type: formData.type.toLowerCase(),
       uploaded_by: profileId || null
     };
@@ -134,131 +146,122 @@ export default function DocumentsPage() {
   });
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-[#06231D] tracking-tight">Document Center</h2>
-          <p className="text-xs text-[#4A5D59]">Central repository for administrative reports, templates, drafts, and proposals.</p>
-        </div>
-        <div className="flex gap-2">
-          {errorMsg && (
-            <span className="bg-amber-50 border border-amber-200 text-amber-700 text-xs px-3 py-2 rounded-xl flex items-center gap-1 font-medium animate-fade-in">
-              ⚠️ {errorMsg}
-            </span>
-          )}
-          <button
-            onClick={handleOpenUploadModal}
-            className="py-2.5 px-5 rounded-xl bg-gradient-to-r from-[#0E4B43] to-[#22C55E] text-white font-bold text-xs hover:opacity-90 transition-all flex items-center gap-2 shadow-lg cursor-pointer"
-          >
-            <span>📤</span> Upload Document
-          </button>
-        </div>
-      </div>
+    <div className="documents-page">
+      <HeroSection
+        variant="documents"
+        eyebrow="Shared Resources"
+        title="Document"
+        titleGradient="Center"
+        subtitle="Central repository for administrative reports, templates, drafts, and proposals."
+      />
 
-      {/* Filter and Search Bar */}
-      <div className="p-4 rounded-2xl bg-white border border-[#06231D]/10 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
-        {/* Search */}
-        <div className="relative w-full md:w-80">
-          <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#4A5D59]">
-            🔍
-          </span>
-          <input
-            type="text"
-            placeholder="Search documents by name..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-[#06231D] placeholder-[#4A5D59] focus:outline-none focus:border-[#22C55E] focus:ring-1 focus:ring-[#22C55E] transition-all"
-          />
-        </div>
-
-        {/* Extension type switcher tabs */}
-        <div className="flex gap-1.5 p-1 bg-gray-50 rounded-xl border border-gray-200 w-full md:w-auto overflow-x-auto">
-          {["All", "PDF", "Word", "Excel"].map((type) => (
-            <button
-              key={type}
-              onClick={() => setSelectedType(type)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                selectedType === type ? "bg-[#22C55E] text-[#06231D] font-bold" : "text-[#4A5D59] hover:text-[#06231D]"
-              }`}
-            >
-              {type === "All" ? "All Files" : type}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Document Items List */}
-      <div className="space-y-3">
-        {loading ? (
-          <div className="py-12 text-center text-[#4A5D59] flex flex-col items-center justify-center gap-2 bg-white border border-gray-200 rounded-2xl">
-            <span className="w-6 h-6 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin"></span>
-            <span>Fetching club documents...</span>
-          </div>
-        ) : filteredDocs.length > 0 ? (
-          filteredDocs.map((d) => (
-            <div
-              key={d.id}
-              className="p-4 rounded-xl bg-white border border-gray-200 flex items-center justify-between hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
-            >
-              {/* Left Details */}
-              <div className="flex items-center gap-3.5 min-w-0">
-                <span className="text-2xl p-2 bg-gray-50 rounded-xl flex-shrink-0 select-none border border-gray-200/50">
-                  {d.type === "PDF" ? "📕" : d.type === "Word" ? "📘" : "📗"}
-                </span>
-                <div className="min-w-0">
-                  <h4 className="font-semibold text-sm text-[#06231D] truncate leading-tight">{d.name}</h4>
-                  <p className="text-[10px] text-[#4A5D59] mt-1.5 flex flex-wrap gap-2 items-center">
-                    <span>Size: <strong>{d.size}</strong></span>
-                    <span className="text-gray-300">•</span>
-                    <span>Uploaded on: <strong>{d.date}</strong></span>
-                    <span className="text-gray-300">•</span>
-                    <span>By: <strong className="text-[#06231D]">{d.uploader}</strong></span>
-                  </p>
-                </div>
-              </div>
-
-              {/* Right Badges and Download actions */}
-              <div className="flex items-center gap-4 ml-4">
-                <span className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase border ${
-                  d.type === "PDF"
-                    ? "bg-red-500/10 text-red-600 border-red-500/20"
-                    : d.type === "Word"
-                    ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
-                    : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                }`}>
-                  {d.type}
-                </span>
-                <div className="flex items-center gap-2">
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      alert(`Simulating document download for: ${d.name}`);
-                    }}
-                    className="text-xs text-[#22C55E] hover:underline font-bold"
-                  >
-                    Download
-                  </a>
-                  <span className="text-gray-200">|</span>
-                  <button
-                    onClick={() => handleDeleteDoc(d.id)}
-                    className="text-xs text-red-500 hover:text-red-600 font-semibold"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
+      <div className="events-page__body documents-page__body">
+        <div className="events-page__container documents-page__container">
+          {/* Page Header */}
+          <div className="events-page__header">
+            <div>
+              <h2 className="events-page__title">Document Library</h2>
+              <p className="events-page__subtitle">Manage and download administrative reports, templates, and shared assets.</p>
             </div>
-          ))
-        ) : (
-          <div className="py-12 text-center text-[#4A5D59] bg-white border border-gray-200 rounded-2xl">
-            No documents found matching the criteria.
+            <div className="events-page__header-actions">
+              {errorMsg && (
+                <span className="events-page__warn">⚠️ {errorMsg}</span>
+              )}
+              <button type="button" className="events-page__btn-primary" onClick={handleOpenUploadModal}>
+                📤 Upload Document
+              </button>
+            </div>
           </div>
-        )}
+
+          {/* Filter and Search Bar */}
+          <div className="documents-page__toolbar">
+            <div className="documents-page__search">
+              <span className="documents-page__search-icon">🔍</span>
+              <input
+                type="text"
+                placeholder="Search documents by name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="documents-page__search-input"
+              />
+            </div>
+
+            <div className="documents-page__tabs">
+              {["All", "PDF", "Word", "Excel"].map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setSelectedType(type)}
+                  className={`documents-page__tab ${selectedType === type ? "documents-page__tab--active" : ""}`}
+                >
+                  {type === "All" ? "All Files" : type}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Document Items List */}
+          <div className="documents-page__list">
+            {loading ? (
+              <div className="events-page__loading">
+                <span className="events-page__spinner" />
+                <span>Fetching club documents…</span>
+              </div>
+            ) : filteredDocs.length > 0 ? (
+              filteredDocs.map((d) => (
+                <div key={d.id} className="document-row">
+                  <div className="document-row__main">
+                    <span className={`document-row__icon document-row__icon--${d.type.toLowerCase()}`}>
+                      {d.type === "PDF" ? "📕" : d.type === "Word" ? "📘" : "📗"}
+                    </span>
+                    <div className="document-row__meta">
+                      <h4 className="document-row__name">{d.name}</h4>
+                      <p className="document-row__info">
+                        Size: <strong>{d.size}</strong>
+                        <span className="document-row__sep">•</span>
+                        Uploaded on: <strong>{d.date}</strong>
+                        <span className="document-row__sep">•</span>
+                        By: <strong>{d.uploader}</strong>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="document-row__actions">
+                    <span className={`document-row__type document-row__type--${d.type.toLowerCase()}`}>
+                      {d.type}
+                    </span>
+                    <div className="document-row__links">
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          window.alert(`Simulating document download for: ${d.name}`);
+                        }}
+                        className="document-row__link document-row__link--download"
+                      >
+                        Download
+                      </a>
+                      <span className="document-row__divider">|</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteDoc(d.id)}
+                        className="document-row__link document-row__link--delete"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="events-page__empty">
+                No documents found matching the criteria.
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Upload File Modal */}
       <DocumentUploadModal
         isOpen={isModalOpen}
         formData={formData}
@@ -267,91 +270,6 @@ export default function DocumentsPage() {
         handleInputChange={handleInputChange}
         handleSubmit={handleSubmit}
       />
-    </div>
-  );
-}
-
-function DocumentUploadModal({
-  isOpen,
-  formData,
-  setFormData,
-  handleCloseModal,
-  handleInputChange,
-  handleSubmit
-}) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={handleCloseModal}></div>
-
-      <div className="bg-white border border-gray-200 rounded-2xl max-w-md w-full p-6 z-50 shadow-2xl relative animate-fade-in text-sm text-[#06231D]">
-        <button onClick={handleCloseModal} className="absolute top-4 right-4 text-[#4A5D59] hover:text-[#06231D] p-1">
-          ✕
-        </button>
-        <h3 className="text-lg font-bold text-[#06231D] mb-4">📤 Upload Document File</h3>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Document Name */}
-          <div>
-            <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Document Display Name</label>
-            <input
-              type="text"
-              name="name"
-              required
-              value={formData.name}
-              onChange={handleInputChange}
-              placeholder="e.g. Sponsorship Proposal Draft v3"
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-[#06231D] focus:outline-none focus:border-[#22C55E]"
-            />
-          </div>
-
-          {/* Document Type Selection */}
-          <div>
-            <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Document Format Type</label>
-            <div className="flex gap-2">
-              {["PDF", "Word", "Excel"].map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setFormData((prev) => ({ ...prev, type: t }))}
-                  className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                    formData.type === t
-                      ? "bg-[#22C55E]/10 text-[#0E4B43] border-[#22C55E]/30"
-                      : "bg-gray-50 border-gray-200 text-[#4A5D59] hover:text-[#06231D]"
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Simulated file upload area */}
-          <div className="border-2 border-dashed border-gray-200 hover:border-[#22C55E]/50 rounded-2xl p-6 text-center cursor-pointer transition-all bg-gray-50/50">
-            <span className="text-3xl">📁</span>
-            <p className="text-xs text-[#06231D] mt-2 font-semibold">Click to select files or drag-and-drop here</p>
-            <p className="text-[10px] text-[#4A5D59] mt-1">Accepts PDF, DOCX, XLSX up to 10MB</p>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3 justify-end border-t border-gray-100 pt-4 mt-6">
-            <button
-              type="button"
-              onClick={handleCloseModal}
-              className="px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-xs text-[#4A5D59] font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#0E4B43] to-[#22C55E] text-white font-bold text-xs hover:opacity-90 cursor-pointer"
-            >
-              Confirm Upload
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   );
 }

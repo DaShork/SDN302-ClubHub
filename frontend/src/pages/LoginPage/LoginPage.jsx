@@ -3,6 +3,7 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Loader2 } from 'lucide-react';
 import { AuthLayout, FormField, TextInput } from '@/components';
 import { useAuth } from '@/hooks/useAuth.jsx';
+import './LoginPage.css';
 
 const mapAuthError = (msg) => {
   const m = msg.toLowerCase();

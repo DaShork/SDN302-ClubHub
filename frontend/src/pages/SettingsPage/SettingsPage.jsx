@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth.jsx';
 import { updatePassword } from '@/services/authService';
+import './SettingsPage.css';
 
 const mapAuthError = (msg) => {
   const m = msg.toLowerCase();

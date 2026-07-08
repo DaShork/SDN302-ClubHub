@@ -1,9 +1,22 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import MainLayout from '@/layouts/MainLayout.jsx';
 import { membershipService } from "../../services/membershipService";
 import { resolveClubUuid, supabase } from "../../services/supabase";
+import { HeroSection } from "@/components";
+import MemberFormModal from "./components/MemberFormModal/MemberFormModal.jsx";
+import MemberDetailModal from "./components/MemberDetailModal/MemberDetailModal.jsx";
+import "./MembersPage.css";
 
 export default function MembersPage() {
+  return (
+    <MainLayout>
+      <MembersPageContent />
+    </MainLayout>
+  );
+}
+
+function MembersPageContent() {
   const { clubId } = useParams();
   const [resolvedClubId, setResolvedClubId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -285,177 +298,165 @@ export default function MembersPage() {
   });
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-[#06231D] tracking-tight">Members Management</h2>
-          <p className="text-xs text-[#4A5D59]">View, search, add, and update roles or membership terms for club members.</p>
-        </div>
-        <div className="flex gap-2">
-          {errorMsg && (
-            <span className="bg-amber-50 border border-amber-200 text-amber-700 text-xs px-3 py-2 rounded-xl flex items-center gap-1 font-medium animate-fade-in">
-              ⚠️ {errorMsg}
-            </span>
-          )}
-          <button
-            onClick={handleOpenAddModal}
-            className="py-2.5 px-5 rounded-xl bg-gradient-to-r from-[#0E4B43] to-[#22C55E] text-white font-bold text-xs hover:opacity-90 transition-all flex items-center gap-2 shadow-lg cursor-pointer tactile-btn"
-          >
-            <span>➕</span> Add New Member
-          </button>
-        </div>
-      </div>
+    <div className="members-page">
+      <HeroSection
+        variant="members"
+        eyebrow="Club Directory"
+        title="Members"
+        titleGradient="Management"
+        subtitle="View, search, add, and update roles or membership terms for club members."
+      />
 
-      {/* 1. Upper Filter Toolbar */}
-      <div className="p-4 rounded-2xl bg-white border border-[#06231D]/10 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
-        {/* Search Input */}
-        <div className="relative w-full md:w-80">
-          <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#4A5D59]">
-            🔍
-          </span>
-          <input
-            type="text"
-            placeholder="Search by name, email, code..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-[#06231D] placeholder-[#4A5D59] focus:outline-none focus:border-[#22C55E] focus:ring-1 focus:ring-[#22C55E] transition-all"
-          />
-        </div>
-
-        {/* Filters Group */}
-        <div className="flex flex-wrap gap-3 w-full md:w-auto justify-end">
-          {/* Role Filter */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-[#4A5D59] hidden sm:inline">Role:</span>
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-[#06231D] focus:outline-none focus:border-[#22C55E]"
-            >
-              <option value="All">All Roles</option>
-              <option value="Leader">Leader</option>
-              <option value="Member">Member</option>
-              <option value="Mentor">Mentor</option>
-            </select>
+      <div className="events-page__body members-page__body">
+        <div className="events-page__container members-page__container">
+          {/* Page Header */}
+          <div className="events-page__header">
+            <div>
+              <h2 className="events-page__title">Members Directory</h2>
+              <p className="events-page__subtitle">Search, filter and manage active committee and members.</p>
+            </div>
+            <div className="events-page__header-actions">
+              {errorMsg && (
+                <span className="events-page__warn">⚠️ {errorMsg}</span>
+              )}
+              <button type="button" className="events-page__btn-primary" onClick={handleOpenAddModal}>
+                ➕ Add New Member
+              </button>
+            </div>
           </div>
 
-          {/* Status Filter */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-[#4A5D59] hidden sm:inline">Status:</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-[#06231D] focus:outline-none focus:border-[#22C55E]"
-            >
-              <option value="All">All Statuses</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-          </div>
-        </div>
-      </div>
+          {/* Filter Toolbar */}
+          <div className="members-page__toolbar">
+            <div className="members-page__search">
+              <span className="members-page__search-icon">🔍</span>
+              <input
+                type="text"
+                placeholder="Search by name, email, code..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="members-page__search-input"
+              />
+            </div>
 
-      {/* 2. Table Section */}
-      <div className="rounded-2xl bg-white border border-[#06231D]/10 shadow-sm overflow-hidden">
-        {loading ? (
-          <div className="py-12 text-center text-[#4A5D59] flex flex-col items-center justify-center gap-2">
-            <span className="w-6 h-6 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin"></span>
-            <span>Fetching club members...</span>
+            <div className="members-page__filter-group">
+              <div className="members-page__filter">
+                <span className="members-page__filter-label members-page__filter-label--sm">Role:</span>
+                <select
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value)}
+                  className="members-page__filter-select"
+                >
+                  <option value="All">All Roles</option>
+                  <option value="Leader">Leader</option>
+                  <option value="Member">Member</option>
+                  <option value="Mentor">Mentor</option>
+                </select>
+              </div>
+
+              <div className="members-page__filter">
+                <span className="members-page__filter-label members-page__filter-label--sm">Status:</span>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="members-page__filter-select"
+                >
+                  <option value="All">All Statuses</option>
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-[#06231D]/10 text-[#4A5D59] bg-[#F4F1EA]/70">
-                  <th className="py-3.5 px-6 font-bold">User</th>
-                  <th className="py-3.5 px-4 font-bold">Student Code</th>
-                  <th className="py-3.5 px-4 font-bold">Joined Date</th>
-                  <th className="py-3.5 px-4 font-bold">Role</th>
-                  <th className="py-3.5 px-4 font-bold">Status</th>
-                  <th className="py-3.5 px-6 font-bold text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredMembers.length > 0 ? (
-                  filteredMembers.map((m) => (
-                    <tr key={m.id} className="border-b border-gray-100 hover:bg-gray-50/50 transition-all text-[#06231D]">
-                      <td className="py-4 px-6 flex items-center gap-3">
-                        <img src={m.avatar} className="w-9 h-9 rounded-xl bg-[#0E4B43]/10 border border-gray-200" alt="avatar" />
-                        <div>
-                          <div className="font-bold text-[#06231D] leading-tight">{m.name}</div>
-                          <div className="text-[11px] text-[#4A5D59] mt-0.5">{m.email}</div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 font-medium">{m.code}</td>
-                      <td className="py-4 px-4">{m.joinedAt}</td>
-                      <td className="py-4 px-4">
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                          m.role === "Leader"
-                            ? "bg-red-500/10 text-red-600 border-red-500/20"
-                            : m.role === "Mentor"
-                            ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                            : "bg-blue-500/10 text-blue-600 border-blue-500/20"
-                        }`}>
-                          {m.role}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                          m.status === "Active"
-                            ? "bg-[#22C55E]/10 text-[#0E4B43] border-[#22C55E]/20"
-                            : "bg-gray-100 text-gray-500 border-gray-200"
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${m.status === "Active" ? "bg-[#22C55E]" : "bg-gray-400"}`}></span>
-                          {m.status}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-right space-x-2.5">
-                        <button
-                          onClick={() => handleOpenDetailModal(m)}
-                          className="text-xs text-[#4A5D59] hover:text-[#06231D] font-medium transition-all"
-                          title="View Details"
-                        >
-                          Detail
-                        </button>
-                        <button
-                          onClick={() => handleOpenEditModal(m)}
-                          className="text-xs text-[#22C55E] hover:underline font-bold"
-                          title="Edit Info"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleToggleStatus(m.id)}
-                          className={`text-xs ${m.status === "Active" ? "text-amber-600 hover:text-amber-500 font-semibold" : "text-emerald-600 hover:text-emerald-500 font-semibold"} transition-all`}
-                          title={m.status === "Active" ? "Block Member" : "Activate Member"}
-                        >
-                          {m.status === "Active" ? "Block" : "Activate"}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteMember(m.id)}
-                          className="text-xs text-red-500 hover:text-red-600 transition-all font-bold"
-                          title="Remove"
-                        >
-                          Remove
-                        </button>
-                      </td>
+
+          {/* Table Section */}
+          <div className="members-page__table-card">
+            {loading ? (
+              <div className="members-page__loading">
+                <span className="events-page__spinner" />
+                <span>Fetching club members…</span>
+              </div>
+            ) : (
+              <div className="members-page__table-scroll">
+                <table className="members-page__table">
+                  <thead>
+                    <tr className="members-page__head-row">
+                      <th className="members-page__th members-page__th--user">User</th>
+                      <th className="members-page__th">Student Code</th>
+                      <th className="members-page__th">Joined Date</th>
+                      <th className="members-page__th">Role</th>
+                      <th className="members-page__th">Status</th>
+                      <th className="members-page__th members-page__th--actions">Actions</th>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="6" className="py-8 text-center text-[#4A5D59]">
-                      No members found matching your search.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {filteredMembers.length > 0 ? (
+                      filteredMembers.map((m) => (
+                        <tr key={m.id} className="members-page__row">
+                          <td className="members-page__td members-page__td--user">
+                            <img src={m.avatar} className="members-page__avatar" alt="avatar" />
+                            <div>
+                              <div className="members-page__user-name">{m.name}</div>
+                              <div className="members-page__user-email">{m.email}</div>
+                            </div>
+                          </td>
+                          <td className="members-page__td members-page__td--medium">{m.code}</td>
+                          <td className="members-page__td">{m.joinedAt}</td>
+                          <td className="members-page__td">
+                            <span className={`members-page__role members-page__role--${m.role.toLowerCase()}`}>
+                              {m.role}
+                            </span>
+                          </td>
+                          <td className="members-page__td">
+                            <span className={`members-page__status members-page__status--${m.status.toLowerCase()}`}>
+                              <span className={`members-page__status-dot members-page__status-dot--${m.status.toLowerCase()}`} />
+                              {m.status}
+                            </span>
+                          </td>
+                          <td className="members-page__td members-page__td--actions">
+                            <button type="button" onClick={() => handleOpenDetailModal(m)} className="members-page__action members-page__action--detail" title="View Details">
+                              Detail
+                            </button>
+                            <button type="button" onClick={() => handleOpenEditModal(m)} className="members-page__action members-page__action--edit" title="Edit Info">
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleStatus(m.id)}
+                              className={`members-page__action ${m.status === "Active" ? "members-page__action--block" : "members-page__action--activate"}`}
+                              title={m.status === "Active" ? "Block Member" : "Activate Member"}
+                            >
+                              {m.status === "Active" ? "Block" : "Activate"}
+                            </button>
+                            <button type="button" onClick={() => handleDeleteMember(m.id)} className="members-page__action members-page__action--remove" title="Remove">
+                              Remove
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="6" className="members-page__empty">
+                          No members found matching your search.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
-      {/* 4. Modal Form (Add / Edit Member) */}
+      <MemberDetailModal
+        isOpen={isDetailModalOpen}
+        selectedMember={selectedMember}
+        handleCloseModal={() => {
+          setIsDetailModalOpen(false);
+          setSelectedMember(null);
+        }}
+      />
+
       <MemberFormModal
         isOpen={isModalOpen}
         selectedMember={selectedMember}
@@ -464,227 +465,6 @@ export default function MembersPage() {
         handleInputChange={handleInputChange}
         handleSubmit={handleSubmit}
       />
-
-      {/* 5. Detail Modal */}
-      <MemberDetailModal
-        isOpen={isDetailModalOpen}
-        selectedMember={selectedMember}
-        onClose={() => setIsDetailModalOpen(false)}
-      />
-    </div>
-  );
-}
-
-function MemberFormModal({
-  isOpen,
-  selectedMember,
-  formData,
-  handleCloseModal,
-  handleInputChange,
-  handleSubmit
-}) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={handleCloseModal}></div>
-
-      <div className="bg-white border border-gray-200 rounded-2xl max-w-md w-full p-6 z-50 shadow-2xl relative animate-fade-in text-sm text-[#06231D]">
-        <button onClick={handleCloseModal} className="absolute top-4 right-4 text-[#4A5D59] hover:text-[#06231D] p-1">
-          ✕
-        </button>
-        <h3 className="text-lg font-bold text-[#06231D] mb-4">
-          {selectedMember ? "✏️ Edit Member Info" : "➕ Add New Member"}
-        </h3>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name */}
-          <div>
-            <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Full Name</label>
-            <input
-              type="text"
-              name="name"
-              required
-              value={formData.name}
-              onChange={handleInputChange}
-              placeholder="e.g. Nguyễn Văn A"
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-[#06231D] placeholder-[#4A5D59] focus:outline-none focus:border-[#22C55E]"
-            />
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Email Address</label>
-            <input
-              type="email"
-              name="email"
-              required
-              value={formData.email}
-              onChange={handleInputChange}
-              placeholder="e.g. anv@fpt.edu.vn"
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-[#06231D] placeholder-[#4A5D59] focus:outline-none focus:border-[#22C55E]"
-            />
-          </div>
-
-          {/* Phone + Student Code in 2-col grid */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Phone */}
-            <div>
-              <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Phone Number</label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                placeholder="e.g. 09xxxxxxxx"
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-[#06231D] placeholder-[#4A5D59] focus:outline-none focus:border-[#22C55E]"
-              />
-            </div>
-
-            {/* Student Code */}
-            <div>
-              <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Student Code</label>
-              <input
-                type="text"
-                name="studentCode"
-                required
-                value={formData.studentCode}
-                onChange={handleInputChange}
-                placeholder="e.g. SE180xxx"
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-[#06231D] placeholder-[#4A5D59] focus:outline-none focus:border-[#22C55E]"
-              />
-            </div>
-          </div>
-
-          {/* Grid (Role and Status) */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Role */}
-            <div>
-              <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Role / Position</label>
-              <select
-                name="role"
-                value={formData.role}
-                onChange={handleInputChange}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-[#06231D] focus:outline-none focus:border-[#22C55E]"
-              >
-                <option value="Leader">Leader</option>
-                <option value="Member">Member</option>
-                <option value="Mentor">Mentor</option>
-              </select>
-            </div>
-
-            {/* Status */}
-            <div>
-              <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Status</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-[#06231D] focus:outline-none focus:border-[#22C55E]"
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Membership Plan Term */}
-          <div>
-            <label className="block text-xs font-bold text-[#4A5D59] uppercase mb-1">Membership Plan (Term)</label>
-            <select
-              name="term"
-              value={formData.term}
-              onChange={handleInputChange}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-[#06231D] focus:outline-none focus:border-[#22C55E]"
-            >
-              <option value="Term 11 (2026)">Term 11 (2026) - Current</option>
-              <option value="Term 10 (Alumni)">Term 10 (Alumni)</option>
-              <option value="Term 9 (Alumni)">Term 9 (Alumni)</option>
-            </select>
-          </div>
-
-          {/* Submit Buttons */}
-          <div className="flex gap-3 justify-end border-t border-gray-100 pt-4 mt-6">
-            <button
-              type="button"
-              onClick={handleCloseModal}
-              className="px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-xs text-[#4A5D59] font-medium tactile-btn"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#0E4B43] to-[#22C55E] text-white font-bold text-xs hover:opacity-90 cursor-pointer tactile-btn"
-            >
-              {selectedMember ? "Save Changes" : "Create Member"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-function MemberDetailModal({ isOpen, selectedMember, onClose }) {
-  if (!isOpen || !selectedMember) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose}></div>
-
-      <div className="bg-white border border-gray-200 rounded-2xl max-w-md w-full p-6 z-50 shadow-2xl relative animate-fade-in text-sm text-[#06231D]">
-        <button onClick={onClose} className="absolute top-4 right-4 text-[#4A5D59] hover:text-[#06231D] p-1">
-          ✕
-        </button>
-        <h3 className="text-lg font-bold text-[#06231D] mb-6">👤 Member Profile Card</h3>
-
-        <div className="flex flex-col items-center text-center pb-6 border-b border-gray-100">
-          <img src={selectedMember.avatar} className="w-20 h-20 rounded-2xl bg-[#0E4B43]/10 border-2 border-[#22C55E] shadow-md mb-4" alt="" />
-          <h4 className="text-lg font-bold text-[#06231D]">{selectedMember.name}</h4>
-          <p className="text-xs text-[#4A5D59]">{selectedMember.code} • {selectedMember.term}</p>
-          <span className={`px-2.5 py-0.5 mt-2 rounded-full text-[10px] font-bold border ${
-            selectedMember.role === "Leader"
-              ? "bg-red-500/10 text-red-600 border-red-500/20"
-              : selectedMember.role === "Mentor"
-              ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-              : "bg-blue-500/10 text-blue-600 border-blue-500/20"
-          }`}>
-            {selectedMember.role}
-          </span>
-        </div>
-
-        <div className="py-4 space-y-3">
-          <div className="flex justify-between items-center text-xs">
-            <span className="text-[#4A5D59]">Email:</span>
-            <span className="font-semibold text-[#06231D]">{selectedMember.email}</span>
-          </div>
-          <div className="flex justify-between items-center text-xs">
-            <span className="text-[#4A5D59]">Phone Number:</span>
-            <span className="font-semibold text-[#06231D]">{selectedMember.phone}</span>
-          </div>
-          <div className="flex justify-between items-center text-xs">
-            <span className="text-[#4A5D59]">Joined At:</span>
-            <span className="font-semibold text-[#06231D]">{selectedMember.joinedAt}</span>
-          </div>
-          <div className="flex justify-between items-center text-xs">
-            <span className="text-[#4A5D59]">Status:</span>
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border ${
-              selectedMember.status === "Active" ? "bg-[#22C55E]/10 text-[#0E4B43] border-[#22C55E]/20" : "bg-gray-100 text-gray-500 border-gray-200"
-            }`}>
-              {selectedMember.status}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex justify-end pt-4 border-t border-gray-100">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-xs text-[#4A5D59] font-medium cursor-pointer"
-          >
-            Close View
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

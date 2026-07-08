@@ -1,14 +1,24 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import MainLayout from '@/layouts/MainLayout.jsx'
 import { clubService } from '@/services/clubService'
 import { eventService } from '@/services/eventService'
 import { galleryService } from '@/services/galleryService'
 import { Card, Button, Badge, Loading, toast, ConfirmModal } from '@/components'
 import { useMembership } from '@/stores/userStore'
+import './ClubDetailPage.css';
 
 const defaultLogo = 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=200&h=200&fit=crop'
 
-export function ClubDetailPage() {
+export default function ClubDetailPage() {
+  return (
+    <MainLayout>
+      <ClubDetailPageContent />
+    </MainLayout>
+  )
+}
+
+function ClubDetailPageContent() {
   const { id } = useParams()
   const [club, setClub] = useState(null)
   const [events, setEvents] = useState([])
@@ -18,10 +28,6 @@ export function ClubDetailPage() {
   const [confirmLeave, setConfirmLeave] = useState(false)
   const { isMember, join, leave } = useMembership()
   const isJoined = !loading && isMember(club?.id)
-
-  useEffect(() => {
-    loadData()
-  }, [id])
 
   const loadData = async () => {
     try {
@@ -40,6 +46,10 @@ export function ClubDetailPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    loadData()
+  }, [id])
 
   if (loading) return <Loading fullScreen />
 
@@ -60,7 +70,7 @@ export function ClubDetailPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Banner */}
-      <section className="relative h-64 md:h-80 bg-linear-to-br from-primary-700 to-primary-800">
+      <section className="relative h-64 md:h-80 club-detail-hero">
         {club.banner_url && (
           <img
             src={club.banner_url}
@@ -68,7 +78,7 @@ export function ClubDetailPage() {
             className="absolute inset-0 w-full h-full object-cover opacity-50"
           />
         )}
-        <div className="absolute inset-0 bg-linear-to-t from-primary-900 to-transparent" />
+        <div className="absolute inset-0 club-detail-hero-overlay" />
         <div className="container relative h-full flex items-end pb-8">
           <div className="flex items-end gap-6">
             <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-card border-4 border-white/10 overflow-hidden shadow-xl">
@@ -168,7 +178,7 @@ export function ClubDetailPage() {
                 </Card>
 
                 {club.recruitment_status && (
-                  <Card className="bg-linear-to-br from-primary-800 to-accent-green/20 border-accent-green/30">
+                  <Card className="club-detail-join-card">
                     <div className="p-6 text-center">
                       <h3 className="text-lg font-semibold text-secondary-100 mb-2">
                         {isJoined ? "You're a member!" : "We're Recruiting!"}

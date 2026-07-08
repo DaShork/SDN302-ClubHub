@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Loader2, CheckCircle2 } from 'lucide-react';
 import { AuthLayout, FormField, TextInput } from '@/components';
 import { forgotPassword } from '@/services/authService';
+import './ForgotPasswordPage.css';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -161,8 +162,6 @@ export default function ForgotPasswordPage() {
           Link đặt lại mật khẩu sẽ có hiệu lực trong <strong>1 giờ</strong>.
         </p>
       </form>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </AuthLayout>
   );
 }

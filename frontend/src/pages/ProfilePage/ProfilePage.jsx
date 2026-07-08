@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth.jsx';
 import { updateProfile, updateAvatar, deleteAvatar } from '@/services/authService';
+import './ProfilePage.css';
 
 const FPTU_FACULTIES = [
   'School of Business',

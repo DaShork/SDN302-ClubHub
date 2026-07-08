@@ -1,0 +1,221 @@
+.knowledge-detail {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.knowledge-detail__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 35, 29, 0.40);
+  backdrop-filter: blur(4px);
+}
+
+.knowledge-detail__panel {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid rgba(6, 35, 29, 0.10);
+  border-radius: 16px;
+  max-width: 720px;
+  width: 100%;
+  padding: 24px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(6, 35, 29, 0.30);
+  z-index: 1;
+  font-size: 14px;
+  color: #06231D;
+  animation: knowledge-detail-in 0.2s ease;
+}
+
+@media (min-width: 768px) {
+  .knowledge-detail__panel {
+    padding: 32px;
+  }
+}
+
+@keyframes knowledge-detail-in {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.knowledge-detail__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: #5A6B62;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.knowledge-detail__close:hover {
+  background: rgba(6, 35, 29, 0.05);
+  color: #06231D;
+}
+
+.knowledge-detail__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.knowledge-detail__category {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid;
+}
+
+.knowledge-detail__category--guide {
+  background: rgba(20, 184, 166, 0.10);
+  color: #0E7C70;
+  border-color: rgba(20, 184, 166, 0.25);
+}
+
+.knowledge-detail__category--technical {
+  background: rgba(59, 130, 246, 0.10);
+  color: #1D4ED8;
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+.knowledge-detail__category--template {
+  background: rgba(139, 92, 246, 0.10);
+  color: #6D28D9;
+  border-color: rgba(139, 92, 246, 0.25);
+}
+
+.knowledge-detail__date {
+  font-size: 12px;
+  color: #5A6B62;
+}
+
+.knowledge-detail__title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #06231D;
+  margin: 0 0 8px;
+  line-height: 1.25;
+}
+
+.knowledge-detail__author {
+  font-size: 12px;
+  color: #5A6B62;
+  margin: 0 0 24px;
+}
+
+.knowledge-detail__author-name {
+  color: #22C55E;
+  font-weight: 600;
+}
+
+.knowledge-detail__content {
+  background: #F4F1EA;
+  border: 1px solid rgba(6, 35, 29, 0.08);
+  border-radius: 16px;
+  padding: 20px;
+  color: #06231D;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  font-family: 'Helvetica', system-ui, sans-serif;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.knowledge-detail__attachment {
+  padding: 14px;
+  border-radius: 12px;
+  background: #F4F1EA;
+  border: 1px solid rgba(6, 35, 29, 0.10);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.knowledge-detail__attachment-text {
+  color: #5A6B62;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.knowledge-detail__attachment-text strong {
+  color: #06231D;
+  margin-left: 4px;
+  font-weight: 700;
+}
+
+.knowledge-detail__download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #22C55E;
+  text-decoration: none;
+  font-weight: 700;
+  transition: opacity 0.15s ease;
+}
+
+.knowledge-detail__download:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
+.knowledge-detail__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid rgba(6, 35, 29, 0.06);
+  padding-top: 16px;
+}
+
+.knowledge-detail__btn-primary {
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: #0E4B43;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.knowledge-detail__btn-primary:hover {
+  opacity: 0.92;
+}
+
+.knowledge-detail__btn-secondary {
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(6, 35, 29, 0.12);
+  background: transparent;
+  color: #5A6B62;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.knowledge-detail__btn-secondary:hover {
+  background: #F4F1EA;
+  color: #06231D;
+}

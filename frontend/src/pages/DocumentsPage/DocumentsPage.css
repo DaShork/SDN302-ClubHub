@@ -1,0 +1,273 @@
+/* Documents page - reuses EventsPage layout + custom list/row classes */
+
+.documents-page {
+  min-height: 100vh;
+  background: #F8F6F2;
+  font-family: 'Helvetica', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #06231D;
+}
+
+.documents-page__body {
+  padding-top: 0;
+}
+
+.documents-page__container {
+  padding-top: 0;
+}
+
+.documents-page__toolbar {
+  padding: 16px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid rgba(6, 35, 29, 0.10);
+  box-shadow: 0 4px 14px rgba(6, 35, 29, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: stretch;
+  justify-content: space-between;
+}
+
+@media (min-width: 768px) {
+  .documents-page__toolbar {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.documents-page__search {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+}
+
+.documents-page__search-icon {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  padding-left: 14px;
+  display: inline-flex;
+  align-items: center;
+  color: #5A6B62;
+  pointer-events: none;
+}
+
+.documents-page__search-input {
+  width: 100%;
+  padding: 10px 16px 10px 40px;
+  background: #F4F1EA;
+  border: 1px solid rgba(6, 35, 29, 0.12);
+  border-radius: 12px;
+  font-size: 13px;
+  color: #06231D;
+  transition: border-color 0.15s ease;
+}
+
+.documents-page__search-input::placeholder {
+  color: #5A6B62;
+}
+
+.documents-page__search-input:focus {
+  outline: none;
+  border-color: #22C55E;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+.documents-page__tabs {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  background: #F4F1EA;
+  border: 1px solid rgba(6, 35, 29, 0.10);
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+.documents-page__tab {
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: transparent;
+  border: none;
+  color: #5A6B62;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.documents-page__tab:hover {
+  color: #06231D;
+}
+
+.documents-page__tab--active {
+  background: #22C55E;
+  color: #06231D;
+  font-weight: 700;
+}
+
+.documents-page__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.document-row {
+  padding: 16px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid rgba(6, 35, 29, 0.10);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 4px 14px rgba(6, 35, 29, 0.05);
+  transition: background 0.15s ease, border-color 0.15s ease;
+  flex-wrap: wrap;
+}
+
+.document-row:hover {
+  background: #F4F1EA;
+  border-color: rgba(6, 35, 29, 0.18);
+}
+
+.document-row__main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+.document-row__icon {
+  font-size: 24px;
+  padding: 8px;
+  background: #F4F1EA;
+  border: 1px solid rgba(6, 35, 29, 0.10);
+  border-radius: 12px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.document-row__icon--pdf {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.20);
+}
+
+.document-row__icon--word {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.20);
+}
+
+.document-row__icon--excel {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.20);
+}
+
+.document-row__meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.document-row__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #06231D;
+  margin: 0;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.document-row__info {
+  font-size: 10px;
+  color: #5A6B62;
+  margin: 6px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.document-row__info strong {
+  color: #06231D;
+  font-weight: 700;
+}
+
+.document-row__sep {
+  color: rgba(6, 35, 29, 0.20);
+}
+
+.document-row__actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: 16px;
+}
+
+.document-row__type {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid;
+}
+
+.document-row__type--pdf {
+  background: rgba(239, 68, 68, 0.08);
+  color: #B91C1C;
+  border-color: rgba(239, 68, 68, 0.20);
+}
+
+.document-row__type--word {
+  background: rgba(59, 130, 246, 0.08);
+  color: #1D4ED8;
+  border-color: rgba(59, 130, 246, 0.20);
+}
+
+.document-row__type--excel {
+  background: rgba(16, 185, 129, 0.08);
+  color: #047857;
+  border-color: rgba(16, 185, 129, 0.20);
+}
+
+.document-row__links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.document-row__link {
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.document-row__link--download {
+  color: #22C55E;
+  font-weight: 700;
+}
+
+.document-row__link--download:hover {
+  text-decoration: underline;
+}
+
+.document-row__link--delete {
+  color: #EF4444;
+}
+
+.document-row__link--delete:hover {
+  color: #DC2626;
+}
+
+.document-row__divider {
+  color: rgba(6, 35, 29, 0.20);
+}

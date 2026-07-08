@@ -7,6 +7,7 @@ import {
   getCurrentProfile,
   onAuthChange,
 } from '@/services/authService';
+import { grantsFor, roleCan, rolesAnyCan, ROLE_DEFAULT_ROUTE, ROLES } from '@/auth/rolePermissions';
 
 const AuthContext = createContext(null);
 
@@ -48,20 +49,51 @@ export function AuthProvider({ children }) {
     };
   }, [refreshProfile]);
 
+  const role = profile?.role_name ?? null;
+  const grants = useMemo(() => grantsFor(role), [role]);
+
   const value = useMemo(
     () => ({
       session,
       user: session?.user ?? null,
       profile,
       profileId: profile?.id ?? null,
+      role,
+      grants,
       loading,
       isAuthenticated: !!session?.user,
+
       signIn: svcSignIn,
       signUp: svcSignUp,
       signOut: svcSignOut,
       refreshProfile,
+
+      /* ---- Role helpers ---- */
+      hasRole(requiredRole) {
+        if (!requiredRole) return true;
+        if (Array.isArray(requiredRole)) return requiredRole.includes(role);
+        return role === requiredRole;
+      },
+      can(permission) {
+        return roleCan(role, permission);
+      },
+      canAny(permissions) {
+        if (!Array.isArray(permissions) || permissions.length === 0) return true;
+        return permissions.some((p) => roleCan(role, p));
+      },
+      canAll(permissions) {
+        if (!Array.isArray(permissions) || permissions.length === 0) return true;
+        return permissions.every((p) => roleCan(role, p));
+      },
+      anyCan(roles, permission) {
+        return rolesAnyCan(roles, permission);
+      },
+      landingRouteForRole() {
+        return ROLE_DEFAULT_ROUTE[role] ?? '/';
+      },
+      ROLES,
     }),
-    [session, profile, loading, refreshProfile],
+    [session, profile, role, grants, loading, refreshProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
