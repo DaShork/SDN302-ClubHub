@@ -1,0 +1,245 @@
+/* Page-level hero. Mirrors the HomePage hero language but in a leaner
+   variant so each page can adopt the same chrome without competing with
+   the homepage itself. */
+
+.page-hero {
+  position: relative;
+  padding-top: 120px;
+  padding-bottom: 64px;
+  overflow: hidden;
+  background: #F4F1EA;
+}
+
+.page-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, #D2C7B8 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.page-hero__glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.page-hero__glow--green {
+  top: -128px;
+  right: -128px;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(22, 104, 93, 0.08) 0%, transparent 70%);
+}
+
+.page-hero__glow--blue {
+  bottom: -96px;
+  left: -96px;
+  width: 384px;
+  height: 384px;
+  background: radial-gradient(circle, rgba(14, 75, 67, 0.06) 0%, transparent 70%);
+}
+
+.page-hero__inner {
+  position: relative;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 32px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 48px;
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .page-hero__inner {
+    grid-template-columns: 1.4fr 1fr;
+    gap: 64px;
+  }
+}
+
+.page-hero__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.page-hero__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(22, 104, 93, 0.25);
+  background: rgba(22, 104, 93, 0.07);
+  width: fit-content;
+}
+
+.page-hero__badge-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.page-hero__badge-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #16685D;
+}
+
+.page-hero__title {
+  font-size: clamp(36px, 5vw, 56px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: #06231D;
+}
+
+.page-hero__title-gradient {
+  display: inline-block;
+  margin-left: 12px;
+  background: linear-gradient(90deg, #0E4B43, #22C55E);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.page-hero__subtitle {
+  font-size: 18px;
+  line-height: 1.6;
+  margin: 0;
+  color: #16685D;
+  max-width: 560px;
+}
+
+.page-hero__cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.page-hero__btn-primary,
+.page-hero__btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.page-hero__btn-primary {
+  background: linear-gradient(90deg, #0E4B43, #22C55E);
+  color: #ffffff;
+}
+
+.page-hero__btn-primary:hover {
+  opacity: 0.9;
+  box-shadow: 0 8px 30px rgba(22, 104, 93, 0.35);
+}
+
+.page-hero__btn-secondary {
+  background: transparent;
+  color: #0E4B43;
+  border: 1px solid rgba(14, 75, 67, 0.35);
+}
+
+.page-hero__btn-secondary:hover {
+  background: #E8E2D8;
+}
+
+.page-hero__visual {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .page-hero__visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.page-hero__visual-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 1;
+  margin: 0 auto;
+  padding: 32px;
+  background: #ffffff;
+  border: 1px solid rgba(6, 35, 29, 0.08);
+  border-radius: 24px;
+  box-shadow: 0 12px 40px rgba(6, 35, 29, 0.10);
+  text-align: center;
+}
+
+.page-hero__visual-emoji {
+  font-size: 72px;
+  line-height: 1;
+}
+
+.page-hero__visual-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #16685D;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Variant-specific accents. The structure stays the same; only the
+   decoration card gets a subtle background tint so the page feels
+   distinct without breaking the visual system. */
+.page-hero--ai .page-hero__visual-card {
+  background: linear-gradient(135deg, #06231D 0%, #223148 100%);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.page-hero--ai .page-hero__visual-label {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.page-hero--gallery .page-hero__visual-card {
+  background: linear-gradient(135deg, #E8F5F0 0%, #F4F1EA 100%);
+}
+
+.page-hero--checkin .page-hero__visual-card {
+  background: linear-gradient(135deg, #F4F1EA 0%, #E8E2D8 100%);
+}
+
+.page-hero--dashboard .page-hero__visual-card {
+  background: linear-gradient(135deg, #06231D 0%, #16685D 100%);
+}
+
+.page-hero--dashboard .page-hero__visual-label {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.page-hero--profile .page-hero__visual-card {
+  background: linear-gradient(135deg, #0E4B43 0%, #22C55E 100%);
+}
+
+.page-hero--profile .page-hero__visual-label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.page-hero--settings .page-hero__visual-card {
+  background: linear-gradient(135deg, #223148 0%, #06231D 100%);
+}
+
+.page-hero--settings .page-hero__visual-label {
+  color: rgba(255, 255, 255, 0.85);
+}

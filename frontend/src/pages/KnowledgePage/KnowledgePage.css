@@ -1,0 +1,372 @@
+/* Knowledge Page (sub-page of /club/:clubId). Light cream palette. */
+
+.knowledge-page {
+  min-height: 100vh;
+  background: #F8F6F2;
+  font-family: 'Helvetica', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #06231D;
+}
+
+.knowledge-page__body {
+  padding: 32px 0 96px;
+}
+
+.knowledge-page__container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.knowledge-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+@media (min-width: 640px) {
+  .knowledge-page__header {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.knowledge-page__title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #06231D;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.knowledge-page__subtitle {
+  font-size: 12px;
+  color: #5A6B62;
+  margin: 4px 0 0;
+}
+
+.knowledge-page__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.knowledge-page__warn {
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  background: rgba(245, 158, 11, 0.08);
+  color: #92400E;
+  font-weight: 500;
+}
+
+.knowledge-page__btn-primary {
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #0E4B43, #22C55E);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 30px rgba(34, 197, 94, 0.25);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.2s ease;
+}
+
+.knowledge-page__btn-primary:hover {
+  opacity: 0.92;
+}
+
+.knowledge-page__toolbar {
+  padding: 16px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid rgba(6, 35, 29, 0.10);
+  box-shadow: 0 4px 14px rgba(6, 35, 29, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: stretch;
+  justify-content: space-between;
+}
+
+@media (min-width: 768px) {
+  .knowledge-page__toolbar {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.knowledge-page__search {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+}
+
+.knowledge-page__search-icon {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  padding-left: 14px;
+  display: inline-flex;
+  align-items: center;
+  color: #5A6B62;
+  pointer-events: none;
+}
+
+.knowledge-page__search-input {
+  width: 100%;
+  padding: 10px 16px 10px 40px;
+  background: #F4F1EA;
+  border: 1px solid rgba(6, 35, 29, 0.12);
+  border-radius: 12px;
+  font-size: 13px;
+  color: #06231D;
+  transition: border-color 0.15s ease;
+}
+
+.knowledge-page__search-input::placeholder {
+  color: #5A6B62;
+}
+
+.knowledge-page__search-input:focus {
+  outline: none;
+  border-color: #22C55E;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+.knowledge-page__tabs {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  background: #F4F1EA;
+  border: 1px solid rgba(6, 35, 29, 0.10);
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+.knowledge-page__tab {
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: transparent;
+  border: none;
+  color: #5A6B62;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.knowledge-page__tab:hover {
+  color: #06231D;
+}
+
+.knowledge-page__tab--active {
+  background: #22C55E;
+  color: #06231D;
+  font-weight: 700;
+}
+
+.knowledge-page__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 768px) {
+  .knowledge-page__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .knowledge-page__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.knowledge-page__loading {
+  grid-column: 1 / -1;
+  padding: 48px 0;
+  text-align: center;
+  color: #5A6B62;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid rgba(6, 35, 29, 0.10);
+  border-radius: 16px;
+}
+
+.knowledge-page__spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #22C55E;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: knowledge-spin 0.7s linear infinite;
+}
+
+@keyframes knowledge-spin {
+  to { transform: rotate(360deg); }
+}
+
+.knowledge-page__empty {
+  grid-column: 1 / -1;
+  padding: 48px 0;
+  text-align: center;
+  color: #5A6B62;
+  background: #ffffff;
+  border: 1px solid rgba(6, 35, 29, 0.10);
+  border-radius: 16px;
+}
+
+.knowledge-card {
+  padding: 24px;
+  background: #ffffff;
+  border: 1px solid rgba(6, 35, 29, 0.10);
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(6, 35, 29, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  gap: 16px;
+}
+
+.knowledge-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(6, 35, 29, 0.12);
+}
+
+.knowledge-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.knowledge-card__category {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid;
+}
+
+.knowledge-card__category--guide {
+  background: rgba(20, 184, 166, 0.10);
+  color: #0E7C70;
+  border-color: rgba(20, 184, 166, 0.25);
+}
+
+.knowledge-card__category--technical {
+  background: rgba(59, 130, 246, 0.10);
+  color: #1D4ED8;
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+.knowledge-card__category--template {
+  background: rgba(139, 92, 246, 0.10);
+  color: #6D28D9;
+  border-color: rgba(139, 92, 246, 0.25);
+}
+
+.knowledge-card__date {
+  font-size: 10px;
+  color: #5A6B62;
+}
+
+.knowledge-card__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #06231D;
+  margin: 0 0 8px;
+  line-height: 1.35;
+  transition: color 0.2s ease;
+}
+
+.knowledge-card:hover .knowledge-card__title {
+  color: #22C55E;
+}
+
+.knowledge-card__desc {
+  font-size: 12px;
+  color: #5A6B62;
+  line-height: 1.6;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.knowledge-card__footer {
+  border-top: 1px solid rgba(6, 35, 29, 0.06);
+  padding-top: 16px;
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.knowledge-card__author {
+  font-size: 10px;
+  color: #5A6B62;
+}
+
+.knowledge-card__author strong {
+  color: #06231D;
+  font-weight: 700;
+}
+
+.knowledge-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.knowledge-card__link {
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.knowledge-card__link--edit {
+  color: #22C55E;
+}
+
+.knowledge-card__link--edit:hover {
+  text-decoration: underline;
+}
+
+.knowledge-card__link--delete {
+  color: #EF4444;
+}
+
+.knowledge-card__link--delete:hover {
+  color: #DC2626;
+}
+
+.knowledge-card__divider {
+  color: rgba(6, 35, 29, 0.20);
+}

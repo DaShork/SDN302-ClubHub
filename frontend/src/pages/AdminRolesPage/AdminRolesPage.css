@@ -1,0 +1,172 @@
+.admin-roles {
+  min-height: 100vh;
+  padding-top: 80px;
+  background: #F8FAF8;
+}
+
+.admin-roles__container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.admin-roles__header {
+  margin-bottom: 24px;
+}
+
+.admin-roles__title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #06231D;
+  margin: 0 0 8px;
+}
+
+.admin-roles__subtitle {
+  font-size: 15px;
+  color: #666;
+  margin: 0;
+}
+
+.admin-roles__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: #666;
+}
+
+.admin-roles__info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 12px;
+  margin-bottom: 32px;
+  color: #1E40AF;
+}
+
+.admin-roles__info svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.admin-roles__info p {
+  font-size: 13px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.admin-roles__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 1024px) {
+  .admin-roles__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-roles__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-roles__card {
+  padding: 24px !important;
+}
+
+.admin-roles__card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.admin-roles__card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.admin-roles__card-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #06231D;
+  margin: 0 0 6px;
+}
+
+.admin-roles__card-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 20px;
+}
+
+.admin-roles__card-desc {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+
+.admin-roles__permissions {
+  padding-top: 16px;
+  border-top: 1px solid #F3F4F6;
+}
+
+.admin-roles__permissions-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #666;
+  margin: 0 0 12px;
+}
+
+.admin-roles__permissions-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-roles__permission {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: #374151;
+  background: #F3F4F6;
+  border-radius: 6px;
+}
+
+.admin-roles__permission svg {
+  color: #22C55E;
+  flex-shrink: 0;
+}
+
+.admin-roles__no-perms {
+  font-size: 13px;
+  color: #9CA3AF;
+  font-style: italic;
+}
+
+.admin-roles__more-perms {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: #666;
+  background: #F9FAFB;
+  border-radius: 6px;
+}
