@@ -1,38 +1,50 @@
-import { useState } from "react";
-import Button from "../../../components/shared/Button";
+import { useState } from 'react';
 
-export default function ChatInput({ onSend, disabled }) {
-  const [message, setMessage] = useState("");
+export function ChatInput({ onSend, disabled = false }) {
+  const [value, setValue] = useState('');
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    const trimmed = message.trim();
+  const handleSubmit = () => {
+    const trimmed = value.trim();
     if (!trimmed || disabled) return;
     onSend(trimmed);
-    setMessage("");
-  }
+    setValue('');
+  };
 
-  function handleKeyDown(e) {
-    if (e.key === "Enter" && !e.shiftKey) {
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit(e);
+      handleSubmit();
     }
-  }
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-3">
+    <div className="flex items-end gap-3 px-4 py-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)', backgroundColor: '#0B1220' }}>
       <textarea
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Hỏi về CLB, sự kiện, workshop, thông báo..."
-        rows={1}
+        placeholder="Ask about clubs, events, workshops..."
         disabled={disabled}
-        className="flex-1 resize-none rounded-xl border border-white/10 bg-primary-600 px-4 py-3 text-sm text-secondary-100 placeholder:text-secondary-300/60 focus:border-accent-blue focus:outline-none disabled:opacity-50"
+        rows={1}
+        className="flex-1 bg-primary-600 text-secondary-100 rounded-xl px-4 py-3 text-sm resize-none outline-none placeholder:text-muted"
+        style={{
+          border: '1px solid rgba(255,255,255,0.08)',
+          maxHeight: '120px',
+          overflowY: 'auto',
+        }}
       />
-      <Button type="submit" disabled={disabled || !message.trim()} size="lg">
-        Gửi
-      </Button>
-    </form>
+      <button
+        onClick={handleSubmit}
+        disabled={!value.trim() || disabled}
+        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all disabled:opacity-30"
+        style={{ background: 'linear-gradient(90deg, #0E4B43, #22C55E)' }}
+        aria-label="Send message"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
   );
 }
