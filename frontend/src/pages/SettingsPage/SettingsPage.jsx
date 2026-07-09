@@ -1,27 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Lock, Bell, Shield, Trash2, ArrowLeft,
   Loader2, CheckCircle2, AlertTriangle, Eye, EyeOff
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth.jsx';
-import { updatePassword } from '@/services/authService';
+import { changePassword, deleteOwnAccount } from '@/services/authService';
+import { getPrefs, savePrefs, DEFAULT_PREFS } from '@/services/notificationPrefsService';
 import './SettingsPage.css';
 
 const mapAuthError = (msg) => {
-  const m = msg.toLowerCase();
+  const m = (msg || '').toLowerCase();
   if (m.includes('same') || m.includes('duplicate'))
     return 'Mật khẩu mới không được trùng với mật khẩu hiện tại.';
-  if (m.includes('weak') || m.includes('invalid'))
+  if (m.includes('weak') || m.includes('should be at least'))
     return 'Mật khẩu mới không đủ mạnh. Vui lòng sử dụng ít nhất 6 ký tự.';
   if (m.includes('network') || m.includes('fetch'))
     return 'Không thể kết nối tới server. Kiểm tra mạng rồi thử lại.';
   return msg;
 };
 
+const NOTIF_FIELDS = [
+  { key: 'email_events',      group: 'Sự kiện',   label: 'Email sự kiện mới',  desc: 'Nhận email khi có sự kiện mới từ các CLB bạn quan tâm.' },
+  { key: 'push_events',       group: 'Sự kiện',   label: 'Push notification',  desc: 'Nhận thông báo đẩy về sự kiện sắp tới.' },
+  { key: 'email_clubs',       group: 'CLB',       label: 'Email CLB mới',      desc: 'Nhận email khi có CLB mới được tạo.' },
+  { key: 'push_clubs',        group: 'CLB',       label: 'Push notification',  desc: 'Nhận thông báo đẩy từ các CLB bạn tham gia.' },
+  { key: 'email_announcements', group: 'Thông báo', label: 'Email thông báo',  desc: 'Nhận email về các thông báo quan trọng.' },
+  { key: 'push_announcements',  group: 'Thông báo', label: 'Push notification', desc: 'Nhận thông báo đẩy về các thông báo quan trọng.' },
+];
+
 export default function SettingsPage() {
   const navigate = useNavigate();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile } = useAuth();
+  const profileId = profile?.id || user?.id;
 
   const [activeTab, setActiveTab] = useState('security');
 
@@ -34,25 +45,41 @@ export default function SettingsPage() {
   const [showPwd, setShowPwd] = useState({ current: false, new: false, confirm: false });
 
   /* ---- Notifications state ---- */
-  const [notifications, setNotifications] = useState({
-    emailEvents: true,
-    emailClubs: true,
-    emailAnnouncements: false,
-    pushEvents: true,
-    pushClubs: false,
-    pushAnnouncements: false,
-  });
+  const [notifications, setNotifications] = useState({ ...DEFAULT_PREFS });
+  const [notifLoading, setNotifLoading] = useState(true);
+  const [notifSaving, setNotifSaving] = useState(false);
+  const [notifMessage, setNotifMessage] = useState({ type: '', text: '' });
 
   /* ---- Danger zone state ---- */
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  /* ---- Load notification prefs from Supabase ---- */
+  useEffect(() => {
+    if (!profileId) return;
+    let cancelled = false;
+    (async () => {
+      setNotifLoading(true);
+      try {
+        const data = await getPrefs(profileId);
+        if (!cancelled) setNotifications(data);
+      } catch (err) {
+        console.error('[Settings] load prefs error:', err);
+      } finally {
+        if (!cancelled) setNotifLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [profileId]);
 
   /* ---- Password handlers ---- */
   const onPwdChange = (key) => (e) => {
     setPwdForm((f) => ({ ...f, [key]: e.target.value }));
     if (pwdErrors[key]) setPwdErrors((p) => ({ ...p, [key]: undefined }));
     setPwdSuccess('');
+    setPwdSubmitError('');
   };
 
   const validatePwd = () => {
@@ -63,6 +90,8 @@ export default function SettingsPage() {
       errs.newPwd = 'Mật khẩu mới phải có ít nhất 6 ký tự.';
     if (pwdForm.confirm !== pwdForm.newPwd)
       errs.confirm = 'Mật khẩu xác nhận không khớp.';
+    if (pwdForm.current && pwdForm.newPwd && pwdForm.current === pwdForm.newPwd)
+      errs.newPwd = 'Mật khẩu mới không được trùng với mật khẩu hiện tại.';
     setPwdErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -72,9 +101,17 @@ export default function SettingsPage() {
     setPwdSubmitError('');
     setPwdSuccess('');
     if (!validatePwd()) return;
+    if (!user?.email) {
+      setPwdSubmitError('Không tìm thấy email người dùng. Vui lòng đăng nhập lại.');
+      return;
+    }
     setPwdLoading(true);
     try {
-      await updatePassword({ newPassword: pwdForm.newPwd });
+      await changePassword({
+        email: user.email,
+        currentPassword: pwdForm.current,
+        newPassword: pwdForm.newPwd,
+      });
       setPwdSuccess('Mật khẩu đã được thay đổi thành công!');
       setPwdForm({ current: '', newPwd: '', confirm: '' });
     } catch (err) {
@@ -84,14 +121,39 @@ export default function SettingsPage() {
     }
   };
 
+  /* ---- Notification handlers ---- */
+  const onNotifToggle = (key) => (e) => {
+    setNotifications((n) => ({ ...n, [key]: e.target.checked }));
+    setNotifMessage({ type: '', text: '' });
+  };
+
+  const handleNotifSave = async () => {
+    if (!profileId) {
+      setNotifMessage({ type: 'error', text: 'Không tìm thấy hồ sơ người dùng.' });
+      return;
+    }
+    setNotifSaving(true);
+    setNotifMessage({ type: '', text: '' });
+    try {
+      await savePrefs(profileId, notifications);
+      setNotifMessage({ type: 'success', text: 'Đã lưu tùy chọn thông báo!' });
+    } catch (err) {
+      setNotifMessage({ type: 'error', text: err.message || 'Lưu thất bại.' });
+    } finally {
+      setNotifSaving(false);
+    }
+  };
+
   /* ---- Delete account handler ---- */
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== user?.email) return;
     setDeleteLoading(true);
+    setDeleteError('');
     try {
-      await signOut();
-      navigate('/');
-    } catch {
+      await deleteOwnAccount();
+      navigate('/', { replace: true });
+    } catch (err) {
+      setDeleteError(err.message || 'Không thể xóa tài khoản. Vui lòng thử lại.');
       setDeleteLoading(false);
     }
   };
@@ -101,6 +163,13 @@ export default function SettingsPage() {
     { id: 'notifications', label: 'Thông báo', icon: Bell },
     { id: 'danger', label: 'Vùng nguy hiểm', icon: Shield },
   ];
+
+  // Group notification fields by category for display
+  const groupedNotifs = NOTIF_FIELDS.reduce((acc, f) => {
+    if (!acc[f.group]) acc[f.group] = [];
+    acc[f.group].push(f);
+    return acc;
+  }, {});
 
   return (
     <div className="settings-page">
@@ -145,7 +214,10 @@ export default function SettingsPage() {
 
                 <form onSubmit={handlePwdSubmit} className="settings-form">
                   {pwdSubmitError && (
-                    <div className="auth__alert" role="alert">{pwdSubmitError}</div>
+                    <div className="auth__alert" role="alert">
+                      <AlertTriangle size={16} />
+                      {pwdSubmitError}
+                    </div>
                   )}
                   {pwdSuccess && (
                     <div className="auth__alert auth__alert--success" role="status">
@@ -167,6 +239,7 @@ export default function SettingsPage() {
                         onChange={onPwdChange('current')}
                         placeholder="Nhập mật khẩu hiện tại"
                         aria-invalid={!!pwdErrors.current}
+                        autoComplete="current-password"
                       />
                       <button
                         type="button"
@@ -195,6 +268,7 @@ export default function SettingsPage() {
                         onChange={onPwdChange('newPwd')}
                         placeholder="Tối thiểu 6 ký tự"
                         aria-invalid={!!pwdErrors.newPwd}
+                        autoComplete="new-password"
                       />
                       <button
                         type="button"
@@ -223,6 +297,7 @@ export default function SettingsPage() {
                         onChange={onPwdChange('confirm')}
                         placeholder="Nhập lại mật khẩu mới"
                         aria-invalid={!!pwdErrors.confirm}
+                        autoComplete="new-password"
                       />
                       <button
                         type="button"
@@ -269,103 +344,61 @@ export default function SettingsPage() {
                   Chọn cách bạn muốn nhận thông báo từ ClubHub.
                 </p>
 
-                <div className="notification-groups">
-                  <div className="notification-group">
-                    <h3 className="notification-group__title">Sự kiện</h3>
-                    <div className="notification-item">
-                      <div className="notification-item__info">
-                        <span className="notification-item__label">Email sự kiện mới</span>
-                        <span className="notification-item__desc">
-                          Nhận email khi có sự kiện mới từ các CLB bạn quan tâm.
-                        </span>
-                      </div>
-                      <label className="toggle">
-                        <input
-                          type="checkbox"
-                          checked={notifications.emailEvents}
-                          onChange={(e) => setNotifications((n) => ({ ...n, emailEvents: e.target.checked }))}
-                        />
-                        <span className="toggle__slider" />
-                      </label>
-                    </div>
-                    <div className="notification-item">
-                      <div className="notification-item__info">
-                        <span className="notification-item__label">Push notification</span>
-                        <span className="notification-item__desc">
-                          Nhận thông báo đẩy về sự kiện sắp tới.
-                        </span>
-                      </div>
-                      <label className="toggle">
-                        <input
-                          type="checkbox"
-                          checked={notifications.pushEvents}
-                          onChange={(e) => setNotifications((n) => ({ ...n, pushEvents: e.target.checked }))}
-                        />
-                        <span className="toggle__slider" />
-                      </label>
-                    </div>
+                {notifMessage.text && (
+                  <div
+                    className={`auth__alert ${notifMessage.type === 'success' ? 'auth__alert--success' : ''}`}
+                    role={notifMessage.type === 'success' ? 'status' : 'alert'}
+                  >
+                    {notifMessage.type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+                    {notifMessage.text}
                   </div>
+                )}
 
-                  <div className="notification-group">
-                    <h3 className="notification-group__title">CLB</h3>
-                    <div className="notification-item">
-                      <div className="notification-item__info">
-                        <span className="notification-item__label">Email CLB mới</span>
-                        <span className="notification-item__desc">
-                          Nhận email khi có CLB mới được tạo.
-                        </span>
-                      </div>
-                      <label className="toggle">
-                        <input
-                          type="checkbox"
-                          checked={notifications.emailClubs}
-                          onChange={(e) => setNotifications((n) => ({ ...n, emailClubs: e.target.checked }))}
-                        />
-                        <span className="toggle__slider" />
-                      </label>
-                    </div>
-                    <div className="notification-item">
-                      <div className="notification-item__info">
-                        <span className="notification-item__label">Push notification</span>
-                        <span className="notification-item__desc">
-                          Nhận thông báo đẩy từ các CLB bạn tham gia.
-                        </span>
-                      </div>
-                      <label className="toggle">
-                        <input
-                          type="checkbox"
-                          checked={notifications.pushClubs}
-                          onChange={(e) => setNotifications((n) => ({ ...n, pushClubs: e.target.checked }))}
-                        />
-                        <span className="toggle__slider" />
-                      </label>
-                    </div>
+                {notifLoading ? (
+                  <div className="settings-loading">
+                    <Loader2 size={24} className="spin" />
+                    <span>Đang tải tùy chọn…</span>
                   </div>
-
-                  <div className="notification-group">
-                    <h3 className="notification-group__title">Thông báo</h3>
-                    <div className="notification-item">
-                      <div className="notification-item__info">
-                        <span className="notification-item__label">Email thông báo</span>
-                        <span className="notification-item__desc">
-                          Nhận email về các thông báo quan trọng.
-                        </span>
+                ) : (
+                  <div className="notification-groups">
+                    {Object.entries(groupedNotifs).map(([groupName, fields]) => (
+                      <div key={groupName} className="notification-group">
+                        <h3 className="notification-group__title">{groupName}</h3>
+                        {fields.map((f) => (
+                          <div key={f.key} className="notification-item">
+                            <div className="notification-item__info">
+                              <span className="notification-item__label">{f.label}</span>
+                              <span className="notification-item__desc">{f.desc}</span>
+                            </div>
+                            <label className="toggle">
+                              <input
+                                type="checkbox"
+                                checked={!!notifications[f.key]}
+                                onChange={onNotifToggle(f.key)}
+                              />
+                              <span className="toggle__slider" />
+                            </label>
+                          </div>
+                        ))}
                       </div>
-                      <label className="toggle">
-                        <input
-                          type="checkbox"
-                          checked={notifications.emailAnnouncements}
-                          onChange={(e) => setNotifications((n) => ({ ...n, emailAnnouncements: e.target.checked }))}
-                        />
-                        <span className="toggle__slider" />
-                      </label>
-                    </div>
+                    ))}
                   </div>
-                </div>
+                )}
 
                 <div className="settings-form__actions">
-                  <button className="settings-form__submit">
-                    Lưu tùy chọn
+                  <button
+                    className="settings-form__submit"
+                    onClick={handleNotifSave}
+                    disabled={notifSaving || notifLoading}
+                  >
+                    {notifSaving ? (
+                      <>
+                        <Loader2 size={16} className="spin" />
+                        Đang lưu…
+                      </>
+                    ) : (
+                      'Lưu tùy chọn'
+                    )}
                   </button>
                 </div>
               </div>
@@ -409,7 +442,7 @@ export default function SettingsPage() {
 
       {/* Delete Account Modal */}
       {showDeleteModal && (
-        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+        <div className="modal-overlay" onClick={() => !deleteLoading && setShowDeleteModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal__header">
               <AlertTriangle size={24} style={{ color: '#B91C1C' }} />
@@ -423,6 +456,12 @@ export default function SettingsPage() {
               <p className="modal__text modal__text--warning">
                 Hành động này không thể hoàn tác.
               </p>
+              {deleteError && (
+                <div className="auth__alert" role="alert">
+                  <AlertTriangle size={16} />
+                  {deleteError}
+                </div>
+              )}
               <div className="modal__field">
                 <label htmlFor="delete-confirm" className="modal__label">
                   Để xác nhận, hãy nhập email của bạn: <strong>{user?.email}</strong>
@@ -434,6 +473,7 @@ export default function SettingsPage() {
                   value={deleteConfirmText}
                   onChange={(e) => setDeleteConfirmText(e.target.value)}
                   placeholder={user?.email}
+                  disabled={deleteLoading}
                 />
               </div>
             </div>
@@ -441,8 +481,10 @@ export default function SettingsPage() {
               <button
                 className="modal__cancel"
                 onClick={() => {
+                  if (deleteLoading) return;
                   setShowDeleteModal(false);
                   setDeleteConfirmText('');
+                  setDeleteError('');
                 }}
                 disabled={deleteLoading}
               >
@@ -649,6 +691,15 @@ export default function SettingsPage() {
         .settings-form__submit:disabled {
           opacity: 0.7;
           cursor: not-allowed;
+        }
+        .settings-loading {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+          padding: 32px 0;
+          color: #5A6B62;
+          font-size: 14px;
         }
         .notification-groups {
           display: flex;

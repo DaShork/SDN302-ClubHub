@@ -3,6 +3,8 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Menu, X, Bell, User, LogOut, Settings, ChevronDown, Building2, CreditCard, LayoutDashboard, Users, Shield, CalendarCheck } from 'lucide-react';
 import { cn } from '@/lib/utils.js';
 import { useAuth } from '@/hooks/useAuth.jsx';
+
+const LOGO_URL = '/ClubHub_Logo_White.png';
 import { ROLES, ROLE_META } from '@/auth/rolePermissions.js';
 
 const PUBLIC_LINKS = [
@@ -53,7 +55,7 @@ function Logo() {
         className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm"
         style={{ background: 'linear-gradient(135deg,#0E4B43,#22C55E)' }}
       >
-        <img src="./assets/ClubHub_Logo_White.png" alt="Logo" className="w-full h-full object-cover" />
+        <img src={LOGO_URL} alt="ClubHub logo" className="w-full h-full object-cover" />
       </div>
       <div className="leading-tight">
         <span className="text-white font-bold text-base tracking-tight">ClubHub</span>

@@ -1,19 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { Section, SectionEyebrow, SectionHeader } from '@/components';
-import ClubCard from '../ClubCard/ClubCard.jsx';
+import ClubCard, { normaliseClub } from '../ClubCard/ClubCard.jsx';
+import { clubService } from '@/services/clubService';
 import { CLUBS as PAGE_CLUBS, CATEGORIES } from '../../mockData.js';
-import { featuredClubs as HOMEPAGE_FEATURED } from '@/pages/HomePage/mockData.js';
 
 export default function ClubsDirectory({ variant = 'page' }) {
   const isHome = variant === 'homepage';
   const [filter, setFilter] = useState('All');
+  const [featuredClubs, setFeaturedClubs] = useState([]);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
 
-  const clubs = isHome ? HOMEPAGE_FEATURED : PAGE_CLUBS;
+  useEffect(() => {
+    if (!isHome) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await clubService.getFeatured(8);
+        if (!cancelled) setFeaturedClubs(Array.isArray(data) ? data.map(normaliseClub) : []);
+      } catch {
+        if (!cancelled) setFeaturedClubs([]);
+      } finally {
+        if (!cancelled) setFeaturedLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isHome]);
+
+  const clubs = isHome ? featuredClubs : PAGE_CLUBS;
   const filtered =
     isHome || filter === 'All'
       ? clubs
-      : clubs.filter((c) => c.category === filter);
+      : clubs.filter((c) => (c.category || c.categories?.name) === filter);
+
+  const displayCategory = (c) => c.category || c.categories?.name;
 
   return (
     <Section tone="cream" className="clubs-directory">
@@ -27,7 +47,7 @@ export default function ClubsDirectory({ variant = 'page' }) {
         description={
           isHome
             ? 'A curated selection of clubs actively recruiting new members this semester.'
-            : 'Browse 42+ student clubs across diverse categories. From tech to arts, there’s a community for everyone.'
+            : 'Browse 42+ student clubs across diverse categories. From tech to arts, there\'s a community for everyone.'
         }
         ctaLabel={isHome ? 'View all clubs →' : 'View All Clubs'}
         ctaHref="/clubs"
@@ -69,7 +89,13 @@ export default function ClubsDirectory({ variant = 'page' }) {
         </div>
       )}
 
-      {filtered.length === 0 ? (
+      {featuredLoading && isHome ? (
+        <div className="clubs-directory__skeleton">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="clubs-directory__skeleton-card" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
         <div
           className="clubs-directory__empty"
           style={{ color: '#16685D', borderColor: 'rgba(6, 35, 29, 0.08)' }}
@@ -136,6 +162,20 @@ export default function ClubsDirectory({ variant = 'page' }) {
         @media (min-width: 1024px) {
           .clubs-directory__grid { grid-template-columns: repeat(3, 1fr); }
           .clubs-directory__grid--home { grid-template-columns: repeat(4, 1fr); }
+        }
+        .clubs-directory__skeleton {
+          display: contents;
+        }
+        .clubs-directory__skeleton-card {
+          height: 240px;
+          border-radius: 16px;
+          background: linear-gradient(90deg, #f0ede8 25%, #e8e3dc 50%, #f0ede8 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
         }
         .clubs-directory__empty {
           text-align: center;

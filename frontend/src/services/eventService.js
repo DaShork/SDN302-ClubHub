@@ -1,6 +1,50 @@
 import { supabase } from "./supabase";
 
 export const eventService = {
+  /**
+   * Get upcoming events for the homepage.
+   * Returns events with status='upcoming' ordered by start_time, limited to N.
+   * Joins club info and registration count in a single query.
+   */
+  async getFeatured(limit = 6) {
+    const { data, error } = await supabase
+      .from("events")
+      .select(`
+        id, title, description, location, banner_url,
+        start_time, end_time, status,
+        clubs ( id, name, slug, logo_url )
+      `)
+      .eq("status", "upcoming")
+      .gte("start_time", new Date().toISOString())
+      .order("start_time", { ascending: true })
+      .limit(limit);
+
+    if (error) {
+      console.error("[eventService.getFeatured]", error);
+      return [];
+    }
+
+    // Fetch registration counts in parallel
+    if (!data?.length) return [];
+
+    const ids = data.map((e) => e.id);
+    const { data: counts } = await supabase
+      .from("event_registrations")
+      .select("event_id", { count: "exact", head: false })
+      .in("event_id", ids)
+      .neq("status", "cancelled");
+
+    const countMap = {};
+    (counts || []).forEach((r) => {
+      countMap[r.event_id] = (countMap[r.event_id] || 0) + 1;
+    });
+
+    return data.map((e) => ({
+      ...e,
+      registrationCount: countMap[e.id] || 0,
+    }));
+  },
+
   async getClubEvents(clubId, limit = 50) {
     const { data, error } = await supabase
       .from("events")

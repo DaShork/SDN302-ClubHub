@@ -4,7 +4,6 @@ import {
   LayoutDashboard, Users, Calendar, Wrench, BookOpen, FileText,
   Megaphone, ArrowLeft, Shield, BarChart3, Wallet,
 } from 'lucide-react';
-import logoImg from '../../assets/ClubHub_Logo_White.png';
 import './DashboardLayout.css';
 
 /**
@@ -29,7 +28,7 @@ export default function DashboardLayout() {
       <aside className="dashboard-layout__sidebar">
         <div className="dashboard-layout__brand">
           <Link to="/" className="dashboard-layout__brand-link">
-            <img src={logoImg} alt="ClubHub" className="dashboard-layout__brand-logo" />
+            <img src="/ClubHub_Logo_White.png" alt="ClubHub" className="dashboard-layout__brand-logo" />
             <span className="dashboard-layout__brand-text">ClubHub</span>
           </Link>
           {clubId && (
@@ -97,7 +96,7 @@ export default function DashboardLayout() {
       <aside className={`dashboard-layout__drawer ${isMobileOpen ? 'dashboard-layout__drawer--open' : ''}`}>
         <div className="dashboard-layout__brand">
           <Link to="/" className="dashboard-layout__brand-link" onClick={() => setIsMobileOpen(false)}>
-            <img src={logoImg} alt="ClubHub" className="dashboard-layout__brand-logo" />
+            <img src="/ClubHub_Logo_White.png" alt="ClubHub" className="dashboard-layout__brand-logo" />
             <span className="dashboard-layout__brand-text">ClubHub</span>
           </Link>
         </div>

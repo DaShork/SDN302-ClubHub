@@ -5,6 +5,8 @@ import { Card, Button } from '@/components';
 import { supabase } from '@/services/supabase.js';
 import './ManagerDashboardPage.css';
 
+const LOGO_URL = '/ClubHub_Logo_White.png';
+
 const MANAGER_SIDEBAR_LINKS = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/manager" },
   { icon: Building2, label: "Quản lý CLB", path: "/manager/clubs" },
@@ -123,7 +125,7 @@ export default function ManagerDashboardPage() {
           {/* Header with Logo */}
           <div className="manager-layout__sidebar-header">
             <div className="manager-layout__sidebar-logo">
-              <img src="./assets/ClubHub_Logo_White.png" alt="Logo" />
+              <img src={LOGO_URL} alt="ClubHub logo" />
             </div>
             <div className="manager-layout__sidebar-brand">
               <span className="manager-layout__sidebar-title">ClubHub</span>

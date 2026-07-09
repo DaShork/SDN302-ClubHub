@@ -1,13 +1,15 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   User, Mail, IdCard, Phone, GraduationCap, BookOpen,
-  Camera, Loader2, Save, ArrowLeft, CheckCircle2
+  Camera, Loader2, Save, ArrowLeft, CheckCircle2, LogOut,
+  Shield, Users, Clock, ChevronRight, AlertCircle
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth.jsx';
-import { updateProfile, updateAvatar, deleteAvatar } from '@/services/authService';
+import { updateProfile, updateAvatar, deleteAvatar, getMyMemberships } from '@/services/authService';
 import './ProfilePage.css';
 
+/* ---- FPTU reference data ---- */
 const FPTU_FACULTIES = [
   'School of Business',
   'School of Computer Science',
@@ -22,18 +24,78 @@ const FPTU_FACULTIES = [
   'International School',
 ];
 
-const mapAuthError = (msg) => {
-  const m = msg.toLowerCase();
-  if (m.includes('duplicate') || m.includes('unique'))
-    return 'Mã sinh viên này đã được sử dụng bởi tài khoản khác.';
-  if (m.includes('network') || m.includes('fetch'))
-    return 'Không thể kết nối tới server. Kiểm tra mạng rồi thử lại.';
-  return msg;
+/* ---- Role display metadata ---- */
+const ROLE_META = {
+  Administrator: { label: 'Administrator', color: '#EF4444', bg: '#FEF2F2', icon: Shield },
+  Manager:      { label: 'Manager',       color: '#7C3AED', bg: '#F5F3FF', icon: Users },
+  'Club Leader': { label: 'Club Leader',  color: '#D97706', bg: '#FFFBEB', icon: Users },
+  'Club Member': { label: 'Club Member',  color: '#22C55E', bg: '#F0FDF4', icon: Users },
+  Mentor:       { label: 'Mentor',        color: '#3B82F6', bg: '#EFF6FF', icon: Users },
+  Student:      { label: 'Student',       color: '#16685D', bg: '#E8F5F0', icon: User },
 };
 
+/* ---- Helpers ---- */
+const mapAuthError = (msg) => {
+  const m = (msg || '').toLowerCase();
+  if (m.includes('duplicate') || m.includes('unique'))
+    return 'Mã sinh viên này đã được sử dụng bởi tài khoản khác.';
+  if (m.includes('network') || m.includes('fetch') || m.includes('failed to fetch'))
+    return 'Không thể kết nối tới server. Kiểm tra mạng rồi thử lại.';
+  if (m.includes('row-level security') || m.includes('violates row-level'))
+    return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+  return msg || 'Đã xảy ra lỗi không xác định.';
+};
+
+function Alert({ message, variant = 'error', onDismiss }) {
+  if (!message) return null;
+  const isError = variant === 'error';
+  return (
+    <div className={`profile-alert profile-alert--${variant}`} role="alert">
+      {isError ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
+      <span>{message}</span>
+      {onDismiss && (
+        <button className="profile-alert__dismiss" onClick={onDismiss} aria-label="Dismiss">
+          ×
+        </button>
+      )}
+    </div>
+  );
+}
+
+function RoleBadge({ role }) {
+  const raw = role || 'Student';
+  // Try exact match first, then fallback to Student
+  const meta = ROLE_META[raw] || ROLE_META.Student;
+  const Icon = meta.icon;
+  return (
+    <span
+      className="role-badge"
+      style={{ color: meta.color, background: meta.bg, border: `1px solid ${meta.color}30` }}
+    >
+      <Icon size={12} />
+      {meta.label}
+    </span>
+  );
+}
+
+function SectionCard({ title, icon: Icon, children, className = '' }) {
+  return (
+    <section className={`profile-section ${className}`}>
+      {title && (
+        <header className="profile-section__head">
+          {Icon && <Icon size={18} className="profile-section__icon" />}
+          <h2 className="profile-section__title">{title}</h2>
+        </header>
+      )}
+      <div className="profile-section__body">{children}</div>
+    </section>
+  );
+}
+
+/* ---- Main component ---- */
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { profile, user, refreshProfile } = useAuth();
+  const { profile, user, signOut, refreshProfile } = useAuth();
   const fileInputRef = useRef(null);
 
   const [form, setForm] = useState({
@@ -48,10 +110,38 @@ export default function ProfilePage() {
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
+  const [memberships, setMemberships] = useState([]);
+  const [membershipsLoading, setMembershipsLoading] = useState(true);
 
+  /* Sync form when profile loads */
+  useEffect(() => {
+    if (profile) {
+      setForm({
+        fullName: profile.full_name ?? '',
+        studentCode: profile.student_code ?? '',
+        faculty: profile.faculty ?? '',
+        major: profile.major ?? '',
+        phone: profile.phone ?? '',
+      });
+    }
+  }, [profile]);
+
+  /* Load memberships */
+  useEffect(() => {
+    if (!profile?.id) return;
+    let cancelled = false;
+    (async () => {
+      const data = await getMyMemberships(profile.id);
+      if (!cancelled) setMemberships(data || []);
+      setMembershipsLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [profile?.id]);
+
+  /* ---- Form handlers ---- */
   const onChange = (key) => (e) => {
-    const value = e.target.value;
-    setForm((f) => ({ ...f, [key]: value }));
+    setForm((f) => ({ ...f, [key]: e.target.value }));
     if (fieldErrors[key]) setFieldErrors((p) => ({ ...p, [key]: undefined }));
     setSuccessMsg('');
   };
@@ -91,14 +181,9 @@ export default function ProfilePage() {
     }
   };
 
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
-  };
-
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!validTypes.includes(file.type)) {
       setSubmitError('Chỉ chấp nhận file ảnh (JPG, PNG, GIF, WEBP).');
@@ -108,12 +193,12 @@ export default function ProfilePage() {
       setSubmitError('Kích thước ảnh tối đa là 5MB.');
       return;
     }
-
     setUploadingAvatar(true);
     setSubmitError('');
     try {
       await updateAvatar({ file });
       await refreshProfile();
+      setAvatarError(false);
       setSuccessMsg('Ảnh đại diện đã được cập nhật!');
     } catch (err) {
       setSubmitError(mapAuthError(err.message));
@@ -138,514 +223,350 @@ export default function ProfilePage() {
     }
   };
 
-  const displayName = profile?.full_name ?? user?.email?.split('@')[0] ?? 'User';
-  const initials = displayName
-    .split(' ')
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
+  /* ---- Derived ---- */
+  const displayName = profile?.full_name || user?.email?.split('@')[0] || 'User';
+  const initials = displayName.split(' ').map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+  const joinedAt = profile?.created_at ? new Date(profile.created_at).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' }) : null;
 
   return (
     <div className="profile-page">
       <div className="profile-page__container">
-        <button
-          onClick={() => navigate(-1)}
-          className="profile-page__back"
-        >
-          <ArrowLeft size={18} />
-          Quay lại
+        <button className="profile-page__back" onClick={() => navigate(-1)}>
+          <ArrowLeft size={16} /> Quay lại
         </button>
 
-        <div className="profile-page__header">
-          <h1 className="profile-page__title">My Profile</h1>
-          <p className="profile-page__subtitle">
-            Quản lý thông tin cá nhân và ảnh đại diện của bạn.
-          </p>
-        </div>
-
-        <div className="profile-page__content">
-          {/* Avatar Section */}
-          <div className="profile-card">
-            <h2 className="profile-card__title">Ảnh đại diện</h2>
-
-            <div className="profile-avatar">
-              <div className="profile-avatar__preview" onClick={handleAvatarClick}>
-                {profile?.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt={displayName}
-                    className="profile-avatar__img"
-                  />
+        {/* ---- Hero: avatar + name + role ---- */}
+        <div className="profile-hero">
+          <div className="profile-hero__avatar-wrap">
+            <div
+              className="profile-hero__avatar"
+              onClick={() => !uploadingAvatar && fileInputRef.current?.click()}
+            >
+              {profile?.avatar_url && !avatarError ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={displayName}
+                  className="profile-hero__avatar-img"
+                  onError={() => setAvatarError(true)}
+                />
+              ) : (
+                <div className="profile-hero__avatar-initials">{initials}</div>
+              )}
+              <div className="profile-hero__avatar-overlay">
+                {uploadingAvatar ? (
+                  <Loader2 size={22} className="spin" />
                 ) : (
-                  <div className="profile-avatar__placeholder">
-                    {initials}
-                  </div>
-                )}
-                <div className="profile-avatar__overlay">
-                  <Camera size={24} />
-                  <span>Thay đổi</span>
-                </div>
-                {uploadingAvatar && (
-                  <div className="profile-avatar__uploading">
-                    <Loader2 size={20} className="spin" />
-                  </div>
-                )}
-              </div>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp"
-                onChange={handleAvatarChange}
-                style={{ display: 'none' }}
-              />
-
-              <div className="profile-avatar__info">
-                <p className="profile-avatar__hint">
-                  JPG, PNG, GIF hoặc WEBP. Kích thước tối đa 5MB.
-                </p>
-                {profile?.avatar_url && (
-                  <button
-                    type="button"
-                    className="profile-avatar__delete"
-                    onClick={handleDeleteAvatar}
-                    disabled={uploadingAvatar}
-                  >
-                    Xóa ảnh đại diện
-                  </button>
+                  <>
+                    <Camera size={22} />
+                    <span>Đổi ảnh</span>
+                  </>
                 )}
               </div>
             </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              onChange={handleAvatarChange}
+              style={{ display: 'none' }}
+            />
           </div>
 
-          {/* Profile Form */}
-          <form className="profile-card" onSubmit={handleSubmit}>
-            <h2 className="profile-card__title">Thông tin cá nhân</h2>
+          <div className="profile-hero__info">
+            <div className="profile-hero__name-row">
+              <h1 className="profile-hero__name">{displayName}</h1>
+              <RoleBadge role={profile?.role_name} />
+            </div>
+            <div className="profile-hero__meta">
+              {profile?.student_code && (
+                <span className="profile-hero__meta-item">
+                  <IdCard size={13} />
+                  {profile.student_code}
+                </span>
+              )}
+              {profile?.email && (
+                <span className="profile-hero__meta-item">
+                  <Mail size={13} />
+                  {profile.email}
+                </span>
+              )}
+              {joinedAt && (
+                <span className="profile-hero__meta-item">
+                  <Clock size={13} />
+                  Tham gia {joinedAt}
+                </span>
+              )}
+            </div>
+          </div>
 
-            {submitError && (
-              <div className="auth__alert" role="alert">{submitError}</div>
-            )}
-            {successMsg && (
-              <div className="auth__alert auth__alert--success" role="status">
-                <CheckCircle2 size={16} />
-                {successMsg}
-              </div>
-            )}
+          <div className="profile-hero__actions">
+            <button
+              className="profile-btn profile-btn--danger-outline"
+              onClick={async () => {
+                await signOut();
+                navigate('/');
+              }}
+            >
+              <LogOut size={15} /> Đăng xuất
+            </button>
+          </div>
+        </div>
 
-            <div className="profile-form">
-              <div className="profile-form__row">
-                <div className="profile-form__field">
-                  <label htmlFor="profile-name" className="profile-form__label">
-                    <User size={15} />
-                    Họ và tên <span className="required">*</span>
-                  </label>
-                  <input
-                    id="profile-name"
-                    type="text"
-                    className="profile-form__input"
-                    value={form.fullName}
-                    onChange={onChange('fullName')}
-                    placeholder="Nguyễn Văn A"
-                    aria-invalid={!!fieldErrors.fullName}
-                  />
-                  {fieldErrors.fullName && (
-                    <span className="profile-form__error">{fieldErrors.fullName}</span>
-                  )}
-                </div>
+        {/* ---- Alerts ---- */}
+        <Alert message={submitError} variant="error" onDismiss={() => setSubmitError('')} />
+        <Alert message={successMsg} variant="success" onDismiss={() => setSuccessMsg('')} />
 
-                <div className="profile-form__field">
-                  <label htmlFor="profile-code" className="profile-form__label">
-                    <IdCard size={15} />
-                    Mã sinh viên <span className="required">*</span>
-                  </label>
-                  <input
-                    id="profile-code"
-                    type="text"
-                    className="profile-form__input"
-                    value={form.studentCode}
-                    onChange={onChange('studentCode')}
-                    placeholder="HE170123"
-                    aria-invalid={!!fieldErrors.studentCode}
-                  />
-                  {fieldErrors.studentCode && (
-                    <span className="profile-form__error">{fieldErrors.studentCode}</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="profile-form__row">
-                <div className="profile-form__field">
-                  <label htmlFor="profile-email" className="profile-form__label">
-                    <Mail size={15} />
-                    Email
-                  </label>
-                  <input
-                    id="profile-email"
-                    type="email"
-                    className="profile-form__input profile-form__input--readonly"
-                    value={profile?.email ?? user?.email ?? ''}
-                    readOnly
-                    disabled
-                  />
-                  <span className="profile-form__hint">Email không thể thay đổi.</span>
-                </div>
-
-                <div className="profile-form__field">
-                  <label htmlFor="profile-phone" className="profile-form__label">
-                    <Phone size={15} />
-                    Số điện thoại
-                  </label>
-                  <input
-                    id="profile-phone"
-                    type="tel"
-                    className="profile-form__input"
-                    value={form.phone}
-                    onChange={onChange('phone')}
-                    placeholder="0912 345 678"
-                    aria-invalid={!!fieldErrors.phone}
-                  />
-                  {fieldErrors.phone && (
-                    <span className="profile-form__error">{fieldErrors.phone}</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="profile-form__row">
-                <div className="profile-form__field">
-                  <label htmlFor="profile-faculty" className="profile-form__label">
-                    <GraduationCap size={15} />
-                    Khoa <span className="required">*</span>
-                  </label>
-                  <select
-                    id="profile-faculty"
-                    className="profile-form__input profile-form__select"
-                    value={form.faculty}
-                    onChange={onChange('faculty')}
-                    aria-invalid={!!fieldErrors.faculty}
+        {/* ---- My Clubs ---- */}
+        <SectionCard title="Câu lạc bộ của tôi" icon={Users}>
+          {membershipsLoading ? (
+            <div className="profile-skeleton-row">
+              {[1, 2].map((i) => <div key={i} className="profile-skeleton-line" />)}
+            </div>
+          ) : memberships.length === 0 ? (
+            <div className="profile-empty">
+              <Users size={28} className="profile-empty__icon" />
+              <p className="profile-empty__title">Chưa tham gia câu lạc bộ nào</p>
+              <p className="profile-empty__desc">Khám phá và tham gia các câu lạc bộ tại FPTU.</p>
+              <Link to="/clubs" className="profile-btn profile-btn--primary">
+                Khám phá câu lạc bộ <ChevronRight size={15} />
+              </Link>
+            </div>
+          ) : (
+            <div className="club-membership-list">
+              {memberships.map((m) => (
+                <Link
+                  key={m.id}
+                  to={`/clubs/${m.clubs?.slug || m.clubs?.id}`}
+                  className="club-membership-card"
+                >
+                  <div className="club-membership-card__left">
+                    {m.clubs?.logo_url ? (
+                      <img
+                        src={m.clubs.logo_url}
+                        alt={m.clubs.name}
+                        className="club-membership-card__logo"
+                      />
+                    ) : (
+                      <div className="club-membership-card__logo-initials">
+                        {m.clubs?.name?.charAt(0) || '?'}
+                      </div>
+                    )}
+                    <div>
+                      <p className="club-membership-card__name">{m.clubs?.name || '—'}</p>
+                      <p className="club-membership-card__position">{m.position || 'Member'}</p>
+                    </div>
+                  </div>
+                  <span
+                    className="club-membership-card__status"
+                    style={{
+                      color: m.status === 'active' ? '#22C55E' : '#9CA3AF',
+                      background: m.status === 'active' ? '#F0FDF4' : '#F4F1EA',
+                    }}
                   >
-                    <option value="">Chọn khoa...</option>
-                    {FPTU_FACULTIES.map((f) => (
-                      <option key={f} value={f}>{f}</option>
-                    ))}
-                  </select>
-                  {fieldErrors.faculty && (
-                    <span className="profile-form__error">{fieldErrors.faculty}</span>
-                  )}
-                </div>
+                    {m.status === 'active' ? 'Đang hoạt động' : m.status}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </SectionCard>
 
-                <div className="profile-form__field">
-                  <label htmlFor="profile-major" className="profile-form__label">
-                    <BookOpen size={15} />
-                    Ngành học <span className="required">*</span>
-                  </label>
-                  <input
-                    id="profile-major"
-                    type="text"
-                    className="profile-form__input"
-                    value={form.major}
-                    onChange={onChange('major')}
-                    placeholder="Software Engineering"
-                    aria-invalid={!!fieldErrors.major}
-                  />
-                  {fieldErrors.major && (
-                    <span className="profile-form__error">{fieldErrors.major}</span>
-                  )}
-                </div>
+        {/* ---- Account Info (read-only) ---- */}
+        <SectionCard title="Thông tin tài khoản" icon={Shield}>
+          <div className="account-info-grid">
+            <div className="account-info-item">
+              <span className="account-info-item__label">
+                <Mail size={13} /> Email
+              </span>
+              <span className="account-info-item__value">{profile?.email || user?.email || '—'}</span>
+              <span className="account-info-item__note">Email không thể thay đổi</span>
+            </div>
+            <div className="account-info-item">
+              <span className="account-info-item__label">
+                <Shield size={13} /> Vai trò
+              </span>
+              <span className="account-info-item__value">
+                <RoleBadge role={profile?.role_name} />
+              </span>
+              <span className="account-info-item__note">Vai trò được cấp bởi quản trị viên</span>
+            </div>
+            <div className="account-info-item">
+              <span className="account-info-item__label">
+                <IdCard size={13} /> Mã sinh viên
+              </span>
+              <span className="account-info-item__value">{profile?.student_code || '—'}</span>
+              <span className="account-info-item__note">Dùng để xác minh sinh viên FPTU</span>
+            </div>
+            {joinedAt && (
+              <div className="account-info-item">
+                <span className="account-info-item__label">
+                  <Clock size={13} /> Ngày tham gia
+                </span>
+                <span className="account-info-item__value">{joinedAt}</span>
+                <span className="account-info-item__note">Ngày tạo tài khoản</span>
+              </div>
+            )}
+          </div>
+        </SectionCard>
+
+        {/* ---- Personal Info Form ---- */}
+        <SectionCard title="Thông tin cá nhân" icon={User}>
+          <form className="profile-form" onSubmit={handleSubmit} noValidate>
+            <div className="profile-form__row">
+              <div className="profile-form__field">
+                <label htmlFor="profile-name" className="profile-form__label">
+                  <User size={14} />
+                  Họ và tên <span className="required">*</span>
+                </label>
+                <input
+                  id="profile-name"
+                  type="text"
+                  className="profile-form__input"
+                  value={form.fullName}
+                  onChange={onChange('fullName')}
+                  placeholder="Nguyễn Văn A"
+                  aria-invalid={!!fieldErrors.fullName}
+                />
+                {fieldErrors.fullName && <span className="profile-form__error">{fieldErrors.fullName}</span>}
+              </div>
+
+              <div className="profile-form__field">
+                <label htmlFor="profile-code" className="profile-form__label">
+                  <IdCard size={14} />
+                  Mã sinh viên <span className="required">*</span>
+                </label>
+                <input
+                  id="profile-code"
+                  type="text"
+                  className="profile-form__input"
+                  value={form.studentCode}
+                  onChange={onChange('studentCode')}
+                  placeholder="HE170123"
+                  aria-invalid={!!fieldErrors.studentCode}
+                />
+                {fieldErrors.studentCode && <span className="profile-form__error">{fieldErrors.studentCode}</span>}
+              </div>
+            </div>
+
+            <div className="profile-form__row">
+              <div className="profile-form__field">
+                <label htmlFor="profile-faculty" className="profile-form__label">
+                  <GraduationCap size={14} />
+                  Khoa <span className="required">*</span>
+                </label>
+                <select
+                  id="profile-faculty"
+                  className="profile-form__input profile-form__select"
+                  value={form.faculty}
+                  onChange={onChange('faculty')}
+                  aria-invalid={!!fieldErrors.faculty}
+                >
+                  <option value="">Chọn khoa...</option>
+                  {FPTU_FACULTIES.map((f) => (
+                    <option key={f} value={f}>{f}</option>
+                  ))}
+                </select>
+                {fieldErrors.faculty && <span className="profile-form__error">{fieldErrors.faculty}</span>}
+              </div>
+
+              <div className="profile-form__field">
+                <label htmlFor="profile-major" className="profile-form__label">
+                  <BookOpen size={14} />
+                  Ngành học <span className="required">*</span>
+                </label>
+                <input
+                  id="profile-major"
+                  type="text"
+                  className="profile-form__input"
+                  value={form.major}
+                  onChange={onChange('major')}
+                  placeholder="Software Engineering"
+                  aria-invalid={!!fieldErrors.major}
+                />
+                {fieldErrors.major && <span className="profile-form__error">{fieldErrors.major}</span>}
+              </div>
+            </div>
+
+            <div className="profile-form__single">
+              <div className="profile-form__field">
+                <label htmlFor="profile-phone" className="profile-form__label">
+                  <Phone size={14} />
+                  Số điện thoại
+                </label>
+                <input
+                  id="profile-phone"
+                  type="tel"
+                  className="profile-form__input"
+                  value={form.phone}
+                  onChange={onChange('phone')}
+                  placeholder="0912 345 678"
+                  aria-invalid={!!fieldErrors.phone}
+                />
+                {fieldErrors.phone && <span className="profile-form__error">{fieldErrors.phone}</span>}
               </div>
             </div>
 
             <div className="profile-form__actions">
               <button
                 type="submit"
-                className="profile-form__submit"
+                className="profile-btn profile-btn--primary"
                 disabled={loading}
               >
-                {loading ? (
-                  <>
-                    <Loader2 size={16} className="spin" />
-                    Đang lưu…
-                  </>
-                ) : (
-                  <>
-                    <Save size={16} />
-                    Lưu thay đổi
-                  </>
-                )}
+                {loading ? <><Loader2 size={15} className="spin" /> Đang lưu…</> : <><Save size={15} /> Lưu thay đổi</>}
               </button>
             </div>
           </form>
-        </div>
-      </div>
+        </SectionCard>
 
-      <style>{`
-        .profile-page {
-          min-height: 100vh;
-          padding-top: 80px;
-          background: #F8FAF8;
-        }
-        .profile-page__container {
-          max-width: 900px;
-          margin: 0 auto;
-          padding: 32px 24px 64px;
-        }
-        .profile-page__back {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          margin-bottom: 24px;
-          font-size: 14px;
-          font-weight: 500;
-          color: #16685D;
-          background: white;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .profile-page__back:hover {
-          background: #F4F1EA;
-          border-color: #16685D;
-        }
-        .profile-page__header {
-          margin-bottom: 32px;
-        }
-        .profile-page__title {
-          font-size: 28px;
-          font-weight: 700;
-          color: #06231D;
-          margin: 0 0 8px;
-        }
-        .profile-page__subtitle {
-          font-size: 15px;
-          color: #666;
-          margin: 0;
-        }
-        .profile-page__content {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-        }
-        .profile-card {
-          background: white;
-          border-radius: 16px;
-          padding: 28px;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-          border: 1px solid #f0f0f0;
-        }
-        .profile-card__title {
-          font-size: 18px;
-          font-weight: 600;
-          color: #06231D;
-          margin: 0 0 24px;
-          padding-bottom: 16px;
-          border-bottom: 1px solid #f0f0f0;
-        }
-        .profile-avatar {
-          display: flex;
-          align-items: center;
-          gap: 28px;
-        }
-        .profile-avatar__preview {
-          position: relative;
-          width: 120px;
-          height: 120px;
-          border-radius: 16px;
-          overflow: hidden;
-          cursor: pointer;
-          flex-shrink: 0;
-        }
-        .profile-avatar__img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-        .profile-avatar__placeholder {
-          width: 100%;
-          height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(135deg, #0E4B43, #22C55E);
-          color: white;
-          font-size: 32px;
-          font-weight: 700;
-        }
-        .profile-avatar__overlay {
-          position: absolute;
-          inset: 0;
-          background: rgba(0,0,0,0.5);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 4px;
-          color: white;
-          font-size: 13px;
-          opacity: 0;
-          transition: opacity 0.2s;
-        }
-        .profile-avatar__preview:hover .profile-avatar__overlay {
-          opacity: 1;
-        }
-        .profile-avatar__uploading {
-          position: absolute;
-          inset: 0;
-          background: rgba(255,255,255,0.85);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .profile-avatar__info {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-        .profile-avatar__hint {
-          font-size: 13px;
-          color: #888;
-          margin: 0;
-        }
-        .profile-avatar__delete {
-          font-size: 13px;
-          color: #B91C1C;
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 0;
-          text-decoration: underline;
-        }
-        .profile-avatar__delete:hover {
-          color: #991B1B;
-        }
-        .profile-form {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-        .profile-form__row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 20px;
-        }
-        @media (max-width: 640px) {
-          .profile-form__row {
-            grid-template-columns: 1fr;
-          }
-        }
-        .profile-form__field {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-        .profile-form__label {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 14px;
-          font-weight: 500;
-          color: #374151;
-        }
-        .profile-form__label svg {
-          color: #16685D;
-        }
-        .profile-form__input {
-          width: 100%;
-          padding: 12px 16px;
-          font-size: 15px;
-          color: #1F2937;
-          background: #FAFAFA;
-          border: 1.5px solid #E5E7EB;
-          border-radius: 10px;
-          transition: all 0.2s;
-          box-sizing: border-box;
-        }
-        .profile-form__input:focus {
-          outline: none;
-          border-color: #16685D;
-          background: white;
-          box-shadow: 0 0 0 3px rgba(22,104,93,0.1);
-        }
-        .profile-form__input--readonly {
-          background: #F3F4F6;
-          color: #6B7280;
-          cursor: not-allowed;
-        }
-        .profile-form__select {
-          cursor: pointer;
-          appearance: none;
-          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-          background-position: right 12px center;
-          background-repeat: no-repeat;
-          background-size: 16px;
-          padding-right: 40px;
-        }
-        .profile-form__hint {
-          font-size: 12px;
-          color: #9CA3AF;
-        }
-        .profile-form__error {
-          font-size: 13px;
-          color: #B91C1C;
-        }
-        .profile-form__actions {
-          display: flex;
-          justify-content: flex-end;
-          padding-top: 16px;
-          border-top: 1px solid #f0f0f0;
-          margin-top: 8px;
-        }
-        .profile-form__submit {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 12px 28px;
-          font-size: 15px;
-          font-weight: 600;
-          color: white;
-          background: linear-gradient(135deg, #0E4B43, #16685D);
-          border: none;
-          border-radius: 10px;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .profile-form__submit:hover:not(:disabled) {
-          opacity: 0.9;
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(6,35,29,0.25);
-        }
-        .profile-form__submit:disabled {
-          opacity: 0.7;
-          cursor: not-allowed;
-        }
-        .required {
-          color: #B91C1C;
-        }
-        .auth__alert {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 12px 16px;
-          margin-bottom: 16px;
-          border-radius: 10px;
-          font-size: 14px;
-          background: #FEF2F2;
-          color: #B91C1C;
-          border: 1px solid #FECACA;
-        }
-        .auth__alert--success {
-          background: #F0FDF4;
-          color: #16685D;
-          border-color: #BBF7D0;
-        }
-        .spin {
-          animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+        {/* ---- Danger Zone ---- */}
+        <SectionCard title="Quản lý ảnh đại diện" icon={Camera}>
+          <div className="avatar-manager">
+            <div className="avatar-manager__preview">
+              <div
+                className="avatar-manager__img-wrap"
+                onClick={() => !uploadingAvatar && fileInputRef.current?.click()}
+              >
+                {profile?.avatar_url && !avatarError ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt={displayName}
+                    className="avatar-manager__img"
+                    onError={() => setAvatarError(true)}
+                  />
+                ) : (
+                  <div className="avatar-manager__img-initials">{initials}</div>
+                )}
+                <div className="avatar-manager__img-overlay">
+                  <Camera size={20} />
+                </div>
+              </div>
+              <div className="avatar-manager__info">
+                <p className="avatar-manager__hint">
+                  JPG, PNG, GIF hoặc WEBP. Tối đa 5MB.
+                </p>
+                <div className="avatar-manager__btns">
+                  <button
+                    className="profile-btn profile-btn--primary"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                  >
+                    {uploadingAvatar ? <><Loader2 size={14} className="spin" /> Đang tải lên…</> : <><Camera size={14} /> Tải ảnh mới</>}
+                  </button>
+                  {profile?.avatar_url && (
+                    <button
+                      className="profile-btn profile-btn--danger-outline"
+                      onClick={handleDeleteAvatar}
+                      disabled={uploadingAvatar}
+                    >
+                      Xóa ảnh
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </SectionCard>
+      </div>
     </div>
   );
 }
