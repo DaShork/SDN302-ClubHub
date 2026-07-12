@@ -70,6 +70,8 @@ export default function WorkshopsPage() {
         } else {
           setLoading(false);
         }
+      } else {
+        setLoading(false);
       }
     }
     init();

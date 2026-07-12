@@ -50,6 +50,8 @@ export default function DocumentsPage() {
         } else {
           setLoading(false);
         }
+      } else {
+        setLoading(false);
       }
     }
     init();

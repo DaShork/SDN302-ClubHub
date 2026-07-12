@@ -58,6 +58,8 @@ export default function AnnouncementsPage() {
         } else {
           setLoading(false);
         }
+      } else {
+        setLoading(false);
       }
     }
     init();

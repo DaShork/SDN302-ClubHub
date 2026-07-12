@@ -60,6 +60,8 @@ export default function KnowledgePage() {
         } else {
           setLoading(false);
         }
+      } else {
+        setLoading(false);
       }
     }
     init();
