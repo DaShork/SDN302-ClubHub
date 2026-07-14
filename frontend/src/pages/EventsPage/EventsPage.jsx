@@ -115,6 +115,8 @@ export default function EventsPageContent() {
         } else {
           setLoading(false);
         }
+      } else {
+        setLoading(false);
       }
     }
     init();

@@ -73,6 +73,8 @@ export default function MembersPageContent() {
         } else {
           setLoading(false);
         }
+      } else {
+        setLoading(false);
       }
     }
     init();
