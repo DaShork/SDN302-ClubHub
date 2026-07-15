@@ -230,7 +230,7 @@ const FCODE_ANNOUNCEMENTS = [
 const FCODE_MEMBERS = [
   {
     id: "m-1",
-    position: "Leader",
+    position: "President",
     profiles: {
       id: FCODE_CLUB.leader_id,
       full_name: "Nguyen Van A",
@@ -240,7 +240,7 @@ const FCODE_MEMBERS = [
   },
   {
     id: "m-2",
-    position: "Vice Leader",
+    position: "Vice President",
     profiles: {
       id: "11111111-1111-4111-8111-111111111111",
       full_name: "Tran Thi B",
@@ -277,12 +277,15 @@ export const mockData = {
     return match ? clone(match) : null;
   },
 
-  getAllClubs({ categoryId, search, limit = 20, offset = 0 } = {}) {
+  getAllClubs({ categoryId, search, leaderId, limit = 20, offset = 0 } = {}) {
     let rows = ALL_CLUBS.filter((c) => c.status === "active");
     if (categoryId) rows = rows.filter((c) => c.category_id === categoryId);
     if (search) {
       const q = search.toLowerCase();
       rows = rows.filter((c) => c.name.toLowerCase().includes(q));
+    }
+    if (leaderId) {
+      rows = rows.filter((c) => c.leader_id === leaderId);
     }
     return clone(rows.slice(offset, offset + limit));
   },

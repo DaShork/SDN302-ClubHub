@@ -42,16 +42,22 @@ export default function EventsPageContent() {
         id: e.id,
         type: "Event",
         title: e.title,
-        speaker: "Nguyễn Hoàng Nam",
+        speaker: e.speaker || e.profiles?.full_name || "FPTU",
         description: e.description || "",
         startTime: e.start_time ? e.start_time.slice(0, 16) : "",
         endTime: e.end_time ? e.end_time.slice(0, 16) : "",
         location: e.location || "Online",
         maxSlots: e.max_participants || 100,
-        remainingSlots: e.max_participants || 100,
-        status: e.status === "upcoming" ? "Upcoming" : e.status === "ongoing" ? "Ongoing" : "Finished",
-        document: "React_19_Seminar_Outline.pdf",
-        minutes: "Executive Meeting Minutes 30/06",
+        remainingSlots: Math.max(0, (e.max_participants || 100) - (e.registrationCount || 0)),
+        status: e.status === "upcoming"
+          ? "Upcoming"
+          : e.status === "ongoing"
+            ? "Ongoing"
+            : e.status === "cancelled"
+              ? "Cancelled"
+              : "Finished",
+        document: "",
+        minutes: "",
         coverColor: colors[idx % colors.length]
       }));
 
@@ -59,16 +65,16 @@ export default function EventsPageContent() {
         id: w.id,
         type: "Workshop",
         title: w.title,
-        speaker: "Trần Quốc Bảo",
+        speaker: w.speaker || w.profiles?.full_name || "FPTU",
         description: w.description || "",
-        startTime: "",
-        endTime: "",
-        location: "TBD",
-        maxSlots: 40,
-        remainingSlots: 40,
+        startTime: w.start_time || "",
+        endTime: w.end_time || "",
+        location: w.location || "TBD",
+        maxSlots: w.max_participants || 40,
+        remainingSlots: Math.max(0, (w.max_participants || 40) - (w.registrationCount || 0)),
         status: "Upcoming",
-        document: w.material_url || "Tailwindv4_Workshop_Slides.pdf",
-        minutes: "Weekly Planning Minutes 28/06",
+        document: w.material_url || "",
+        minutes: "",
         coverColor: colors[(idx + 1) % colors.length]
       }));
 
@@ -120,7 +126,13 @@ export default function EventsPageContent() {
         maxSlots: e.max_participants || 100,
         remainingSlots: Math.max(0, (e.max_participants || 100) - (e.registrationCount || 0)),
         registrationCount: e.registrationCount || 0,
-        status: e.status === "upcoming" ? "Upcoming" : e.status === "ongoing" ? "Ongoing" : "Finished",
+        status: e.status === "upcoming"
+          ? "Upcoming"
+          : e.status === "ongoing"
+            ? "Ongoing"
+            : e.status === "cancelled"
+              ? "Cancelled"
+              : "Finished",
         coverColor: colors[idx % colors.length],
         clubName: e.clubs?.name || "Club"
       }));
@@ -134,21 +146,13 @@ export default function EventsPageContent() {
     }
   }
 
-  const documentsList = [
-    "React_19_Seminar_Outline.pdf",
-    "Tailwindv4_Workshop_Slides.pdf",
-    "Hackathon_Rules_and_Prizes.pdf",
-    "Sponsorship_Proposal_Template_2026.docx",
-    "Standard_Event_Planning_Blueprint.pdf"
-  ];
-
-  const minutesList = [
-    "Executive Meeting Minutes 30/06",
-    "Weekly Planning Minutes 28/06",
-    "Hackathon Guidelines Draft v2",
-    "Meeting Minutes 01/07.pdf",
-    "Orientation_Feedback_Minutes"
-  ];
+  // Document/minutes options for the create modal are derived from the
+  // event's `material_url` field (DB). If the leader has no materials
+  // uploaded yet, leave the list empty so they must enter a URL or skip.
+  const documentsList = activities
+    .filter((a) => a.type === "Workshop" && a.document)
+    .map((a) => a.document);
+  const minutesList = [];
 
   const [filterType, setFilterType] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -233,8 +237,15 @@ export default function EventsPageContent() {
     }
 
     if (formData.type === "Event") {
+      // Guard: refuse to submit when slug resolution failed (would produce
+      // 22P02 invalid_uuid). The leader must click "Edit" from a valid
+      // /club/:uuid/events URL, not a slug.
+      if (!resolvedClubId) {
+        window.alert("Không xác định được club. Mở trang từ URL /club/<UUID>/events.");
+        return;
+      }
       const payload = {
-        club_id: resolvedClubId || clubId,
+        club_id: resolvedClubId,
         title: formData.title,
         description: formData.description,
         location: formData.location,
@@ -257,8 +268,12 @@ export default function EventsPageContent() {
         mutateLocalState();
       }
     } else {
+      if (!resolvedClubId) {
+        window.alert("Không xác định được club. Mở trang từ URL /club/<UUID>/events.");
+        return;
+      }
       const payload = {
-        club_id: resolvedClubId || clubId,
+        club_id: resolvedClubId,
         title: formData.title,
         description: formData.description,
         material_url: formData.document,
@@ -281,22 +296,25 @@ export default function EventsPageContent() {
   };
 
   function mutateLocalState() {
-    if (selectedActivity) {
-      setActivities((prev) =>
-        prev.map((act) =>
-          act.id === selectedActivity.id ? { ...act, ...formData } : act
-        )
-      );
-    } else {
-      const colors = ["events-cover--teal", "events-cover--blue", "events-cover--violet", "events-cover--amber"];
-      const randomColor = colors[Math.floor(Math.random() * colors.length)];
-      const newActivity = {
-        id: String(activities.length + 1),
-        coverColor: randomColor,
-        ...formData
-      };
-      setActivities((prev) => [newActivity, ...prev]);
-    }
+if (selectedActivity) {
+        setActivities((prev) =>
+          prev.map((act) =>
+            act.id === selectedActivity.id ? { ...act, ...formData } : act
+          )
+        );
+      } else {
+        const colors = ["events-cover--teal", "events-cover--blue", "events-cover--violet", "events-cover--amber"];
+        // Deterministic round-robin so the optimistic card doesn't pick a
+        // different tint on each render.
+        const newActivity = {
+          id: typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          coverColor: colors[(activities.length) % colors.length],
+          ...formData
+        };
+        setActivities((prev) => [newActivity, ...prev]);
+      }
   }
 
   const handleDeleteActivity = async (id, type) => {

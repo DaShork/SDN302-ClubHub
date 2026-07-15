@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { eventService } from '@/services/eventService'
 import { joinRequestService } from '@/services/joinRequestService'
+import { resolveClubUuid } from '@/services/supabase'
 import { Card, Button, Badge, Loading, toast, ConfirmModal, JoinRequestModal } from '@/components'
 import { useAuth } from '@/hooks/useAuth.jsx'
 import { Clock, CheckCircle, XCircle, Users } from 'lucide-react'
@@ -80,22 +81,32 @@ export default function EventDetailPageContent() {
   }
 
   const handleSubmitRegistrationRequest = async (formData) => {
+    if (!event?.id) {
+      throw new Error('Missing event id');
+    }
+    // Resolve club UUID — the events table stores club_id as UUID, so
+    // a slug here would cause the request to fail with 22P02.
+    let clubIdForRequest = event?.club_id || event?.clubs?.id;
+    if (clubIdForRequest && !/^[0-9a-f-]{36}$/i.test(clubIdForRequest)) {
+      const resolved = await resolveClubUuid(clubIdForRequest);
+      clubIdForRequest = resolved || clubIdForRequest;
+    }
     try {
       await joinRequestService.submitEventRequest({
-        eventId: id,
-        clubId: event?.club_id || event?.clubs?.id,
+        eventId: event.id,
+        clubId: clubIdForRequest,
         profileId,
         ...formData
-      })
-      toast('Đã gửi yêu cầu đăng ký sự kiện!', { variant: 'success' })
+      });
+      toast('Đã gửi yêu cầu đăng ký sự kiện!', { variant: 'success' });
       // Refresh the request status
-      const request = await joinRequestService.getUserEventRequest(profileId, id).catch(() => null)
-      setRegistrationRequest(request)
-      return true
+      const request = await joinRequestService.getUserEventRequest(profileId, event.id).catch(() => null);
+      setRegistrationRequest(request);
+      return true;
     } catch (err) {
-      console.error('Submit registration request failed:', err)
-      toast('Không thể gửi yêu cầu', { variant: 'error' })
-      throw err
+      console.error('Submit registration request failed:', err);
+      toast('Không thể gửi yêu cầu', { variant: 'error' });
+      throw err;
     }
   }
 
@@ -360,7 +371,7 @@ export default function EventDetailPageContent() {
         confirmLabel="Cancel Registration"
         variant="danger"
         onCancel={() => setConfirmCancel(false)}
-        onConfirm={handleCancel}
+        onConfirm={handleCancelRequest}
       />
 
       <JoinRequestModal

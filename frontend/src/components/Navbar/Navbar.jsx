@@ -7,36 +7,48 @@ import { useAuth } from '@/hooks/useAuth.jsx';
 const LOGO_URL = '/ClubHub_Logo_White.png';
 import { ROLES, ROLE_META } from '@/auth/rolePermissions.js';
 
-const PUBLIC_LINKS = [
+/* Navigation links visible to EVERYONE (signed-out + every role).
+ * These are "view-only" discovery surfaces — never lead to a write
+ * affordance. */
+const INFO_LINKS = [
   { label: 'Home', href: '/' },
   { label: 'Clubs', href: '/clubs' },
   { label: 'Events', href: '/events' },
-  { label: 'AI Assistant', href: '/ai' },
   { label: 'Announcements', href: '/announcements' },
+  { label: 'Gallery', href: '/gallery' },
+];
+
+/* Links that only authenticated users with the right role should see. */
+const AUTH_LINKS = [
+  { label: 'AI Assistant', href: '/ai', rolesAny: [] }, // any authenticated
 ];
 
 const LEADER_LINKS = [
   { label: 'Knowledge Base', href: '/knowledge' },
 ];
 
-/* Navigation links per role */
+/* Navigation links per role. Order matters — first items appear first.
+ * NOTE: each role can also see the INFO_LINKS on top. */
 const ROLE_NAV = {
   [ROLES.STUDENT]: [
     { label: 'My Clubs', href: '/my-clubs', icon: Building2 },
     { label: 'My Registrations', href: '/my-registrations', icon: CalendarCheck },
   ],
   [ROLES.CLUB_MEMBER]: [
+    { label: 'Member Dashboard', href: '/member', icon: LayoutDashboard },
     { label: 'My Clubs', href: '/my-clubs', icon: Building2 },
     { label: 'My Registrations', href: '/my-registrations', icon: CalendarCheck },
     { label: 'Finance', href: '/finance', icon: CreditCard },
   ],
   [ROLES.CLUB_LEADER]: [
     { label: 'My Clubs', href: '/my-clubs', icon: Building2 },
+    { label: 'My Dashboard', href: '/club/f-code/dashboard', icon: LayoutDashboard },
     { label: 'My Registrations', href: '/my-registrations', icon: CalendarCheck },
     { label: 'Finance', href: '/finance', icon: CreditCard },
   ],
   [ROLES.MENTOR]: [
     { label: 'My Clubs', href: '/my-clubs', icon: Building2 },
+    { label: 'Mentor Dashboard', href: '/mentor/dashboard', icon: LayoutDashboard },
   ],
   [ROLES.MANAGER]: [
     { label: 'IC-PDP Dashboard', href: '/manager', icon: LayoutDashboard },
@@ -134,7 +146,12 @@ export default function Navbar() {
         <Logo />
 
         <ul className="hidden lg:flex items-center gap-1">
-          {PUBLIC_LINKS.map((l) => (
+          {INFO_LINKS.map((l) => (
+            <li key={l.href}>
+              <NavItem link={l} />
+            </li>
+          ))}
+          {isAuthenticated && AUTH_LINKS.map((l) => (
             <li key={l.href}>
               <NavItem link={l} />
             </li>
@@ -320,7 +337,10 @@ export default function Navbar() {
           className="absolute top-full left-0 right-0 lg:hidden py-4 px-6 flex flex-col gap-1"
           style={{ background: 'rgba(6,35,29,0.98)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
         >
-          {PUBLIC_LINKS.map((l) => (
+          {INFO_LINKS.map((l) => (
+            <NavItem key={l.href} link={l} onClick={() => setOpen(false)} />
+          ))}
+          {isAuthenticated && AUTH_LINKS.map((l) => (
             <NavItem key={l.href} link={l} onClick={() => setOpen(false)} />
           ))}
           {!loading && isAuthenticated && role === ROLES.CLUB_LEADER && LEADER_LINKS.map((l) => (

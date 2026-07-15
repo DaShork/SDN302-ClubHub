@@ -174,21 +174,16 @@ export function rolesAnyCan(roleIds, permission) {
 
 /* Returns the list of UI routes to navigate to after sign-in for each role.
    Used by GuestRoute / useAuth.landingRouteForRole() to land users on an
-   appropriate dashboard after login. Only Student and Club Member have
-   dedicated landing pages; Mentor / Manager / Administrator fall back to
-   HomePage until their dashboards are built.
-
-   Club Leaders land on `/my-clubs` so they can pick an active membership
-   before being routed into `/club/:clubId/dashboard`. Resolving the
-   "primary" club for a leader requires reading `memberships` and is done
-   lazily inside GuestRoute when needed. */
+   appropriate dashboard after login. Mentor / Manager / Administrator
+   have dedicated dashboards; Student and Club Leader fall back to
+   /my-clubs so they can pick an active membership. */
 export const ROLE_DEFAULT_ROUTE = {
   [ROLES.STUDENT]: '/',
-  [ROLES.CLUB_MEMBER]: '/my-clubs',
+  [ROLES.CLUB_MEMBER]: '/member',
   [ROLES.CLUB_LEADER]: '/my-clubs',
-  [ROLES.MENTOR]: '/',
-  [ROLES.MANAGER]: '/',
-  [ROLES.ADMINISTRATOR]: '/',
+  [ROLES.MENTOR]: '/mentor/dashboard',
+  [ROLES.MANAGER]: '/manager',
+  [ROLES.ADMINISTRATOR]: '/admin',
 };
 
 /* Returns true when a role string looks like one of the 6 known roles. */

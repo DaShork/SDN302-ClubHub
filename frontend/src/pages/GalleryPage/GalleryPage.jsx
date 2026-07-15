@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Image as ImageIcon, X } from 'lucide-react'
 import { galleryService } from '@/services/galleryService'
 import { clubService } from '@/services/clubService'
+import { resolveClubUuid, USE_MOCK_FALLBACK } from '@/services/supabase'
 import { Loading, HeroSection } from '@/components'
 import Badge from '@/components/StatusBadge/StatusBadge.jsx'
 import './GalleryPage.css'
@@ -14,14 +15,37 @@ export default function GalleryPageContent() {
   const [galleries, setGalleries] = useState([])
   const [clubs, setClubs] = useState([])
   const [loading, setLoading] = useState(true)
-  const [selectedClub, setSelectedClub] = useState(clubIdFromUrl || null)
+  // selectedClubRaw preserves the slug/UUID the user clicked so the
+  // filter button highlight stays correct. resolvedClubId is what we
+  // actually send to galleryService.getAll().
+  const [selectedClubRaw, setSelectedClubRaw] = useState(clubIdFromUrl || null)
+  const [resolvedClubId, setResolvedClubId] = useState(null)
   const [lightboxImage, setLightboxImage] = useState(null)
+
+  // Resolve slug → UUID whenever the selection changes
+  useEffect(() => {
+    let cancelled = false
+    async function resolve() {
+      if (!selectedClubRaw) {
+        setResolvedClubId(null)
+        return
+      }
+      if (/^[0-9a-f-]{36}$/i.test(selectedClubRaw)) {
+        setResolvedClubId(selectedClubRaw)
+        return
+      }
+      const uuid = await resolveClubUuid(selectedClubRaw).catch(() => null)
+      if (!cancelled) setResolvedClubId(uuid)
+    }
+    resolve()
+    return () => { cancelled = true }
+  }, [selectedClubRaw])
 
   const loadData = async () => {
     try {
       setLoading(true)
       const [galleryData, clubsData] = await Promise.all([
-        galleryService.getAll({ clubId: selectedClub || undefined }),
+        galleryService.getAll({ clubId: resolvedClubId || undefined }),
         clubs.length === 0 ? clubService.getAll() : Promise.resolve(clubs),
       ])
       setGalleries(galleryData || [])
@@ -35,9 +59,18 @@ export default function GalleryPageContent() {
     }
   }
 
+  // Reload when the resolved UUID changes (not when raw slug changes)
   useEffect(() => {
     loadData()
-  }, [selectedClub])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolvedClubId])
+
+  // When mock fallback is on and DB is empty, surface a one-liner so the
+  // user understands why the page is blank instead of assuming a bug.
+  const showEmptyHint = useMemo(
+    () => !loading && galleries.length === 0 && USE_MOCK_FALLBACK,
+    [loading, galleries.length]
+  )
 
   return (
     <div className="gallery-page">
@@ -54,8 +87,8 @@ export default function GalleryPageContent() {
           <div className="gallery-page__filters">
             <button
               type="button"
-              className={`gallery-filter ${selectedClub === null ? 'gallery-filter--active' : ''}`}
-              onClick={() => setSelectedClub(null)}
+              className={`gallery-filter ${selectedClubRaw === null ? 'gallery-filter--active' : ''}`}
+              onClick={() => setSelectedClubRaw(null)}
             >
               All Clubs
             </button>
@@ -63,8 +96,8 @@ export default function GalleryPageContent() {
               <button
                 key={club.id}
                 type="button"
-                className={`gallery-filter ${selectedClub === club.id ? 'gallery-filter--active' : ''}`}
-                onClick={() => setSelectedClub(club.id)}
+                className={`gallery-filter ${selectedClubRaw === club.id ? 'gallery-filter--active' : ''}`}
+                onClick={() => setSelectedClubRaw(club.id)}
               >
                 {club.name}
               </button>
@@ -77,7 +110,11 @@ export default function GalleryPageContent() {
             <div className="gallery-empty">
               <ImageIcon size={48} className="gallery-empty__icon" />
               <h3 className="gallery-empty__title">No images found</h3>
-              <p className="gallery-empty__desc">Check back later for gallery updates</p>
+              <p className="gallery-empty__desc">
+                {showEmptyHint
+                  ? 'Mock fallback is enabled — upload images to Supabase Storage to see them here.'
+                  : 'Check back later for gallery updates'}
+              </p>
             </div>
           ) : (
             <>

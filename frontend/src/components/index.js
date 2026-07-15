@@ -18,3 +18,6 @@ export { default as ProtectedRoute } from './ProtectedRoute/ProtectedRoute.jsx';
 export { default as GuestRoute } from './GuestRoute/GuestRoute.jsx';
 export { default as HeroSection } from './HeroSection/HeroSection.jsx';
 export { default as JoinRequestModal } from './JoinRequestModal/JoinRequestModal.jsx';
+export { default as LeaderClubPicker } from './LeaderClubPicker/LeaderClubPicker.jsx';
+export { default as LeaderDashboardHeader } from './LeaderDashboardHeader/LeaderDashboardHeader.jsx';
+export { default as LeaderEmptyState } from './LeaderEmptyState/LeaderEmptyState.jsx';

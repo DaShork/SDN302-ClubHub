@@ -1,10 +1,15 @@
 import { supabase } from "./supabase";
+import { USE_MOCK_FALLBACK } from "./supabase";
 import { mockData } from "./mockData";
 import { RequestTimeoutError } from "./supabase";
 
-/* DELETE_MOCK_FALLBACK: when backend is stable, drop the mockData
-   import + this helper + every withFallback wrapper in this file. */
-const USE_MOCK_FALLBACK = true;
+/* USE_MOCK_FALLBACK is read from the VITE_USE_MOCK_FALLBACK env var via
+ * ./supabase. Default: OFF. Set `VITE_USE_MOCK_FALLBACK=true` in
+ * `frontend/.env` to bypass Supabase and serve mock data instead.
+ *
+ * DELETE_MOCK_FALLBACK: drop the mockData import + this constant + every
+ * withFallback wrapper in this file. */
+const useMock = USE_MOCK_FALLBACK;
 
 function withTimeout(promise, label) {
   return new Promise((resolve, reject) => {
@@ -33,9 +38,9 @@ function withTimeout(promise, label) {
 
 async function withFallback(label, fallbackFn) {
   // Fast path: skip the Supabase call entirely while the backend is
-  // unstable. Saves an 8s hang on every page load. Set
-  // USE_MOCK_FALLBACK = false once Supabase is back to hit the real API.
-  if (USE_MOCK_FALLBACK) {
+  // unstable. Saves an 8s hang on every page load. When VITE_USE_MOCK_FALLBACK
+  // is unset (default), every call hits the real API.
+  if (useMock) {
     return fallbackFn();
   }
   try {
@@ -124,7 +129,7 @@ export const eventService = {
           if (error) throw error;
           return data || [];
         }),
-      () => MOCK_EVENTS.slice(0, limit).map(e => ({ ...e, registrationCount: Math.floor(Math.random() * 50) }))
+      () => MOCK_EVENTS.slice(0, limit).map((e) => ({ ...e, registrationCount: 0 }))
     ).then((data) => {
       // Add registration counts for mock data
       return data.map(e => ({
@@ -183,9 +188,12 @@ export const eventService = {
           return data;
         }),
       () => {
-        // Find in mock data or return first mock event as fallback
-        const mockEvent = MOCK_EVENTS.find(e => e.id === id);
-        return mockEvent || MOCK_EVENTS[0];
+        // Match by id (UUID or mock id). Fallback to the first mock event
+        // so /events/<any unknown id> renders an honest "no such event"
+        // empty state instead of pretending a different event is the one
+        // requested. ClubDetailPage already handles null gracefully.
+        const mockEvent = MOCK_EVENTS.find((e) => e.id === id);
+        return mockEvent || null;
       }
     );
   },
@@ -237,12 +245,14 @@ export const eventService = {
 
             return data.map((e) => ({
               ...e,
+              // Real backend path: registration count joined above
+              // (countMap). Default 0 when an event has no registrations.
               registrationCount: countMap[e.id] || 0,
             }));
           })(),
           "events.getAll"
         ),
-      () => MOCK_EVENTS.map(e => ({ ...e, registrationCount: Math.floor(Math.random() * 50) }))
+      () => MOCK_EVENTS.map((e) => ({ ...e, registrationCount: 0 }))
     );
   },
 
@@ -260,7 +270,9 @@ export const eventService = {
           if (error) throw error;
           return count || 0;
         }),
-      () => Math.floor(Math.random() * 50)
+      // Deterministic fallback: 0 (so the page does not display a misleading
+      // random number when the backend is offline).
+      () => 0
     );
   },
 

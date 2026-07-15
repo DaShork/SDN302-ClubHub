@@ -1,10 +1,15 @@
 import { supabase } from './supabase'
+import { USE_MOCK_FALLBACK } from './supabase'
 import { mockData } from './mockData'
 import { RequestTimeoutError } from './supabase'
 
-/* DELETE_MOCK_FALLBACK: when backend is stable, drop the mockData
-   import + this helper + every withFallback wrapper in this file. */
-const USE_MOCK_FALLBACK = true
+/* USE_MOCK_FALLBACK is read from the VITE_USE_MOCK_FALLBACK env var via
+ * ./supabase. Default: OFF. Set `VITE_USE_MOCK_FALLBACK=true` in
+ * `frontend/.env` to bypass Supabase and serve mock data instead.
+ *
+ * DELETE_MOCK_FALLBACK: drop the mockData import + this constant + every
+ * withFallback wrapper in this file. */
+const useMock = USE_MOCK_FALLBACK
 
 function withTimeout(promise, label) {
   return new Promise((resolve, reject) => {
@@ -33,7 +38,7 @@ function withTimeout(promise, label) {
 
 async function withFallback(label, fallbackFn) {
   // Fast path: skip the Supabase call while the backend is unstable.
-  if (USE_MOCK_FALLBACK) {
+  if (useMock) {
     return fallbackFn();
   }
   try {
@@ -55,22 +60,29 @@ async function withFallback(label, fallbackFn) {
 
 export const galleryService = {
   async getAll({ clubId, limit = 20, offset = 0 } = {}) {
-    let query = supabase
-      .from('galleries')
-      .select(`
-        *,
-        clubs (id, name, logo_url)
-      `)
-      .order('uploaded_at', { ascending: false })
+    return withFallback(
+      async () => {
+        let query = supabase
+          .from('galleries')
+          .select(`
+            *,
+            clubs (id, name, logo_url)
+          `)
+          .order('uploaded_at', { ascending: false });
 
-    if (clubId) {
-      query = query.eq('club_id', clubId)
-    }
+        if (clubId) {
+          query = query.eq('club_id', clubId);
+        }
 
-    const { data, error } = await query.range(offset, offset + limit - 1)
-
-    if (error) throw error
-    return data
+        const { data, error } = await withTimeout(
+          query.range(offset, offset + limit - 1),
+          'gallery.getAll'
+        );
+        if (error) throw error;
+        return data;
+      },
+      () => [] // Gallery public bucket has no mock fallback records
+    );
   },
 
   async getByClub(clubId) {

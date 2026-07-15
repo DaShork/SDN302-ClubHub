@@ -3,7 +3,7 @@ import { ChevronRight, Search, X, ArrowUpDown, RefreshCw } from 'lucide-react';
 import { Section, SectionEyebrow, SectionHeader } from '@/components';
 import ClubCard, { normaliseClub } from '../ClubCard/ClubCard.jsx';
 import { clubService } from '@/services/clubService';
-import { CATEGORIES } from '../../mockData.js';
+import { useSearchParams } from 'react-router-dom';
 
 /* Sort options. Keep this list small — adding too many options is a UX trap. */
 const SORT_OPTIONS = [
@@ -32,26 +32,95 @@ function compareClubs(a, b, sortId) {
   }
 }
 
+/**
+ * ClubsDirectory
+ *
+ * variant="page"     → /clubs      (full directory with search, sort, filter)
+ * variant="homepage" → /           (Featured Clubs only — uses clubService.getFeatured)
+ *
+ * Search and category filter are pushed DOWN to the server when possible
+ * (variant="page"). variant="homepage" always queries via getFeatured()
+ * because the homepage doesn't expose filter controls.
+ *
+ * The category list is loaded from clubService.getCategories() so the
+ * filter pills reflect what's actually in the database. Categories with
+ * `count` are pre-sorted to put empty buckets last.
+ */
 export default function ClubsDirectory({ variant = 'page' }) {
   const isHome = variant === 'homepage';
-  const [filter, setFilter] = useState('All');
-  const [search, setSearch] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [filter, setFilter] = useState(searchParams.get('category') || 'All');
+  const [search, setSearch] = useState(searchParams.get('q') || '');
   const [sort, setSort] = useState('name-asc');
   const [featuredClubs, setFeaturedClubs] = useState([]);
   const [pageClubs, setPageClubs] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
 
+  /* Load categories from Supabase (unless we're on the homepage, where
+     the filter pills are hidden and we can skip the round-trip). */
+  useEffect(() => {
+    if (isHome) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await clubService.getCategories();
+        if (!cancelled) {
+          setCategories([
+            { name: 'All', count: null },
+            ...(Array.isArray(list) ? list : []).map((c) => ({
+              name: c.name,
+              count: typeof c.count === 'number' ? c.count : null,
+              id: c.id,
+            })),
+          ]);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.warn('[ClubsDirectory] getCategories failed:', err);
+          // Keep a minimal fallback so the filter UI still works while
+          // Supabase is unreachable — the actual data still comes from
+          // clubService.getAll() below.
+          setCategories([{ name: 'All', count: null }]);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isHome, reloadKey]);
+
+  /* Resolve the `filter` (category NAME from the UI pills) to a categoryId
+     the server expects. Without this lookup we cannot push the filter
+     down to Postgres. */
+  const filterCategoryId = useMemo(() => {
+    if (!filter || filter === 'All') return undefined;
+    const found = categories.find((c) => c.name === filter);
+    return found?.id;
+  }, [filter, categories]);
+
+  /* Main list query. Whenever search/filter/reload change, refetch from
+     Supabase. For the homepage variant we use getFeatured() instead. */
   useEffect(() => {
     let cancelled = false;
+    /* eslint-disable react-hooks/set-state-in-effect --
+     * The `loading` state must reset synchronously here so the skeleton
+     * shows on every filter/search keystroke. Without this, the previous
+     * results stay on screen until the new fetch resolves, which feels
+     * laggy. The lint rule is a React 19 recommendation, not a runtime
+     * correctness issue — and our `cancelled` guard prevents double-set
+     * on unmounted components. */
     setLoading(true);
     setError(null);
     (async () => {
       try {
         const data = isHome
           ? await clubService.getFeatured(8)
-          : await clubService.getAll({ limit: 100 });
+          : await clubService.getAll({
+              limit: 100,
+              search: search.trim() || undefined,
+              categoryId: filterCategoryId,
+            });
         if (!cancelled) {
           const list = Array.isArray(data) ? data.map(normaliseClub) : [];
           if (isHome) setFeaturedClubs(list);
@@ -69,29 +138,26 @@ export default function ClubsDirectory({ variant = 'page' }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [isHome, reloadKey]);
+  }, [isHome, search, filterCategoryId, reloadKey]);
+
+  /* Keep the URL in sync so /clubs?category=Technology&q=foo is shareable */
+  useEffect(() => {
+    if (isHome) return;
+    const next = new URLSearchParams();
+    if (filter && filter !== 'All') next.set('category', filter);
+    if (search.trim()) next.set('q', search.trim());
+    setSearchParams(next, { replace: true });
+    // `setSearchParams` is a stable ref returned by react-router; omitting
+    // it from the deps list avoids spurious re-runs without changing semantics.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, search, isHome]);
 
   const clubs = isHome ? featuredClubs : pageClubs;
 
-  /* Filter + search + sort are all client-side, which is fine because
-     we already pull up to 100 clubs in one call (clubService.getAll).
-     If the directory ever grows past that, lift these into the service. */
+  /* Client-side sort only — search & category already hit the server. */
   const visibleClubs = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    let list = clubs;
-    if (!isHome && filter !== 'All') {
-      list = list.filter((c) => (c.category || c.categories?.name) === filter);
-    }
-    if (q) {
-      list = list.filter(
-        (c) =>
-          (c.name || '').toLowerCase().includes(q) ||
-          (c.description || '').toLowerCase().includes(q) ||
-          (c.shortDescription || '').toLowerCase().includes(q)
-      );
-    }
-    return [...list].sort((a, b) => compareClubs(a, b, sort));
-  }, [clubs, filter, search, sort, isHome]);
+    return [...clubs].sort((a, b) => compareClubs(a, b, sort));
+  }, [clubs, sort]);
 
   const handleRetry = () => setReloadKey((k) => k + 1);
 
@@ -161,15 +227,15 @@ export default function ClubsDirectory({ variant = 'page' }) {
           role="tablist"
           aria-label="Club category filter"
         >
-          {CATEGORIES.map((c) => {
-            const active = filter === c;
+          {categories.map((c) => {
+            const active = filter === c.name;
             return (
               <button
-                key={c}
+                key={c.name}
                 type="button"
                 role="tab"
                 aria-selected={active}
-                onClick={() => setFilter(c)}
+                onClick={() => setFilter(c.name)}
                 className="clubs-directory__pill"
                 style={
                   active
@@ -184,7 +250,12 @@ export default function ClubsDirectory({ variant = 'page' }) {
                       }
                 }
               >
-                {c}
+                {c.name}
+                {typeof c.count === 'number' && (
+                  <span style={{ marginLeft: 6, opacity: 0.7, fontSize: 12 }}>
+                    ({c.count})
+                  </span>
+                )}
               </button>
             );
           })}

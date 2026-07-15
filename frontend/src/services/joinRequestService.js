@@ -1,16 +1,16 @@
 import { supabase } from "./supabase";
+import { USE_MOCK_FALLBACK } from "./supabase";
 
-/* Join Request Service - Handles club and event join/registration requests
-   with approval workflow. */
-
-const USE_MOCK_FALLBACK = true;
-
-// Mock data for development
-const MOCK_JOIN_REQUESTS = [];
-const MOCK_EVENT_REQUESTS = [];
+/* USE_MOCK_FALLBACK is read from the VITE_USE_MOCK_FALLBACK env var via
+ * ./supabase. Default: OFF. Set `VITE_USE_MOCK_FALLBACK=true` in
+ * `frontend/.env` to bypass Supabase and serve mock data instead.
+ *
+ * DELETE_MOCK_FALLBACK: drop this constant + the MOCK_* arrays + every
+ * branch that mutates them. */
+const useMock = USE_MOCK_FALLBACK;
 
 function withFallback(label, fallbackFn) {
-  if (USE_MOCK_FALLBACK) {
+  if (useMock) {
     return fallbackFn();
   }
   try {
@@ -47,7 +47,7 @@ export const joinRequestService = {
           .single(),
       () => {
         const newRequest = {
-          id: `req-${Date.now()}`,
+          id: `mock-${Date.now()}`,
           club_id: clubId,
           profile_id: profileId,
           type: "club",
@@ -59,7 +59,6 @@ export const joinRequestService = {
           status: "pending",
           created_at: new Date().toISOString()
         };
-        MOCK_JOIN_REQUESTS.push(newRequest);
         return { data: newRequest, error: null };
       }
     );
@@ -88,10 +87,8 @@ export const joinRequestService = {
             return { data: data || [], error: null };
           }),
       () => {
-        const filtered = status
-          ? MOCK_JOIN_REQUESTS.filter(r => r.club_id === clubId && r.status === status)
-          : MOCK_JOIN_REQUESTS.filter(r => r.club_id === clubId);
-        return { data: filtered, error: null };
+        // Mock fallback: no persistence layer, return empty list
+        return { data: [], error: null };
       }
     );
   },
@@ -108,7 +105,7 @@ export const joinRequestService = {
           .eq("club_id", clubId)
           .eq("type", "club")
           .eq("status", "pending"),
-      () => MOCK_JOIN_REQUESTS.filter(r => r.club_id === clubId && r.status === "pending").length
+      () => 0
     ).then(result => result?.count ?? result ?? 0);
   },
 
@@ -139,14 +136,7 @@ export const joinRequestService = {
             }
             return { data, error: null };
           }),
-      () => {
-        const req = MOCK_JOIN_REQUESTS.find(r => r.id === requestId);
-        if (req) {
-          req.status = "approved";
-          req.updated_at = new Date().toISOString();
-        }
-        return { data: req, error: null };
-      }
+      () => ({ data: null, error: null })
     );
   },
 
@@ -158,23 +148,15 @@ export const joinRequestService = {
       () =>
         supabase
           .from("join_requests")
-          .update({ 
-            status: "rejected", 
+          .update({
+            status: "rejected",
             rejection_reason: reason,
-            updated_at: new Date().toISOString() 
+            updated_at: new Date().toISOString()
           })
           .eq("id", requestId)
           .select()
           .single(),
-      () => {
-        const req = MOCK_JOIN_REQUESTS.find(r => r.id === requestId);
-        if (req) {
-          req.status = "rejected";
-          req.rejection_reason = reason;
-          req.updated_at = new Date().toISOString();
-        }
-        return { data: req, error: null };
-      }
+      () => ({ data: null, error: null })
     );
   },
 
@@ -193,7 +175,7 @@ export const joinRequestService = {
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
-      () => MOCK_JOIN_REQUESTS.find(r => r.profile_id === profileId && r.club_id === clubId)
+      () => null
     );
   },
 
@@ -212,7 +194,7 @@ export const joinRequestService = {
           .eq("profile_id", profileId)
           .eq("type", "club")
           .order("created_at", { ascending: false }),
-      () => MOCK_JOIN_REQUESTS.filter(r => r.profile_id === profileId)
+      () => ({ data: [], error: null })
     );
   },
 
@@ -241,7 +223,7 @@ export const joinRequestService = {
           .single(),
       () => {
         const newRequest = {
-          id: `evtreq-${Date.now()}`,
+          id: `mock-evt-${Date.now()}`,
           event_id: eventId,
           club_id: clubId,
           profile_id: profileId,
@@ -253,7 +235,6 @@ export const joinRequestService = {
           status: "pending",
           created_at: new Date().toISOString()
         };
-        MOCK_EVENT_REQUESTS.push(newRequest);
         return { data: newRequest, error: null };
       }
     );
@@ -280,12 +261,7 @@ export const joinRequestService = {
             }
             return { data: data || [], error: null };
           }),
-      () => {
-        const filtered = status
-          ? MOCK_EVENT_REQUESTS.filter(r => r.event_id === eventId && r.status === status)
-          : MOCK_EVENT_REQUESTS.filter(r => r.event_id === eventId);
-        return { data: filtered, error: null };
-      }
+      () => ({ data: [], error: null })
     );
   },
 
@@ -306,15 +282,7 @@ export const joinRequestService = {
           approved: approved.count || 0,
           rejected: rejected.count || 0
         })),
-      () => {
-        const requests = MOCK_EVENT_REQUESTS.filter(r => r.event_id === eventId);
-        return {
-          total: requests.length,
-          pending: requests.filter(r => r.status === "pending").length,
-          approved: requests.filter(r => r.status === "approved").length,
-          rejected: requests.filter(r => r.status === "rejected").length
-        };
-      }
+      () => ({ total: 0, pending: 0, approved: 0, rejected: 0 })
     );
   },
 
@@ -346,14 +314,7 @@ export const joinRequestService = {
             }
             return { data, error: null };
           }),
-      () => {
-        const req = MOCK_EVENT_REQUESTS.find(r => r.id === requestId);
-        if (req) {
-          req.status = "approved";
-          req.updated_at = new Date().toISOString();
-        }
-        return { data: req, error: null };
-      }
+      () => ({ data: null, error: null })
     );
   },
 
@@ -365,23 +326,15 @@ export const joinRequestService = {
       () =>
         supabase
           .from("event_requests")
-          .update({ 
-            status: "rejected", 
+          .update({
+            status: "rejected",
             rejection_reason: reason,
-            updated_at: new Date().toISOString() 
+            updated_at: new Date().toISOString()
           })
           .eq("id", requestId)
           .select()
           .single(),
-      () => {
-        const req = MOCK_EVENT_REQUESTS.find(r => r.id === requestId);
-        if (req) {
-          req.status = "rejected";
-          req.rejection_reason = reason;
-          req.updated_at = new Date().toISOString();
-        }
-        return { data: req, error: null };
-      }
+      () => ({ data: null, error: null })
     );
   },
 
@@ -399,7 +352,7 @@ export const joinRequestService = {
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
-      () => MOCK_EVENT_REQUESTS.find(r => r.profile_id === profileId && r.event_id === eventId)
+      () => null
     );
   },
 
@@ -417,7 +370,7 @@ export const joinRequestService = {
           `)
           .eq("profile_id", profileId)
           .order("created_at", { ascending: false }),
-      () => MOCK_EVENT_REQUESTS.filter(r => r.profile_id === profileId)
+      () => ({ data: [], error: null })
     );
   }
 };

@@ -1,20 +1,23 @@
-import { supabase, REQUEST_TIMEOUT_MS, RequestTimeoutError } from './supabase'
+import {
+  supabase,
+  REQUEST_TIMEOUT_MS,
+  RequestTimeoutError,
+  USE_MOCK_FALLBACK,
+} from './supabase'
 import { mockData } from './mockData'
 
 /* ----------------------------------------------------------------------------
- * Temporary debug toggle.
+ * USE_MOCK_FALLBACK is imported from ./supabase and reads the
+ * `VITE_USE_MOCK_FALLBACK` env var. Default: OFF (real Supabase).
+ * Set `VITE_USE_MOCK_FALLBACK=true` in `frontend/.env` to force every read
+ * to short-circuit and return data from ./mockData.
  *
- * The backend has been intermittently timing out. To keep the UI usable
- * while new features are developed, set USE_MOCK_FALLBACK = true so any
- * service call whose request fails (timeout, network error, 5xx) returns
- * records from `mockData.js` instead of an empty list / null.
- *
- * DELETE_MOCK_FALLBACK:
- *   When the backend is stable again, delete mockData.js, this constant,
- *   the `withFallback` helper, and every wrapper around the service
- *   methods in this file. The functions then run as plain Supabase calls.
+ * DELETE_MOCK_FALLBACK: when offline development is no longer needed,
+ * delete mockData.js, this import, the `withFallback` helper, and every
+ * wrapper around the service methods in this file. The functions then
+ * run as plain Supabase calls.
  * -------------------------------------------------------------------------- */
-export const USE_MOCK_FALLBACK = true
+export { USE_MOCK_FALLBACK }
 
 /**
  * Wrap an existing Promise (result of `.select()`) with a hard timeout.
@@ -100,8 +103,21 @@ export const clubService = {
   /**
    * Get all active clubs (with leader + category info).
    * Uses the v_clubs_with_leaders view for efficient leader/mentor joins.
+   *
+   * Accepted filters:
+   *   - categoryId   filter by category FK
+   *   - search       case-insensitive name contains
+   *   - leaderId     filter to clubs led by the given profile id
+   *                   (uses `clubs.leader_id`, kept in sync with
+   *                   `memberships.position='President'` by migration 010)
+   *   - limit / offset pagination. Defaults to 20, but raised to 100
+   *                   automatically when leaderId is set, since a single
+   *                   leader is unlikely to own more than ~20 clubs but
+   *                   we still want the picker to show every one.
    */
-  async getAll({ categoryId, search, limit = 20, offset = 0 } = {}) {
+  async getAll({ categoryId, search, leaderId, limit, offset = 0 } = {}) {
+    const effectiveLimit = leaderId ? Math.max(limit ?? 100, 100) : (limit ?? 20);
+
     let query = supabase
       .from('clubs')
       .select(`
@@ -110,7 +126,7 @@ export const clubService = {
         memberships (count)
       `)
       .eq('status', 'active')
-      .range(offset, offset + limit - 1)
+      .range(offset, offset + effectiveLimit - 1)
 
     if (categoryId) {
       query = query.eq('category_id', categoryId)
@@ -120,9 +136,21 @@ export const clubService = {
       query = query.ilike('name', `%${search}%`)
     }
 
+    if (leaderId) {
+      query = query.eq('leader_id', leaderId)
+    }
+
     return withFallback({
-      label: () => withTimeout(query.order('name'), 'clubs.getAll'),
-      fallbackFn: () => mockData.getAllClubs({ categoryId, search, limit, offset }),
+      label: () =>
+        withTimeout(query.order('name'), 'clubs.getAll').then(({ data, error }) => {
+          /* MUST unwrap the `{data, error}` envelope — supabase-js always
+           * returns an object, never a bare array. Without this, callers
+           * would `Array.isArray(data) === false` and silently render zero
+           * rows even when Supabase returned the full result set. */
+          if (error) throw error
+          return data || []
+        }),
+      fallbackFn: () => mockData.getAllClubs({ categoryId, search, leaderId, limit: effectiveLimit, offset }),
     })
   },
 
@@ -328,7 +356,10 @@ export const clubService = {
             .select('*')
             .order('name'),
           'clubs.getCategories'
-        ),
+        ).then(({ data, error }) => {
+          if (error) throw error
+          return data || []
+        }),
       fallbackFn: () => mockData.getCategories(),
     })
   },

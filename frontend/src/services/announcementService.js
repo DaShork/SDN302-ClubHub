@@ -1,10 +1,15 @@
 import { supabase } from "./supabase";
+import { USE_MOCK_FALLBACK } from "./supabase";
 import { mockData } from "./mockData";
 import { RequestTimeoutError } from "./supabase";
 
-/* DELETE_MOCK_FALLBACK: when backend is stable, drop the mockData
-   import + this helper + every withFallback wrapper in this file. */
-const USE_MOCK_FALLBACK = true;
+/* USE_MOCK_FALLBACK is read from the VITE_USE_MOCK_FALLBACK env var via
+ * ./supabase. Default: OFF. Set `VITE_USE_MOCK_FALLBACK=true` in
+ * `frontend/.env` to bypass Supabase and serve mock data instead.
+ *
+ * DELETE_MOCK_FALLBACK: drop the mockData import + this constant + every
+ * withFallback wrapper in this file. */
+const useMock = USE_MOCK_FALLBACK;
 
 function withTimeout(promise, label) {
   return new Promise((resolve, reject) => {
@@ -33,7 +38,7 @@ function withTimeout(promise, label) {
 
 async function withFallback(label, fallbackFn) {
   // Fast path: skip the Supabase call while the backend is unstable.
-  if (USE_MOCK_FALLBACK) {
+  if (useMock) {
     return fallbackFn();
   }
   try {

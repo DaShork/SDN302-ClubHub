@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import ErrorBoundary from '@/components/common/ErrorBoundary.jsx';
 import ConnectionBanner from '@/components/common/ConnectionBanner.jsx';
 import HomePage from '@/pages/HomePage/HomePage.jsx';
@@ -28,14 +28,32 @@ import AdminRolesPage from '@/pages/AdminRolesPage/AdminRolesPage.jsx';
 import AdminClubsPage from '@/pages/AdminClubsPage/AdminClubsPage.jsx';
 import AdminSettingsPage from '@/pages/AdminSettingsPage/AdminSettingsPage.jsx';
 import ManagerDashboardPage from '@/pages/ManagerDashboardPage/ManagerDashboardPage.jsx';
+import ManagerClubsPage from '@/pages/ManagerClubsPage/ManagerClubsPage.jsx';
+import ManagerAnnouncementsPage from '@/pages/ManagerAnnouncementsPage/ManagerAnnouncementsPage.jsx';
+import ManagerActivityLogPage from '@/pages/ManagerActivityLogPage/ManagerActivityLogPage.jsx';
 import AlumniPage from '@/pages/Alumni/AlumniPage.jsx';
 import NotificationsPage from '@/pages/Notifications/NotificationsPage.jsx';
 import PaymentPage from '@/pages/Payment/PaymentPage.jsx';
 import ReportsPage from '@/pages/Reports/ReportsPage.jsx';
+import MentorDashboardPage from '@/pages/MentorDashboardPage/MentorDashboardPage.jsx';
+import MentorClubsPage from '@/pages/MentorClubsPage/MentorClubsPage.jsx';
+import MentorActivityLogPage from '@/pages/MentorActivityLogPage/MentorActivityLogPage.jsx';
+import LeaderDashboardPage from '@/pages/DashboardPage/LeaderDashboardPage.jsx';
+import LeaderMembersPage from '@/pages/MembersPage/LeaderMembersPage.jsx';
+import LeaderEventsPage from '@/pages/EventsPage/LeaderEventsPage.jsx';
+import LeaderWorkshopsPage from '@/pages/WorkshopsPage/LeaderWorkshopsPage.jsx';
+import LeaderAnnouncementsPage from '@/pages/AnnouncementsPage/LeaderAnnouncementsPage.jsx';
+import LeaderDocumentsPage from '@/pages/DocumentsPage/LeaderDocumentsPage.jsx';
+import LeaderKnowledgePage from '@/pages/KnowledgePage/LeaderKnowledgePage.jsx';
+import LeaderFinancePage from '@/pages/FinancePage/LeaderFinancePage.jsx';
+import MemberDashboardPage from '@/pages/MemberDashboardPage/MemberDashboardPage.jsx';
+import MemberMyClubPage from '@/pages/MemberMyClubPage/MemberMyClubPage.jsx';
+import MemberFinancePage from '@/pages/MemberFinancePage/MemberFinancePage.jsx';
 import DashboardLayout from '@/layouts/DashboardLayout/DashboardLayout.jsx';
 import PublicLayout from '@/layouts/PublicLayout/PublicLayout.jsx';
-import AppRoutes from './routes/AppRoutes.jsx';
 import { ROLES } from '@/auth/rolePermissions';
+import { LeaderScopeProvider } from '@/contexts/LeaderScopeContext.jsx';
+import { MemberScopeProvider } from '@/contexts/MemberScopeContext.jsx';
 
 /* Role-based routing is layered as follows:
 
@@ -72,12 +90,43 @@ export default function App() {
     <ErrorBoundary>
       <ConnectionBanner />
       <Routes>
-      {/* Nested club dashboards — wrapped in <DashboardLayout> with sidebar */}
-      <Route path="/club/:clubId/*" element={<ClubDashboardShell />} />
+      {/* Club Leader dashboard — flat routes under /leader/*. Aggregates
+          every club the current user leads into a single set of pages.
+          The leader-specific data layer is provided by LeaderScopeProvider. */}
+      <Route
+        path="/leader/*"
+        element={
+          <ProtectedRoute requiredRole={ROLES.CLUB_LEADER}>
+            <LeaderScopeProvider>
+              <DashboardLayout />
+            </LeaderScopeProvider>
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="/leader/dashboard" replace />} />
+        <Route path="dashboard" element={<LeaderDashboardPage />} />
+        <Route path="members" element={<LeaderMembersPage />} />
+        <Route path="events" element={<LeaderEventsPage />} />
+        <Route path="workshops" element={<LeaderWorkshopsPage />} />
+        <Route path="announcements" element={<LeaderAnnouncementsPage />} />
+        <Route path="documents" element={<LeaderDocumentsPage />} />
+        <Route path="knowledge" element={<LeaderKnowledgePage />} />
+        <Route path="finance" element={<LeaderFinancePage />} />
+        <Route path="*" element={<Navigate to="/leader/dashboard" replace />} />
+      </Route>
+
+      {/* Backward-compat redirect: the old per-club dashboard URLs now
+          collapse to the leader dashboard. We strip the `:clubId` segment
+          and map to the matching leader page when one exists, otherwise
+          fall back to the dashboard. */}
+      <Route
+        path="/club/:clubId/*"
+        element={<LegacyClubRedirect />}
+      />
 
       {/* Admin & Manager dashboards — also use DashboardLayout with sidebar */}
       <Route
-        path="/admin"
+        path="/admin/*"
         element={
           <ProtectedRoute requiredRole={ROLES.ADMINISTRATOR}>
             <DashboardLayout />
@@ -92,14 +141,54 @@ export default function App() {
       </Route>
 
       <Route
-        path="/manager"
+        path="/manager/*"
         element={
           <ProtectedRoute requiredRole={ROLES.MANAGER}>
-            <DashboardLayout hideSidebar />
+            <DashboardLayout />
           </ProtectedRoute>
         }
       >
         <Route index element={<ManagerDashboardPage />} />
+        <Route path="clubs" element={<ManagerClubsPage />} />
+        <Route path="announcements" element={<ManagerAnnouncementsPage />} />
+        <Route path="log" element={<ManagerActivityLogPage />} />
+        <Route path="*" element={<Navigate to="/manager" replace />} />
+      </Route>
+
+      {/* Mentor Dashboard — read-only oversight of assigned clubs.
+          Each Mentor page lives at its own URL but shares the same
+          DashboardLayout + Mentor sidebar. */}
+      <Route
+        path="/mentor/*"
+        element={
+          <ProtectedRoute requiredRole={ROLES.MENTOR}>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="dashboard" element={<MentorDashboardPage />} />
+        <Route path="clubs" element={<MentorClubsPage />} />
+        <Route path="log" element={<MentorActivityLogPage />} />
+        <Route path="*" element={<Navigate to="/mentor/dashboard" replace />} />
+      </Route>
+
+      {/* Club Member Dashboard — read-only view of the clubs the user
+          belongs to (members/events/documents/knowledge) plus a fee
+          tracker that consumes club_fee_settings.monthly_amount. */}
+      <Route
+        path="/member/*"
+        element={
+          <ProtectedRoute requiredRole={ROLES.CLUB_MEMBER}>
+            <MemberScopeProvider>
+              <DashboardLayout />
+            </MemberScopeProvider>
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<MemberDashboardPage />} />
+        <Route path="clubs" element={<MemberMyClubPage />} />
+        <Route path="finance" element={<MemberFinancePage />} />
+        <Route path="*" element={<Navigate to="/member" replace />} />
       </Route>
 
       <Route
@@ -176,14 +265,29 @@ export default function App() {
   );
 }
 
-/* Club dashboards: DashboardLayout wraps AppRoutes which renders the
-   individual club pages. Pages inside this group render through <Outlet />. */
-function ClubDashboardShell() {
-  return (
-    <ProtectedRoute requiredRole={ROLES.CLUB_LEADER}>
-      <DashboardLayout />
-    </ProtectedRoute>
-  );
+/* Backward-compat: legacy per-club URLs (/club/:clubId/dashboard,
+   /club/:clubId/members, ...) collapse to the new flat leader routes.
+   Strips the :clubId segment and maps the rest onto the leader area.
+   Unknown subpaths land on /leader/dashboard so users always land on
+   a real screen. */
+function LegacyClubRedirect() {
+  const { clubId } = useParams();
+  const rest = window.location.pathname.replace(/^\/club\/[^/]+/, '').replace(/^\/+/, '');
+  const map = {
+    '': '/leader/dashboard',
+    'dashboard': '/leader/dashboard',
+    'members': '/leader/members',
+    'events': '/leader/events',
+    'workshops': '/leader/workshops',
+    'knowledge': '/leader/knowledge',
+    'documents': '/leader/documents',
+    'announcements': '/leader/announcements',
+    'finance': '/leader/finance',
+  };
+  const target = map[rest] || '/leader/dashboard';
+  // eslint-disable-next-line no-console
+  console.info(`[legacy] redirecting /club/${clubId}/${rest} → ${target}`);
+  return <Navigate to={target} replace />;
 }
 
 /* Reports page lives under DashboardLayout (sidebar) for Manager/Admin. */

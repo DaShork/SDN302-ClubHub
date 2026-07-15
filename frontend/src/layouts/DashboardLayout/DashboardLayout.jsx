@@ -1,28 +1,80 @@
 import { useState } from 'react';
-import { Link, NavLink, Outlet, useParams } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, Wrench, BookOpen, FileText,
   Megaphone, ArrowLeft, Shield, BarChart3, Wallet, Building2, Settings,
 } from 'lucide-react';
+import { useLeaderClubs } from '@/hooks/useLeaderClubs.jsx';
+import { useMemberClubs } from '@/hooks/useMemberClubs.jsx';
 import './DashboardLayout.css';
 
 /**
  * DashboardLayout — sidebar chrome for management dashboards.
  *
- * Used by Club Leader (`/club/:clubId/*`), Administrator (`/admin/*`) and
- * Manager (`/manager`) routes only. Renders a left sidebar whose items
- * depend on the route prefix.
+ * Used by Club Leader (`/leader/*`), Administrator (`/admin/*`) and
+ * Manager (`/manager`) routes. Renders a left sidebar whose items depend
+ * on the current route prefix.
  *
- * Pass `hideSidebar` prop to hide the sidebar (e.g., for Manager dashboard).
+ * Pass `hideSidebar` to hide the sidebar (Manager dashboard).
  *
  * Renders <Outlet /> — pages inside are NOT expected to wrap themselves
  * in any layout.
  */
 export default function DashboardLayout({ hideSidebar = false }) {
-  const { clubId } = useParams();
+  const location = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  const navItems = clubId ? buildClubNav(clubId) : buildPortalNav();
+  const isLeaderArea = location.pathname.startsWith('/leader');
+  const isAdminArea = location.pathname.startsWith('/admin');
+  const isManagerArea = location.pathname === '/manager' || location.pathname.startsWith('/manager/');
+  const isMentorArea = location.pathname.startsWith('/mentor');
+  const isMemberArea = location.pathname.startsWith('/member');
+  const isReportsArea = location.pathname === '/reports' || location.pathname.startsWith('/reports/');
+
+  // Only fetch the led-clubs list when we're actually rendering a
+  // leader-area sidebar. Avoids an unnecessary round-trip for /admin
+  // and /manager routes, and avoids a render that would otherwise race
+  // with their own data loading.
+  const { ledClubs, loading: leaderLoading } = useLeaderClubsConditional(isLeaderArea);
+  const { memberClubs, loading: memberLoading } = useMemberClubsConditional(isMemberArea);
+
+  const navItems = isLeaderArea
+    ? buildLeaderNav()
+    : isAdminArea
+      ? buildPortalNav()
+      : isManagerArea
+        ? buildManagerNav()
+        : isMentorArea
+          ? buildMentorNav()
+          : isMemberArea
+            ? buildMemberNav()
+            : isReportsArea
+              ? buildPortalNav()
+              : [];
+
+  // Brand sub-label: leader area shows led-clubs; member area shows member-clubs.
+  const brandSubEyebrow = isLeaderArea
+    ? 'Leader Dashboard'
+    : isMemberArea
+      ? 'Member Dashboard'
+      : null;
+  const brandSubValue = isLeaderArea
+    ? (leaderLoading
+        ? 'Loading...'
+        : ledClubs.length === 0
+          ? 'No clubs yet'
+          : ledClubs.length === 1
+            ? ledClubs[0].name
+            : `Leading ${ledClubs.length} clubs`)
+    : isMemberArea
+      ? (memberLoading
+          ? 'Loading...'
+          : memberClubs.length === 0
+            ? 'Chưa tham gia CLB'
+            : memberClubs.length === 1
+              ? memberClubs[0].club?.name
+              : `Thành viên ${memberClubs.length} CLB`)
+      : null;
 
   return (
     <div className={`dashboard-layout ${hideSidebar ? 'dashboard-layout--no-sidebar' : ''}`}>
@@ -34,10 +86,10 @@ export default function DashboardLayout({ hideSidebar = false }) {
               <img src="/ClubHub_Logo_White.png" alt="ClubHub" className="dashboard-layout__brand-logo" />
               <span className="dashboard-layout__brand-text">ClubHub</span>
             </Link>
-            {clubId && (
+            {(isLeaderArea || isMemberArea) && brandSubValue && (
               <div className="dashboard-layout__brand-sub">
-                <span className="dashboard-layout__brand-eyebrow">Club Context</span>
-                <span className="dashboard-layout__brand-club">F-Code</span>
+                <span className="dashboard-layout__brand-eyebrow">{brandSubEyebrow}</span>
+                <span className="dashboard-layout__brand-club">{brandSubValue}</span>
               </div>
             )}
           </div>
@@ -49,7 +101,7 @@ export default function DashboardLayout({ hideSidebar = false }) {
                 <NavLink
                   key={item.path}
                   to={item.path}
-                  end={item.path.endsWith('/dashboard') || item.path === '/admin' || item.path === '/manager'}
+                  end={item.path.endsWith('/dashboard') || item.path === '/admin' || item.path === '/manager' || item.path === '/member'}
                   className={({ isActive }) =>
                     `dashboard-layout__nav-item ${isActive ? 'dashboard-layout__nav-item--active' : ''}`
                   }
@@ -102,6 +154,12 @@ export default function DashboardLayout({ hideSidebar = false }) {
             <img src="/ClubHub_Logo_White.png" alt="ClubHub" className="dashboard-layout__brand-logo" />
             <span className="dashboard-layout__brand-text">ClubHub</span>
           </Link>
+          {(isLeaderArea || isMemberArea) && brandSubValue && (
+            <div className="dashboard-layout__brand-sub">
+              <span className="dashboard-layout__brand-eyebrow">{brandSubEyebrow}</span>
+              <span className="dashboard-layout__brand-club">{brandSubValue}</span>
+            </div>
+          )}
         </div>
         <nav className="dashboard-layout__nav">
           {navItems.map((item) => {
@@ -110,7 +168,7 @@ export default function DashboardLayout({ hideSidebar = false }) {
               <NavLink
                 key={item.path}
                 to={item.path}
-                end={item.path.endsWith('/dashboard') || item.path === '/admin' || item.path === '/manager'}
+                end={item.path.endsWith('/dashboard') || item.path === '/admin' || item.path === '/manager' || item.path === '/member'}
                 className={({ isActive }) =>
                   `dashboard-layout__nav-item ${isActive ? 'dashboard-layout__nav-item--active' : ''}`
                 }
@@ -127,16 +185,16 @@ export default function DashboardLayout({ hideSidebar = false }) {
   );
 }
 
-function buildClubNav(clubId) {
+function buildLeaderNav() {
   return [
-    { name: 'Dashboard',    path: `/club/${clubId}/dashboard`,   icon: LayoutDashboard },
-    { name: 'Members',      path: `/club/${clubId}/members`,     icon: Users },
-    { name: 'Events',       path: `/club/${clubId}/events`,      icon: Calendar },
-    { name: 'Workshops',    path: `/club/${clubId}/workshops`,   icon: Wrench },
-    { name: 'Knowledge',    path: `/club/${clubId}/knowledge`,   icon: BookOpen },
-    { name: 'Documents',    path: `/club/${clubId}/documents`,   icon: FileText },
-    { name: 'Announcements', path: `/club/${clubId}/announcements`, icon: Megaphone },
-    { name: 'Finance',      path: `/club/${clubId}/finance`,     icon: Wallet },
+    { name: 'Dashboard',    path: `/leader/dashboard`,     icon: LayoutDashboard },
+    { name: 'Members',      path: `/leader/members`,       icon: Users },
+    { name: 'Events',       path: `/leader/events`,        icon: Calendar },
+    { name: 'Workshops',    path: `/leader/workshops`,     icon: Wrench },
+    { name: 'Knowledge',    path: `/leader/knowledge`,     icon: BookOpen },
+    { name: 'Documents',    path: `/leader/documents`,     icon: FileText },
+    { name: 'Announcements', path: `/leader/announcements`, icon: Megaphone },
+    { name: 'Finance',      path: `/leader/finance`,       icon: Wallet },
   ];
 }
 
@@ -149,4 +207,56 @@ function buildPortalNav() {
     { name: 'Settings', path: '/admin/settings',  icon: Settings },
     { name: 'Reports',  path: '/reports',         icon: BarChart3 },
   ];
+}
+
+function buildManagerNav() {
+  return [
+    { name: 'Dashboard',       path: '/manager',                  icon: LayoutDashboard },
+    { name: 'Quản lý CLB',     path: '/manager/clubs',            icon: Building2 },
+    { name: 'Thông báo',       path: '/manager/announcements',    icon: Megaphone },
+    { name: 'Nhật ký',         path: '/manager/log',              icon: BarChart3 },
+  ];
+}
+
+function buildMentorNav() {
+  return [
+    { name: 'Dashboard', path: '/mentor/dashboard', icon: LayoutDashboard },
+    { name: 'CLB của tôi', path: '/mentor/clubs',    icon: BookOpen },
+    { name: 'Nhật ký',    path: '/mentor/log',      icon: BarChart3 },
+  ];
+}
+
+function buildMemberNav() {
+  return [
+    { name: 'Dashboard',    path: '/member',            icon: LayoutDashboard },
+    { name: 'CLB của tôi',  path: '/member/clubs',      icon: Building2 },
+    { name: 'Đóng quỹ',     path: '/member/finance',    icon: Wallet },
+    { name: 'Sự kiện',      path: '/my-registrations',  icon: Calendar },
+    { name: 'Thông báo',    path: '/announcements',     icon: Megaphone },
+  ];
+}
+
+/**
+ * Conditional version of useLeaderClubs. Returns an "empty / not loading"
+ * shape when disabled so callers can render unconditionally.
+ */
+function useLeaderClubsConditional(enabled) {
+  // Always call the hook — Rules of Hooks. The hook itself is cheap
+  // when auth isn't ready, and the actual fetch only runs once per
+  // session anyway.
+  const result = useLeaderClubs();
+  if (!enabled) {
+    return { ledClubs: [], ledClubIds: [], loading: false, error: null, refresh: () => {} };
+  }
+  return result;
+}
+
+/* Same pattern as useLeaderClubsConditional — wraps useMemberClubs so
+ * we don't fire the query when the layout isn't on a /member/* route. */
+function useMemberClubsConditional(enabled) {
+  const result = useMemberClubs();
+  if (!enabled) {
+    return { memberClubs: [], memberClubIds: [], loading: false, error: null, refresh: () => {} };
+  }
+  return result;
 }

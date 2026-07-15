@@ -38,6 +38,7 @@ export default function ClubDetailPageContent() {
   const { profileId, isAuthenticated } = useAuth();
 
   const [club, setClub] = useState(null);
+  const [clubUuid, setClubUuid] = useState(null);
   const [events, setEvents] = useState([]);
   const [gallery, setGallery] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
@@ -70,8 +71,11 @@ export default function ClubDetailPageContent() {
 
       /* Resolve UUID once, reuse it for every sub-query.
          resolveClubUuid() now applies a bounded .eq('status','active').limit(200)
-         so we don't pull the entire clubs table. */
-      const clubUuid = await resolveClubUuid(id);
+         so we don't pull the entire clubs table. The UUID is hoisted into
+         component state so handlers (join/leave) can read it without each
+         having to re-resolve. */
+      const resolved = await resolveClubUuid(id);
+      setClubUuid(resolved || null);
 
       const clubData = await clubService.getById(id);
       setClub(clubData);
@@ -86,28 +90,31 @@ export default function ClubDetailPageContent() {
 
       const [eventsRes, galleryRes, announcementsRes, membersRes, leaderRes, relatedRes] =
         await Promise.allSettled([
-          eventService.getByClub(id, 4).catch((err) => {
+          // Pass the freshly-resolved UUID so .eq('club_id', uuid) matches
+          // real rows. Falling back to `id` only when resolveClubUuid returned
+          // null (slug not found) — that path will return [] silently.
+          eventService.getByClub(resolved || id, 4).catch((err) => {
             console.warn('events for club unavailable:', err?.message || err);
             return [];
           }),
-          galleryService.getByClub(id).catch((err) => {
+          galleryService.getByClub(resolved || id).catch((err) => {
             console.warn('gallery for club unavailable:', err?.message || err);
             return [];
           }),
-          clubUuid
-            ? announcementService.getAnnouncements(clubUuid).catch((err) => {
+          resolved
+            ? announcementService.getAnnouncements(resolved).catch((err) => {
                 console.warn('announcements for club unavailable:', err?.message || err);
                 return [];
               })
             : Promise.resolve([]),
-          clubUuid
-            ? clubService.getMembers(clubUuid).catch((err) => {
+          resolved
+            ? clubService.getMembers(resolved).catch((err) => {
                 console.warn('members for club unavailable:', err?.message || err);
                 return [];
               })
             : Promise.resolve([]),
-          clubUuid
-            ? clubService.getLeaderInfo(clubUuid).catch((err) => {
+          resolved
+            ? clubService.getLeaderInfo(resolved).catch((err) => {
                 console.warn('leader info unavailable:', err?.message || err);
                 return null;
               })
@@ -135,12 +142,12 @@ export default function ClubDetailPageContent() {
       setLeaderInfo(leaderRes.status === 'fulfilled' ? leaderRes.value : null);
       setRelatedClubs(relatedRes.status === 'fulfilled' ? relatedRes.value || [] : []);
 
-      if (profileId) {
-        const mem = await membershipService.getMembership(profileId, id).catch(() => null);
+      if (profileId && resolved) {
+        const mem = await membershipService.getMembership(profileId, resolved).catch(() => null);
         setMembership(mem);
 
         // Also check if user has a pending/rejected request
-        const request = await joinRequestService.getUserClubRequest(profileId, id).catch(() => null);
+        const request = await joinRequestService.getUserClubRequest(profileId, resolved).catch(() => null);
         setJoinRequest(request);
       }
     } catch (error) {
@@ -177,15 +184,19 @@ export default function ClubDetailPageContent() {
   };
 
   const handleSubmitJoinRequest = async (formData) => {
+    if (!clubUuid) {
+      toast('Không thể xác định club để gửi yêu cầu', { variant: 'error' });
+      throw new Error('Missing clubUuid');
+    }
     try {
       await joinRequestService.submitClubRequest({
-        clubId: id,
+        clubId: clubUuid,
         profileId,
         ...formData
       });
       toast('Đã gửi yêu cầu tham gia CLB!', { variant: 'success' });
       // Refresh the request status
-      const request = await joinRequestService.getUserClubRequest(profileId, id).catch(() => null);
+      const request = await joinRequestService.getUserClubRequest(profileId, clubUuid).catch(() => null);
       setJoinRequest(request);
       return true;
     } catch (err) {
@@ -196,8 +207,9 @@ export default function ClubDetailPageContent() {
   };
 
   const handleLeave = async () => {
+    if (!clubUuid) return;
     try {
-      await membershipService.leaveClub(id, profileId);
+      await membershipService.leaveClub(clubUuid, profileId);
       toast(`Đã rời ${club.name}`, { variant: 'info' });
       setConfirmLeave(false);
       loadData();

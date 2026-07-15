@@ -4,35 +4,39 @@ import { Megaphone, Pin } from "lucide-react";
 import { announcementService } from "../../services/announcementService";
 import { resolveClubUuid } from "../../services/supabase";
 import { useAuth } from "@/hooks/useAuth";
+import { ROLES } from "@/auth/rolePermissions";
 import { HeroSection } from "@/components";
 import AnnouncementFormModal from "./components/AnnouncementFormModal/AnnouncementFormModal.jsx";
 import "./AnnouncementsPage.css";
 
 export default function AnnouncementsPageContent() {
   const { clubId } = useParams();
-  const { profileId, can } = useAuth();
+  const { profileId, profile, role, can } = useAuth();
   const [resolvedClubId, setResolvedClubId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  /* Club Leader is the only role allowed to create / edit / delete
-     announcements (and toggle pin). Without this guard, every visitor
-     — anon or signed-in Student — would see Create / Edit / Delete /
-     Pin controls. Backend RLS is the authoritative check; this is
-     purely a UI affordance. */
-  const isLeader = can('announcement:create') && can('announcement:edit') && can('announcement:delete');
+  /* Role guard. Two paths to author an announcement:
+     1. Manager / Administrator — can publish platform-wide notices
+        (club_id = NULL) regardless of the URL.
+     2. Club Leader of the current club — can publish notices for their
+        own club.
+     Students / Club Members / Mentors / anonymous users fall under
+     `announcement:view` only; the Create / Edit / Delete / Pin affordances
+     are intentionally hidden from them. RLS policies in migration 014 are
+     the authoritative gate; this is purely the UI affordance. */
+  const canPlatformManage =
+    role === ROLES.MANAGER || role === ROLES.ADMINISTRATOR;
+  const canClubManage =
+    role === ROLES.CLUB_LEADER &&
+    can("announcement:create") &&
+    can("announcement:edit") &&
+    can("announcement:delete");
+  const isLeader = canPlatformManage || canClubManage;
 
-  const [announcements, setAnnouncements] = useState([
-    {
-      id: "1",
-      title: "Weekly Tech Workshop: TailwindCSS v4 Setup & Best Practices",
-      author: "Nguyễn Hoàng Nam",
-      date: "2026-07-02",
-      content: "Hi members, our weekly training session starts today at ALAGRE Space at 14:00. Make sure to pull the latest changes from Github, install dependencies before joining, and bring your laptops. We will be coding the Tailwind v4 responsive grids.",
-      audience: "Members",
-      pinned: true
-    }
-  ]);
+  /* Initial state is always empty so the page never flashes mock data
+     before the Supabase fetch resolves. */
+  const [announcements, setAnnouncements] = useState([]);
 
   async function fetchAnnouncements(uuid) {
     try {
@@ -137,8 +141,14 @@ export default function AnnouncementsPageContent() {
       return;
     }
 
+    /* Manager / Administrator publish platform-wide notices (club_id = NULL).
+       Club Leaders publish notices for their own club. The current value of
+       `resolvedClubId` is the UUID if the URL was /club/:clubId/announcements
+       and a slug resolution succeeded. */
+    const targetClubId = canPlatformManage ? null : resolvedClubId || null;
+
     const payload = {
-      club_id: resolvedClubId || clubId,
+      club_id: targetClubId,
       title: formData.title,
       content: formData.content,
       audience: formData.audience.toLowerCase(),
@@ -153,18 +163,23 @@ export default function AnnouncementsPageContent() {
         await announcementService.createAnnouncement(payload);
       }
       if (resolvedClubId) fetchAnnouncements(resolvedClubId);
+      else fetchAnnouncements(null);
     } catch (err) {
-      console.warn("Supabase announcement save failed, running local state update:", err);
+      console.warn("Supabase announcement save failed:", err?.message || err);
+      const authorFallback =
+        profile?.full_name || profile?.email?.split('@')[0] || 'Author';
       if (selectedAnnouncement) {
         setAnnouncements((prev) =>
           prev.map((ann) =>
-            ann.id === selectedAnnouncement.id ? { ...ann, ...formData } : ann
+            ann.id === selectedAnnouncement.id
+              ? { ...ann, ...formData, author: authorFallback }
+              : ann
           )
         );
       } else {
         const newAnn = {
-          id: String(announcements.length + 1),
-          author: "Lê Thanh Tùng",
+          id: `tmp-${Date.now()}`,
+          author: authorFallback,
           date: new Date().toISOString().split("T")[0],
           ...formData
         };
@@ -182,7 +197,7 @@ export default function AnnouncementsPageContent() {
     if (window.confirm("Are you sure you want to permanently delete this announcement?")) {
       try {
         await announcementService.deleteAnnouncement(id);
-        if (resolvedClubId) fetchAnnouncements(resolvedClubId);
+        fetchAnnouncements(resolvedClubId);
       } catch (err) {
         console.warn("Supabase delete notice failed, updating state locally:", err);
         setAnnouncements((prev) => prev.filter((ann) => ann.id !== id));
@@ -200,7 +215,7 @@ export default function AnnouncementsPageContent() {
 
     try {
       await announcementService.updateAnnouncement(id, { is_pinned: !notice.pinned });
-      if (resolvedClubId) fetchAnnouncements(resolvedClubId);
+      fetchAnnouncements(resolvedClubId);
     } catch (err) {
       console.warn("Supabase pin toggle failed, updating state locally:", err);
       setAnnouncements((prev) =>

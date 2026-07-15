@@ -1,9 +1,21 @@
 import { createClient } from "@supabase/supabase-js";
 import { mockData } from "./mockData";
 
-/* DELETE_MOCK_FALLBACK: when backend is stable, drop the mockData
-   import + USE_MOCK_FALLBACK constant + every fallback branch below. */
-const USE_MOCK_FALLBACK = true;
+/* ----------------------------------------------------------------------------
+ * USE_MOCK_FALLBACK — temporary toggle for offline / broken-backend development.
+ *
+ * Default: OFF. Set `VITE_USE_MOCK_FALLBACK=true` in `frontend/.env` to force
+ * every service to short-circuit and return data from `./mockData` instead of
+ * touching Supabase. When the backend is stable, leave it unset (or set it to
+ * `false`) and every service hits Supabase normally.
+ *
+ * Tracked under DELETE_MOCK_FALLBACK — when the project stops needing offline
+ * development, delete the env var, this constant, the mockData import, and
+ * every wrapper that calls `fallbackFn()`.
+ * -------------------------------------------------------------------------- */
+const envValue = import.meta.env.VITE_USE_MOCK_FALLBACK;
+export const USE_MOCK_FALLBACK =
+  typeof envValue === "string" && envValue.toLowerCase() === "true";
 
 function mockUuidForSlug(slugOrUuid) {
   if (!slugOrUuid) return null;
