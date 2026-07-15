@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { eventService } from '@/services/eventService'
-import { Card, Button, Badge, Loading, toast, ConfirmModal } from '@/components'
+import { joinRequestService } from '@/services/joinRequestService'
+import { Card, Button, Badge, Loading, toast, ConfirmModal, JoinRequestModal } from '@/components'
 import { useAuth } from '@/hooks/useAuth.jsx'
+import { Clock, CheckCircle, XCircle, Users } from 'lucide-react'
 import './EventDetailPage.css';
 
 function formatDate(dateString) {
@@ -32,6 +34,8 @@ export default function EventDetailPageContent() {
   const [currentCount, setCurrentCount] = useState(0)
   const [registration, setRegistration] = useState(null)
   const [registering, setRegistering] = useState(false)
+  const [registrationRequest, setRegistrationRequest] = useState(null)
+  const [showRegisterModal, setShowRegisterModal] = useState(false)
 
   const loadEvent = async () => {
     try {
@@ -44,8 +48,12 @@ export default function EventDetailPageContent() {
       setCurrentCount(count)
 
       if (profileId) {
-        const reg = await eventService.isUserRegistered(id, profileId).catch(() => null)
+        const [reg, request] = await Promise.all([
+          eventService.isUserRegistered(id, profileId).catch(() => null),
+          joinRequestService.getUserEventRequest(profileId, id).catch(() => null)
+        ])
         setRegistration(reg)
+        setRegistrationRequest(request)
       }
     } catch (error) {
       console.error('Error loading event:', error)
@@ -58,26 +66,40 @@ export default function EventDetailPageContent() {
     loadEvent()
   }, [id, profileId])
 
-  const handleRegister = async () => {
+  const handleRegisterClick = () => {
     if (!profileId) {
-      toast('Please log in to register', { variant: 'error' })
+      toast('Vui lòng đăng nhập để đăng ký', { variant: 'error' })
       return
     }
+    // Check if there's a pending request
+    if (registrationRequest?.status === 'pending') {
+      toast('Bạn đã có yêu cầu đang chờ duyệt', { variant: 'warning' })
+      return
+    }
+    setShowRegisterModal(true)
+  }
+
+  const handleSubmitRegistrationRequest = async (formData) => {
     try {
-      setRegistering(true)
-      const reg = await eventService.register(id, profileId)
-      setRegistration(reg)
-      setCurrentCount((c) => c + 1)
-      toast(`Registered for ${event.title}!`, { variant: 'success' })
+      await joinRequestService.submitEventRequest({
+        eventId: id,
+        clubId: event?.club_id || event?.clubs?.id,
+        profileId,
+        ...formData
+      })
+      toast('Đã gửi yêu cầu đăng ký sự kiện!', { variant: 'success' })
+      // Refresh the request status
+      const request = await joinRequestService.getUserEventRequest(profileId, id).catch(() => null)
+      setRegistrationRequest(request)
+      return true
     } catch (err) {
-      console.error('Register failed:', err)
-      toast('Không thể đăng ký sự kiện', { variant: 'error' })
-    } finally {
-      setRegistering(false)
+      console.error('Submit registration request failed:', err)
+      toast('Không thể gửi yêu cầu', { variant: 'error' })
+      throw err
     }
   }
 
-  const handleCancel = async () => {
+  const handleCancelRequest = async () => {
     try {
       await eventService.cancelRegistrationByUser(id, profileId)
       setRegistration((prev) => (prev ? { ...prev, status: 'cancelled' } : null))
@@ -95,7 +117,7 @@ export default function EventDetailPageContent() {
   if (!event) {
     return (
       <div className="container py-16 text-center">
-        <h1 className="text-2xl font-bold text-secondary-100 mb-4">Event not found</h1>
+        <h1 className="text-2xl font-bold text-primary-900 mb-4">Event not found</h1>
         <Link to="/events">
           <Button>Back to Events</Button>
         </Link>
@@ -105,6 +127,7 @@ export default function EventDetailPageContent() {
 
   const registered = registration && registration.status !== 'cancelled'
   const checkedIn = registration?.status === 'checked_in'
+  const requestStatus = registrationRequest?.status
 
   return (
     <div className="min-h-screen">
@@ -126,7 +149,7 @@ export default function EventDetailPageContent() {
             >
               {event.status?.charAt(0).toUpperCase() + event.status?.slice(1)}
             </Badge>
-            <h1 className="text-3xl md:text-4xl font-bold text-secondary-100">
+            <h1 className="text-3xl md:text-4xl font-bold text-primary-900">
               {event.title}
             </h1>
           </div>
@@ -141,8 +164,8 @@ export default function EventDetailPageContent() {
             <div className="lg:col-span-2 space-y-6">
               <Card>
                 <div className="p-6">
-                  <h2 className="text-xl font-semibold text-secondary-100 mb-4">About This Event</h2>
-                  <p className="text-secondary-200 leading-relaxed whitespace-pre-wrap">
+                  <h2 className="text-xl font-semibold text-primary-900 mb-4">About This Event</h2>
+                  <p className="text-primary-800 leading-relaxed whitespace-pre-wrap">
                     {event.description || 'No description available for this event.'}
                   </p>
                 </div>
@@ -151,7 +174,7 @@ export default function EventDetailPageContent() {
               {event.clubs && (
                 <Card>
                   <div className="p-6">
-                    <h2 className="text-xl font-semibold text-secondary-100 mb-4">Organized By</h2>
+                    <h2 className="text-xl font-semibold text-primary-900 mb-4">Organized By</h2>
                     <Link
                       to={`/clubs/${event.clubs.id}`}
                       className="flex items-center gap-4 p-4 rounded-xl bg-primary-800/50 hover:bg-primary-800 transition-colors"
@@ -164,8 +187,8 @@ export default function EventDetailPageContent() {
                         />
                       )}
                       <div>
-                        <p className="font-semibold text-secondary-100">{event.clubs.name}</p>
-                        <p className="text-sm text-secondary-300">View club page</p>
+                        <p className="font-semibold text-primary-900">{event.clubs.name}</p>
+                        <p className="text-sm text-primary-700">View club page</p>
                       </div>
                     </Link>
                   </div>
@@ -177,7 +200,7 @@ export default function EventDetailPageContent() {
             <div className="space-y-6">
               <Card>
                 <div className="p-6 space-y-4">
-                  <h3 className="text-lg font-semibold text-secondary-100">Event Details</h3>
+                  <h3 className="text-lg font-semibold text-primary-900">Event Details</h3>
 
                   <div className="flex items-start gap-3">
                     <div className="p-2 rounded-lg bg-accent-green/20">
@@ -186,8 +209,8 @@ export default function EventDetailPageContent() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm text-secondary-300">Date</p>
-                      <p className="font-medium text-secondary-100">
+                      <p className="text-sm text-primary-700">Date</p>
+                      <p className="font-medium text-primary-900">
                         {formatDate(event.start_time)}
                       </p>
                     </div>
@@ -200,8 +223,8 @@ export default function EventDetailPageContent() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm text-secondary-300">Time</p>
-                      <p className="font-medium text-secondary-100">
+                      <p className="text-sm text-primary-700">Time</p>
+                      <p className="font-medium text-primary-900">
                         {formatTime(event.start_time)}
                         {event.end_time && ` - ${formatTime(event.end_time)}`}
                       </p>
@@ -217,8 +240,8 @@ export default function EventDetailPageContent() {
                         </svg>
                       </div>
                       <div>
-                        <p className="text-sm text-secondary-300">Location</p>
-                        <p className="font-medium text-secondary-100">{event.location}</p>
+                        <p className="text-sm text-primary-700">Location</p>
+                        <p className="font-medium text-primary-900">{event.location}</p>
                       </div>
                     </div>
                   )}
@@ -231,8 +254,8 @@ export default function EventDetailPageContent() {
                         </svg>
                       </div>
                       <div>
-                        <p className="text-sm text-secondary-300">Max Participants</p>
-                        <p className="font-medium text-secondary-100">{event.max_participants}</p>
+                        <p className="text-sm text-primary-700">Max Participants</p>
+                        <p className="font-medium text-primary-900">{event.max_participants}</p>
                       </div>
                     </div>
                   )}
@@ -242,18 +265,51 @@ export default function EventDetailPageContent() {
               {event.status === 'upcoming' && (
                 <Card className="event-detail-cta">
                   <div className="p-6 text-center">
-                    <h3 className="text-lg font-semibold text-secondary-100 mb-2">
+                    <h3 className="text-lg font-semibold text-primary-900 mb-2">
                       {checkedIn
                         ? "You're Checked In!"
                         : registered
                         ? "You're Registered!"
+                        : requestStatus === 'pending'
+                        ? "Request Pending"
+                        : requestStatus === 'rejected'
+                        ? "Request Rejected"
                         : 'Interested in this event?'}
                     </h3>
-                    <p className="text-sm text-secondary-200 mb-4">
+                    <p className="text-sm text-primary-800 mb-4">
                       {registered
                         ? 'Manage from My Registrations'
+                        : requestStatus === 'pending'
+                        ? 'Your registration request is being reviewed'
+                        : requestStatus === 'rejected'
+                        ? 'Your registration was not approved'
                         : 'Register now to secure your spot'}
                     </p>
+
+                    {/* Registration status display */}
+                    {requestStatus && !registered && (
+                      <div className={`event-request-status event-request-status--${requestStatus}`}>
+                        {requestStatus === 'pending' && (
+                          <>
+                            <Clock size={20} />
+                            <span>Đang chờ duyệt</span>
+                          </>
+                        )}
+                        {requestStatus === 'rejected' && (
+                          <>
+                            <XCircle size={20} />
+                            <span>Bị từ chối</span>
+                          </>
+                        )}
+                        {requestStatus === 'approved' && (
+                          <>
+                            <CheckCircle size={20} />
+                            <span>Đã được duyệt</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+
                     {registered ? (
                       <Button
                         variant="destructive"
@@ -262,22 +318,24 @@ export default function EventDetailPageContent() {
                       >
                         {checkedIn ? 'View QR Code' : 'Cancel Registration'}
                       </Button>
-                    ) : (
+                    ) : requestStatus !== 'pending' && (
                       <Button
                         className="w-full"
-                        onClick={handleRegister}
+                        onClick={handleRegisterClick}
                         disabled={registering || !isAuthenticated}
                       >
-                        {registering ? 'Registering...' : isAuthenticated ? 'Register Now' : 'Login to Register'}
+                        {registering ? 'Đang gửi...' : isAuthenticated ? 'Đăng ký ngay' : 'Đăng nhập để đăng ký'}
                       </Button>
                     )}
+
                     {event.max_participants && (
-                      <p className="text-xs text-secondary-300 mt-3">
-                        {currentCount} / {event.max_participants} registered
-                      </p>
+                      <div className="event-registration-stats">
+                        <Users size={14} />
+                        <span>{currentCount} / {event.max_participants} đã đăng ký</span>
+                      </div>
                     )}
                     {registered && registration?.qr_code && (
-                      <p className="text-xs text-secondary-200 mt-3 font-mono">
+                      <p className="text-xs text-primary-800 mt-3 font-mono">
                         {registration.qr_code}
                       </p>
                     )}
@@ -303,6 +361,15 @@ export default function EventDetailPageContent() {
         variant="danger"
         onCancel={() => setConfirmCancel(false)}
         onConfirm={handleCancel}
+      />
+
+      <JoinRequestModal
+        isOpen={showRegisterModal}
+        onClose={() => setShowRegisterModal(false)}
+        onSubmit={handleSubmitRegistrationRequest}
+        type="event"
+        title={event?.title}
+        loading={registering}
       />
     </div>
   )

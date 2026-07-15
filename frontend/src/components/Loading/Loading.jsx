@@ -15,7 +15,7 @@ export function Loading({ className, size = 'default', fullScreen = false }) {
             'animate-spin rounded-full border-2 border-accent-green border-t-transparent',
             sizes[size]
           )} />
-          <p className="text-secondary-200 text-sm">Loading...</p>
+          <p className="text-primary-800 text-sm">Loading...</p>
         </div>
       </div>
     )

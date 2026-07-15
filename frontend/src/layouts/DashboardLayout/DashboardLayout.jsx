@@ -13,58 +13,62 @@ import './DashboardLayout.css';
  * Manager (`/manager`) routes only. Renders a left sidebar whose items
  * depend on the route prefix.
  *
+ * Pass `hideSidebar` prop to hide the sidebar (e.g., for Manager dashboard).
+ *
  * Renders <Outlet /> — pages inside are NOT expected to wrap themselves
  * in any layout.
  */
-export default function DashboardLayout() {
+export default function DashboardLayout({ hideSidebar = false }) {
   const { clubId } = useParams();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const navItems = clubId ? buildClubNav(clubId) : buildPortalNav();
 
   return (
-    <div className="dashboard-layout">
+    <div className={`dashboard-layout ${hideSidebar ? 'dashboard-layout--no-sidebar' : ''}`}>
       {/* Sidebar — desktop */}
-      <aside className="dashboard-layout__sidebar">
-        <div className="dashboard-layout__brand">
-          <Link to="/" className="dashboard-layout__brand-link">
-            <img src="/ClubHub_Logo_White.png" alt="ClubHub" className="dashboard-layout__brand-logo" />
-            <span className="dashboard-layout__brand-text">ClubHub</span>
-          </Link>
-          {clubId && (
-            <div className="dashboard-layout__brand-sub">
-              <span className="dashboard-layout__brand-eyebrow">Club Context</span>
-              <span className="dashboard-layout__brand-club">F-Code</span>
-            </div>
-          )}
-        </div>
+      {!hideSidebar && (
+        <aside className="dashboard-layout__sidebar">
+          <div className="dashboard-layout__brand">
+            <Link to="/" className="dashboard-layout__brand-link">
+              <img src="/ClubHub_Logo_White.png" alt="ClubHub" className="dashboard-layout__brand-logo" />
+              <span className="dashboard-layout__brand-text">ClubHub</span>
+            </Link>
+            {clubId && (
+              <div className="dashboard-layout__brand-sub">
+                <span className="dashboard-layout__brand-eyebrow">Club Context</span>
+                <span className="dashboard-layout__brand-club">F-Code</span>
+              </div>
+            )}
+          </div>
 
-        <nav className="dashboard-layout__nav">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.path.endsWith('/dashboard') || item.path === '/admin' || item.path === '/manager'}
-                className={({ isActive }) =>
-                  `dashboard-layout__nav-item ${isActive ? 'dashboard-layout__nav-item--active' : ''}`
-                }
-                onClick={() => setIsMobileOpen(false)}
-              >
-                <Icon size={18} />
-                <span>{item.name}</span>
-              </NavLink>
-            );
-          })}
-        </nav>
+          <nav className="dashboard-layout__nav">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  end={item.path.endsWith('/dashboard') || item.path === '/admin' || item.path === '/manager'}
+                  className={({ isActive }) =>
+                    `dashboard-layout__nav-item ${isActive ? 'dashboard-layout__nav-item--active' : ''}`
+                  }
+                  onClick={() => setIsMobileOpen(false)}
+                >
+                  <Icon size={18} />
+                  <span>{item.name}</span>
+                </NavLink>
+              );
+            })}
+          </nav>
 
-        <div className="dashboard-layout__footer">
-          <Link to="/" className="dashboard-layout__back">
-            <ArrowLeft size={14} /> Back to Main Portal
-          </Link>
-        </div>
-      </aside>
+          <div className="dashboard-layout__footer">
+            <Link to="/" className="dashboard-layout__back">
+              <ArrowLeft size={14} /> Back to Main Portal
+            </Link>
+          </div>
+        </aside>
+      )}
 
       {/* Mobile overlay */}
       {isMobileOpen && (

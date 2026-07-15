@@ -10,3 +10,88 @@
   background: linear-gradient(135deg, rgba(29, 78, 216, 0.10) 0%, rgba(34, 197, 94, 0.15) 100%) !important;
   border-color: rgba(34, 197, 94, 0.30) !important;
 }
+
+/* Request status badge */
+.event-request-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.event-request-status--pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #B45309;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.event-request-status--rejected {
+  background: rgba(239, 68, 68, 0.10);
+  color: #DC2626;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.event-request-status--approved {
+  background: rgba(34, 197, 94, 0.15);
+  color: #16A34A;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+/* Registration stats */
+.event-registration-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #5A6B62;
+  margin-top: 12px;
+}
+
+/* Join status (Club page) */
+.join-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.join-status--warning {
+  background: rgba(245, 158, 11, 0.10);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.join-status--error {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.20);
+}
+
+.join-status__icon {
+  color: inherit;
+}
+
+.join-status--warning .join-status__icon {
+  color: #F59E0B;
+}
+
+.join-status--error .join-status__icon {
+  color: #EF4444;
+}
+
+.join-status__text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #06231D;
+}
+
+.join-status__subtext {
+  font-size: 12px;
+  color: #5A6B62;
+}

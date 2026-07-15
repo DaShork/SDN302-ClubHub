@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate, Link } from "react-router-dom";
 import { eventService } from "../../services/eventService";
 import { workshopService } from "../../services/workshopService";
 import { resolveClubUuid } from "../../services/supabase";
@@ -9,47 +9,23 @@ import EventFormModal from "./components/EventFormModal/EventFormModal.jsx";
 import "./EventsPage.css";
 
 export default function EventsPageContent() {
-  const { clubId } = useParams();
-  const { profileId } = useAuth();
+  const { clubId: routeClubId } = useParams();
+  const [searchParams] = useSearchParams();
+  const clubId = routeClubId || searchParams.get('club');
+  const { profileId, can } = useAuth();
   const [resolvedClubId, setResolvedClubId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  /* Mock seed data is shown until Supabase returns real rows. */
-  const [activities, setActivities] = useState([
-    {
-      id: "1",
-      type: "Event",
-      title: "React 19 & Next.js 15 Seminar",
-      speaker: "Nguyễn Hoàng Nam",
-      description: "Join us for an in-depth seminar on the latest React 19 features including Server Actions, the new use() hook, and Next.js 15 App Router optimizations. Essential for modern web developers.",
-      startTime: "2026-07-15T13:30",
-      endTime: "2026-07-15T16:30",
-      location: "Beta Building, Room 204",
-      maxSlots: 100,
-      remainingSlots: 24,
-      status: "Upcoming",
-      document: "React_19_Seminar_Outline.pdf",
-      minutes: "Executive Meeting Minutes 30/06",
-      coverColor: "events-cover--teal"
-    },
-    {
-      id: "2",
-      type: "Workshop",
-      title: "TailwindCSS v4 Setup & Build Optimization",
-      speaker: "Trần Quốc Bảo",
-      description: "A hands-on workshop focused on transitioning to TailwindCSS v4. We will cover the new Rust-based compiler engine, Vite plugin integration, and advanced configuration options.",
-      startTime: "2026-07-28T08:00",
-      endTime: "2026-07-28T18:00",
-      location: "ALAGRE Space",
-      maxSlots: 40,
-      remainingSlots: 12,
-      status: "Upcoming",
-      document: "Tailwindv4_Workshop_Slides.pdf",
-      minutes: "Weekly Planning Minutes 28/06",
-      coverColor: "events-cover--blue"
-    }
-  ]);
+  /* Club Leader is the only role allowed to create / edit / delete
+     events and workshops. Without this guard, the Create New button
+     and per-card Edit/Delete controls would be visible to every
+     visitor — anon or signed-in Student alike. Backend RLS is the
+     authoritative check; this is purely a UI affordance. */
+  const isLeader = can('event:create') && can('event:edit') && can('event:delete');
+
+  /* Events from API - will be transformed to match UI format */
+  const [activities, setActivities] = useState([]);
 
   async function fetchActivities(uuid) {
     try {
@@ -116,11 +92,47 @@ export default function EventsPageContent() {
           setLoading(false);
         }
       } else {
+        // No clubId - fetch all public events for the events listing page
+        await fetchAllEvents();
         setLoading(false);
       }
     }
     init();
   }, [clubId]);
+
+  async function fetchAllEvents() {
+    try {
+      setLoading(true);
+      setErrorMsg(null);
+
+      const eventsData = await eventService.getAll({ limit: 50 });
+
+      const colors = ["events-cover--teal", "events-cover--blue", "events-cover--violet", "events-cover--amber"];
+      const parsedEvents = eventsData.map((e, idx) => ({
+        id: e.id,
+        type: "Event",
+        title: e.title,
+        speaker: e.speaker || "FPTU",
+        description: e.description || "",
+        startTime: e.start_time ? e.start_time.slice(0, 16) : "",
+        endTime: e.end_time ? e.end_time.slice(0, 16) : "",
+        location: e.location || "Online",
+        maxSlots: e.max_participants || 100,
+        remainingSlots: Math.max(0, (e.max_participants || 100) - (e.registrationCount || 0)),
+        registrationCount: e.registrationCount || 0,
+        status: e.status === "upcoming" ? "Upcoming" : e.status === "ongoing" ? "Ongoing" : "Finished",
+        coverColor: colors[idx % colors.length],
+        clubName: e.clubs?.name || "Club"
+      }));
+
+      setActivities(parsedEvents);
+    } catch (err) {
+      console.warn("Failed to fetch events:", err);
+      setErrorMsg("Không thể tải danh sách sự kiện.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const documentsList = [
     "React_19_Seminar_Outline.pdf",
@@ -211,6 +223,15 @@ export default function EventsPageContent() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    /* Defense in depth: even if a non-leader manages to open the modal
+       via devtools, refuse to submit. The server-side RLS policy is
+       the authoritative gate, but failing fast here gives a clearer
+       error than the cryptic Supabase 42501. */
+    if (!isLeader) {
+      window.alert("You don't have permission to create or edit events.");
+      return;
+    }
+
     if (formData.type === "Event") {
       const payload = {
         club_id: resolvedClubId || clubId,
@@ -279,6 +300,10 @@ export default function EventsPageContent() {
   }
 
   const handleDeleteActivity = async (id, type) => {
+    if (!isLeader) {
+      window.alert("You don't have permission to delete events.");
+      return;
+    }
     if (window.confirm(`Are you sure you want to delete this ${type.toLowerCase()}?`)) {
       try {
         if (type === "Event") {
@@ -321,9 +346,11 @@ export default function EventsPageContent() {
               {errorMsg && (
                 <span className="events-page__warn">⚠️ {errorMsg}</span>
               )}
-              <button type="button" className="events-page__btn-primary" onClick={handleOpenAddModal}>
-                📅 Create New
-              </button>
+              {isLeader && (
+                <button type="button" className="events-page__btn-primary" onClick={handleOpenAddModal}>
+                  📅 Create New
+                </button>
+              )}
             </div>
           </div>
 
@@ -376,6 +403,9 @@ export default function EventsPageContent() {
                   </div>
 
                   <div className="events-card__body">
+                    {act.clubName && (
+                      <p className="events-card__club-name">by {act.clubName}</p>
+                    )}
                     <p className="events-card__desc">{act.description}</p>
                     <div className="events-card__meta">
                       <div className="events-card__meta-row"><span>👤</span><span>Speaker: <strong>{act.speaker}</strong></span></div>
@@ -412,15 +442,25 @@ export default function EventsPageContent() {
                       </div>
                     )}
 
-                    <div className="events-card__footer">
-                      <button type="button" className="events-card__link events-card__link--edit" onClick={() => handleOpenEditModal(act)}>
-                        Edit
-                      </button>
-                      <span className="events-card__divider">|</span>
-                      <button type="button" className="events-card__link events-card__link--delete" onClick={() => handleDeleteActivity(act.id, act.type)}>
-                        Delete
-                      </button>
-                    </div>
+                    {!isLeader && (
+                      <div className="events-card__footer">
+                        <Link to={`/events/${act.id}`} className="events-card__link">
+                          View Details →
+                        </Link>
+                      </div>
+                    )}
+
+                    {isLeader && (
+                      <div className="events-card__footer">
+                        <button type="button" className="events-card__link events-card__link--edit" onClick={() => handleOpenEditModal(act)}>
+                          Edit
+                        </button>
+                        <span className="events-card__divider">|</span>
+                        <button type="button" className="events-card__link events-card__link--delete" onClick={() => handleDeleteActivity(act.id, act.type)}>
+                          Delete
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </article>
               ))

@@ -28,9 +28,9 @@ export function ConfirmModal({
         onClick={onCancel}
       />
       <div className="relative z-10 w-full max-w-md rounded-2xl bg-card border border-white/10 shadow-2xl p-6">
-        <h3 className="text-lg font-semibold text-secondary-100 mb-2">{title}</h3>
+        <h3 className="text-lg font-semibold text-primary-900 mb-2">{title}</h3>
         {description && (
-          <p className="text-sm text-secondary-300 mb-6">{description}</p>
+          <p className="text-sm text-primary-700 mb-6">{description}</p>
         )}
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onCancel}>{cancelLabel}</Button>

@@ -1,7 +1,11 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import ErrorBoundary from '@/components/common/ErrorBoundary.jsx';
+import ConnectionBanner from '@/components/common/ConnectionBanner.jsx';
 import HomePage from '@/pages/HomePage/HomePage.jsx';
 import ClubsPage from '@/pages/ClubsPage/ClubsPage.jsx';
+import ClubDetailPage from '@/pages/ClubDetailPage/ClubDetailPage.jsx';
 import EventsPage from '@/pages/EventsPage/EventsPage.jsx';
+import EventDetailPage from '@/pages/EventDetailPage/EventDetailPage.jsx';
 import AIPage from '@/pages/AIPage/AIPage.jsx';
 import AnnouncementsPage from '@/pages/AnnouncementsPage/AnnouncementsPage.jsx';
 import LoginPage from '@/pages/LoginPage/LoginPage.jsx';
@@ -65,7 +69,9 @@ import { ROLES } from '@/auth/rolePermissions';
 
 export default function App() {
   return (
-    <Routes>
+    <ErrorBoundary>
+      <ConnectionBanner />
+      <Routes>
       {/* Nested club dashboards — wrapped in <DashboardLayout> with sidebar */}
       <Route path="/club/:clubId/*" element={<ClubDashboardShell />} />
 
@@ -89,7 +95,7 @@ export default function App() {
         path="/manager"
         element={
           <ProtectedRoute requiredRole={ROLES.MANAGER}>
-            <DashboardLayout />
+            <DashboardLayout hideSidebar />
           </ProtectedRoute>
         }
       >
@@ -110,13 +116,13 @@ export default function App() {
         {/* Public (no auth) */}
         <Route path="/" element={<HomePage />} />
         <Route path="/clubs" element={<ClubsPage />} />
-        <Route path="/clubs/:clubId" element={<ClubsPage />} />
+        <Route path="/clubs/:clubId" element={<ClubDetailPage />} />
         <Route path="/events" element={<EventsPage />} />
-        <Route path="/events/:eventId" element={<EventsPage />} />
+        <Route path="/events/:id" element={<EventDetailPage />} />
         <Route path="/ai" element={<ProtectedRoute><AIPage /></ProtectedRoute>} />
         <Route path="/alumni" element={<ProtectedRoute><AlumniPage /></ProtectedRoute>} />
         <Route path="/announcements" element={<AnnouncementsPage />} />
-        <Route path="/announcements/:announcementId" element={<AnnouncementsPage />} />
+        <Route path="/announcements/:clubId" element={<AnnouncementsPage />} />
         <Route path="/gallery" element={<GalleryPage />} />
 
         {/* Authenticated (any role) */}
@@ -165,7 +171,8 @@ export default function App() {
       />
 
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </ErrorBoundary>
   );
 }
 
