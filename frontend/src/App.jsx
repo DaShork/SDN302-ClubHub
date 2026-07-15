@@ -25,6 +25,8 @@ import FinancePage from '@/pages/FinancePage/FinancePage.jsx';
 import AdminDashboardPage from '@/pages/AdminDashboardPage/AdminDashboardPage.jsx';
 import AdminUsersPage from '@/pages/AdminUsersPage/AdminUsersPage.jsx';
 import AdminRolesPage from '@/pages/AdminRolesPage/AdminRolesPage.jsx';
+import AdminClubsPage from '@/pages/AdminClubsPage/AdminClubsPage.jsx';
+import AdminSettingsPage from '@/pages/AdminSettingsPage/AdminSettingsPage.jsx';
 import ManagerDashboardPage from '@/pages/ManagerDashboardPage/ManagerDashboardPage.jsx';
 import AlumniPage from '@/pages/Alumni/AlumniPage.jsx';
 import NotificationsPage from '@/pages/Notifications/NotificationsPage.jsx';
@@ -84,7 +86,9 @@ export default function App() {
       >
         <Route index element={<AdminDashboardPage />} />
         <Route path="users" element={<AdminUsersPage />} />
+        <Route path="clubs" element={<AdminClubsPage />} />
         <Route path="roles" element={<AdminRolesPage />} />
+        <Route path="settings" element={<AdminSettingsPage />} />
       </Route>
 
       <Route

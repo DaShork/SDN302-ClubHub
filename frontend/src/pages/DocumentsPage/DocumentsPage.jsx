@@ -53,6 +53,8 @@ export default function DocumentsPageContent() {
         } else {
           setLoading(false);
         }
+      } else {
+        setLoading(false);
       }
     }
     init();

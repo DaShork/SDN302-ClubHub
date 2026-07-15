@@ -1,0 +1,63 @@
+.admin-role-dist {
+  background: #0D1824;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-role-dist__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  gap: 16px;
+}
+
+.admin-role-dist__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #F4F1EA;
+  margin: 0 0 4px;
+}
+
+.admin-role-dist__title svg { color: #8B5CF6; }
+
+.admin-role-dist__subtitle {
+  font-size: 12px;
+  color: #94A3B8;
+  margin: 0;
+}
+
+.admin-role-dist__total { text-align: right; }
+
+.admin-role-dist__total-label {
+  font-size: 11px;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+}
+
+.admin-role-dist__total-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #F4F1EA;
+  line-height: 1;
+}
+
+.admin-role-dist__chart { flex: 1; min-height: 240px; }
+
+.admin-role-dist__empty {
+  height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748B;
+  font-size: 13px;
+}

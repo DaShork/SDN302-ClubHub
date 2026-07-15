@@ -94,6 +94,7 @@ export default function EventsPageContent() {
       } else {
         // No clubId - fetch all public events for the events listing page
         await fetchAllEvents();
+        setLoading(false);
       }
     }
     init();

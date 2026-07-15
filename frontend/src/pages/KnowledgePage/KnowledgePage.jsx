@@ -63,6 +63,8 @@ export default function KnowledgePageContent() {
         } else {
           setLoading(false);
         }
+      } else {
+        setLoading(false);
       }
     }
     init();

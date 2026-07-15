@@ -70,6 +70,7 @@ export default function AnnouncementsPageContent() {
         }
       } else {
         fetchAnnouncements(null);
+        setLoading(false);
       }
     }
     init();
