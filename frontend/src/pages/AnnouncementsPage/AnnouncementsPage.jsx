@@ -10,10 +10,17 @@ import "./AnnouncementsPage.css";
 
 export default function AnnouncementsPageContent() {
   const { clubId } = useParams();
-  const { profileId } = useAuth();
+  const { profileId, can } = useAuth();
   const [resolvedClubId, setResolvedClubId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
+
+  /* Club Leader is the only role allowed to create / edit / delete
+     announcements (and toggle pin). Without this guard, every visitor
+     — anon or signed-in Student — would see Create / Edit / Delete /
+     Pin controls. Backend RLS is the authoritative check; this is
+     purely a UI affordance. */
+  const isLeader = can('announcement:create') && can('announcement:edit') && can('announcement:delete');
 
   const [announcements, setAnnouncements] = useState([
     {
@@ -61,6 +68,8 @@ export default function AnnouncementsPageContent() {
         } else {
           setLoading(false);
         }
+      } else {
+        fetchAnnouncements(null);
       }
     }
     init();
@@ -119,6 +128,14 @@ export default function AnnouncementsPageContent() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    /* Defense in depth: refuse to submit even if the modal is somehow
+       opened by a non-leader. Server RLS is the real gate; this just
+       surfaces a clearer error message. */
+    if (!isLeader) {
+      window.alert("You don't have permission to create or edit announcements.");
+      return;
+    }
+
     const payload = {
       club_id: resolvedClubId || clubId,
       title: formData.title,
@@ -157,6 +174,10 @@ export default function AnnouncementsPageContent() {
   };
 
   const handleDeleteAnn = async (id) => {
+    if (!isLeader) {
+      window.alert("You don't have permission to delete announcements.");
+      return;
+    }
     if (window.confirm("Are you sure you want to permanently delete this announcement?")) {
       try {
         await announcementService.deleteAnnouncement(id);
@@ -169,6 +190,10 @@ export default function AnnouncementsPageContent() {
   };
 
   const handleTogglePin = async (id) => {
+    if (!isLeader) {
+      window.alert("You don't have permission to pin announcements.");
+      return;
+    }
     const notice = announcements.find((ann) => ann.id === id);
     if (!notice) return;
 
@@ -216,9 +241,11 @@ export default function AnnouncementsPageContent() {
               {errorMsg && (
                 <span className="announcements-page__warn">⚠️ {errorMsg}</span>
               )}
-              <button type="button" className="announcements-page__btn-primary" onClick={handleOpenAddModal}>
-                <Megaphone size={14} /> Create Notice
-              </button>
+              {isLeader && (
+                <button type="button" className="announcements-page__btn-primary" onClick={handleOpenAddModal}>
+                  <Megaphone size={14} /> Create Notice
+                </button>
+              )}
             </div>
           </div>
 
@@ -284,31 +311,33 @@ export default function AnnouncementsPageContent() {
 
                   <p className="announcement-card__content">{ann.content}</p>
 
-                  <div className="announcement-card__footer">
-                    <button
-                      type="button"
-                      className="announcement-card__pin-toggle"
-                      onClick={() => handleTogglePin(ann.id)}
-                    >
-                      {ann.pinned ? "Unpin Notice" : "Pin to Top"}
-                    </button>
-                    <span className="announcement-card__divider">|</span>
-                    <button
-                      type="button"
-                      className="announcement-card__link announcement-card__link--edit"
-                      onClick={() => handleOpenEditModal(ann)}
-                    >
-                      Edit
-                    </button>
-                    <span className="announcement-card__divider">|</span>
-                    <button
-                      type="button"
-                      className="announcement-card__link announcement-card__link--delete"
-                      onClick={() => handleDeleteAnn(ann.id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
+                  {isLeader && (
+                    <div className="announcement-card__footer">
+                      <button
+                        type="button"
+                        className="announcement-card__pin-toggle"
+                        onClick={() => handleTogglePin(ann.id)}
+                      >
+                        {ann.pinned ? "Unpin Notice" : "Pin to Top"}
+                      </button>
+                      <span className="announcement-card__divider">|</span>
+                      <button
+                        type="button"
+                        className="announcement-card__link announcement-card__link--edit"
+                        onClick={() => handleOpenEditModal(ann)}
+                      >
+                        Edit
+                      </button>
+                      <span className="announcement-card__divider">|</span>
+                      <button
+                        type="button"
+                        className="announcement-card__link announcement-card__link--delete"
+                        onClick={() => handleDeleteAnn(ann.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </article>
               ))
             ) : (

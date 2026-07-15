@@ -164,6 +164,15 @@
   flex-direction: column;
 }
 
+/* No sidebar mode */
+.dashboard-layout--no-sidebar .dashboard-layout__body {
+  width: 100%;
+}
+
+.dashboard-layout--no-sidebar .dashboard-layout__main {
+  padding: 24px;
+}
+
 .dashboard-layout__topbar {
   height: 64px;
   flex-shrink: 0;

@@ -22,31 +22,41 @@ function paletteFor(name = '') {
 
 /** Normalise a Supabase club row to the shape ClubCard expects. */
 export function normaliseClub(raw) {
-  const pal = paletteFor(raw.name);
+  const pal = paletteFor(raw?.name || '');
+  const fallbackId = raw?.id || '';
   return {
-    id: raw.id,
-    name: raw.name,
-    slug: raw.slug || raw.id,
-    description: raw.description || '',
-    shortDescription: raw.short_description || '',
-    logoUrl: raw.logo_url || null,
-    bannerUrl: raw.banner_url || null,
-    category: raw.categories?.name || null,
-    memberCount: raw.member_count ?? raw.memberships?.[0]?.count ?? 0,
-    status: raw.recruitment_status ? 'Recruiting' : 'Active',
+    id: fallbackId,
+    slug: raw?.slug || fallbackId,
+    name: raw?.name || 'Untitled club',
+    description: raw?.description || '',
+    shortDescription: raw?.short_description || '',
+    logoUrl: raw?.logo_url || null,
+    bannerUrl: raw?.banner_url || null,
+    category: raw?.categories?.name || null,
+    memberCount: raw?.member_count ?? raw?.memberships?.[0]?.count ?? 0,
+    status: raw?.recruitment_status ? 'Recruiting' : 'Active',
     bg: pal.bg,
     color: pal.color,
-    leaderId: raw.leader_id || null,
-    leaderName: raw.leader_name || null,
-    leaderAvatarUrl: raw.leader_avatar_url || null,
-    mentorId: raw.mentor_id || null,
-    mentorName: raw.mentor_name || null,
-    mentorAvatarUrl: raw.mentor_avatar_url || null,
+    leaderId: raw?.leader_id || null,
+    leaderName: raw?.leader_name || null,
+    leaderAvatarUrl: raw?.leader_avatar_url || null,
+    mentorId: raw?.mentor_id || null,
+    mentorName: raw?.mentor_name || null,
+    mentorAvatarUrl: raw?.mentor_avatar_url || null,
   };
 }
 
 export default function ClubCard({ club }) {
   const { id, name, description, logoUrl, category, memberCount, status, bg, color, slug } = club;
+  const detailHref = slug || id;
+
+  if (!detailHref) {
+    return (
+      <article className="club-card p-4 text-sm text-primary-700">
+        Unavailable club record.
+      </article>
+    );
+  }
 
   return (
     <article
@@ -106,7 +116,7 @@ export default function ClubCard({ club }) {
       </div>
 
       <Link
-        to={`/clubs/${slug || id}`}
+        to={`/clubs/${detailHref}`}
         className="club-card__cta"
         style={{ color: '#0E4B43', borderColor: 'rgba(14, 75, 67, 0.25)' }}
       >

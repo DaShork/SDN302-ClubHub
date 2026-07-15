@@ -263,9 +263,13 @@ body,
   min-height: 100vh;
 }
 
+/* body background/text — primary dark theme. Set here as the final
+   override so any light-mode rules above cannot accidentally flip the
+   site to a light background while components still use light text
+   colors. */
 body {
-  background: #F4F1EA;
-  color: #06231D;
+  background: #06231D;
+  color: #F4F1EA;
   font-family: var(--font-family-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

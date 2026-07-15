@@ -332,6 +332,13 @@
   gap: 16px;
 }
 
+.events-card__club-name {
+  font-size: 11px;
+  color: #16685D;
+  font-weight: 600;
+  margin: 0;
+}
+
 .events-card__desc {
   font-size: 11px;
   color: #5A6B62;
@@ -411,6 +418,13 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
+  text-decoration: none;
+  color: #0E4B43;
+}
+
+.events-card__link:hover {
+  color: #22C55E;
+  text-decoration: underline;
 }
 
 .events-card__link--edit {

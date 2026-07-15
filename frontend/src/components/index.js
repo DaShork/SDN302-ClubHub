@@ -17,3 +17,4 @@ export { default as AuthLayout, FormField, TextInput } from './AuthLayout/AuthLa
 export { default as ProtectedRoute } from './ProtectedRoute/ProtectedRoute.jsx';
 export { default as GuestRoute } from './GuestRoute/GuestRoute.jsx';
 export { default as HeroSection } from './HeroSection/HeroSection.jsx';
+export { default as JoinRequestModal } from './JoinRequestModal/JoinRequestModal.jsx';
