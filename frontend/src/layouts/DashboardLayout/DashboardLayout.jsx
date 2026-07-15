@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet, useParams } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, Wrench, BookOpen, FileText,
-  Megaphone, ArrowLeft, Shield, BarChart3, Wallet,
+  Megaphone, ArrowLeft, Shield, BarChart3, Wallet, Building2, Settings,
 } from 'lucide-react';
 import './DashboardLayout.css';
 
@@ -82,7 +82,6 @@ export default function DashboardLayout() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <div className="dashboard-layout__topbar-title">Dashboard</div>
         </header>
 
         <main className="dashboard-layout__main">
@@ -139,9 +138,11 @@ function buildClubNav(clubId) {
 
 function buildPortalNav() {
   return [
-    { name: 'Overview', path: '/admin',        icon: LayoutDashboard },
-    { name: 'Users',    path: '/admin/users',  icon: Users },
-    { name: 'Roles',    path: '/admin/roles',  icon: Shield },
-    { name: 'Reports',  path: '/reports',      icon: BarChart3 },
+    { name: 'Overview', path: '/admin',           icon: LayoutDashboard },
+    { name: 'Users',    path: '/admin/users',     icon: Users },
+    { name: 'Clubs',    path: '/admin/clubs',     icon: Building2 },
+    { name: 'Roles',    path: '/admin/roles',     icon: Shield },
+    { name: 'Settings', path: '/admin/settings',  icon: Settings },
+    { name: 'Reports',  path: '/reports',         icon: BarChart3 },
   ];
 }
