@@ -37,7 +37,7 @@ export default function PaymentModal({
       }
     } catch (err) {
       console.error('VNPay payment error:', err);
-      toast('Khong the khoi tao thanh toan VNPay. Vui long thu lai.', { variant: 'error' });
+      toast(err.message || 'Khong the khoi tao thanh toan VNPay. Vui long thu lai.', { variant: 'error' });
       setStep('select');
     }
   }

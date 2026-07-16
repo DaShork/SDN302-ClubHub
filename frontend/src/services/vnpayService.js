@@ -4,8 +4,8 @@
  */
 import { supabase } from './supabase';
 
-const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vnpay-payment`;
-const RETURN_URL = `${window.location.origin}/payment/return`;
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '');
+const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/vnpay-payment`;
 
 /**
  * Create a VNPay payment and get the payment URL.
@@ -22,24 +22,36 @@ export async function createVNPayPayment({ membershipId, amount, clubName, descr
     throw new Error('Not authenticated');
   }
 
+  if (!SUPABASE_URL) {
+    throw new Error(
+      'VITE_SUPABASE_URL is not configured. Set it in Vercel project settings.'
+    );
+  }
+
   const response = await fetch(EDGE_FUNCTION_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${session.access_token}`,
+      'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '',
     },
     body: JSON.stringify({
       membership_id: membershipId,
       amount,
-      club_name: clubName,
       description: description || `Thanh toan phi thanh vien CLB ${clubName}`,
-      return_url: RETURN_URL,
     }),
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(error.error || 'Failed to create payment');
+    const errorBody = await response.text().catch(() => '');
+    console.error('[vnpayService] Edge function responded with',
+      response.status, 'at', EDGE_FUNCTION_URL, 'body:', errorBody);
+    let parsed = null;
+    try { parsed = JSON.parse(errorBody); } catch {}
+    throw new Error(
+      parsed?.error || parsed?.message ||
+      `Edge function error ${response.status}`
+    );
   }
 
   return response.json();
