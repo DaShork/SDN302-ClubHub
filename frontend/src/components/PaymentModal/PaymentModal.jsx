@@ -1,8 +1,14 @@
-import { useState } from 'react';
-import { X, ExternalLink, Loader2 } from 'lucide-react';
-import { createVNPayPayment } from '@/services/vnpayService';
+import { useEffect, useState } from 'react';
+import {
+  X, Copy, Check, Loader2, Building2, Upload,
+} from 'lucide-react';
+import { supabase } from '@/services/supabase';
 import { toast } from '@/components';
+import { createManualBankPayment } from '@/services/manualPaymentService';
 import './PaymentModal.css';
+
+const POLL_INTERVAL_MS = 5000;
+const POLL_TIMEOUT_MS = 5 * 60 * 1000;  // 5 min
 
 export default function PaymentModal({
   isOpen,
@@ -13,46 +19,132 @@ export default function PaymentModal({
   currency,
   onSuccess,
 }) {
-  const [step, setStep] = useState('select'); // 'select' | 'loading' | 'redirect'
-  const [paymentMethod, setPaymentMethod] = useState('vnpay'); // 'vnpay' | 'sandbox'
+  const [paymentInfo, setPaymentInfo] = useState(null); // { bank_account, txn_ref, qr_url, payment }
+  const [loading, setLoading] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [pollError, setPollError] = useState(null);
+  const [copiedField, setCopiedField] = useState(null);
 
-  if (!isOpen || !membership) return null;
+  // Create a pending payment when the modal opens. Reset state on close
+  // so the next open starts fresh.
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    if (!membership || !amount) return;
 
-  async function handlePayWithVNPay() {
-    setStep('loading');
-    try {
-      const result = await createVNPayPayment({
-        membershipId: membership,
-        amount,
-        clubName,
-        description: `Thanh toan phi thanh vien CLB ${clubName}`,
-      });
-
-      if (result.success && result.paymentUrl) {
-        setStep('redirect');
-        // Redirect to VNPay
-        window.location.href = result.paymentUrl;
-      } else {
-        throw new Error('Failed to create payment');
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await createManualBankPayment({
+          membership_id: membership,
+          amount,
+          note: `Thanh toán phí thành viên CLB ${clubName}`,
+        });
+        if (!cancelled) setPaymentInfo(data);
+      } catch (err) {
+        if (!cancelled) {
+          toast(err.message || 'Không thể khởi tạo thanh toán', { variant: 'error' });
+          onClose();
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
+    })();
+    return () => { cancelled = true; };
+  }, [isOpen, membership, amount, clubName, onClose]);
+
+  // Poll the payments table once the user has been shown the QR.
+  // Casso/Sepay webhook updates the row; we just wait for it to flip.
+  useEffect(() => {
+    if (!isOpen || !paymentInfo?.payment?.id) return;
+
+    const paymentId = paymentInfo.payment.id;
+    const deadline = Date.now() + POLL_TIMEOUT_MS;
+    let timerId = null;
+
+    async function tick() {
+      if (Date.now() > deadline) {
+        setPollError('Quá thời gian chờ. Vui lòng liên hệ CLB để xác nhận.');
+        return;
+      }
+      const { data, error } = await supabase
+        .from('payments')
+        .select('id, status, payment_date')
+        .eq('id', paymentId)
+        .maybeSingle();
+      if (error) {
+        setPollError(error.message);
+        return;
+      }
+      if (data?.status === 'completed') {
+        toast('Thanh toán đã được xác nhận!', { variant: 'success' });
+        if (onSuccess) onSuccess(data);
+        onClose();
+        return;
+      }
+      timerId = setTimeout(tick, POLL_INTERVAL_MS);
+    }
+
+    timerId = setTimeout(tick, POLL_INTERVAL_MS);
+    return () => {
+      if (timerId) clearTimeout(timerId);
+    };
+  }, [isOpen, paymentInfo, onSuccess, onClose]);
+
+  async function handleManualConfirm() {
+    if (!paymentInfo?.payment?.id) return;
+    setConfirming(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const r = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/payment-manual-confirm`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ payment_id: paymentInfo.payment.id }),
+        },
+      );
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${r.status}`);
+      }
+      toast('Đã xác nhận thanh toán', { variant: 'success' });
+      if (onSuccess) {
+        const json = await r.json();
+        onSuccess(json.payment);
+      }
+      onClose();
     } catch (err) {
-      console.error('VNPay payment error:', err);
-      toast(err.message || 'Khong the khoi tao thanh toan VNPay. Vui long thu lai.', { variant: 'error' });
-      setStep('select');
+      toast(err.message, { variant: 'error' });
+    } finally {
+      setConfirming(false);
     }
   }
 
-  function handleSandboxPay() {
-    if (onSuccess) onSuccess();
-    handleClose();
+  function copy(value, field) {
+    navigator.clipboard.writeText(value);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 1500);
   }
 
   function handleClose() {
-    if (step === 'loading') return;
-    setStep('select');
-    setPaymentMethod('vnpay');
+    if (loading || confirming) return;
+    setPaymentInfo(null);
+    setConfirming(false);
+    setPollError(null);
     onClose();
   }
+
+  if (!isOpen || !membership) return null;
+
+  const formattedAmount = typeof amount === 'number'
+    ? amount.toLocaleString('vi-VN')
+    : amount;
 
   return (
     <div className="payment-modal">
@@ -63,97 +155,113 @@ export default function PaymentModal({
           type="button"
           className="payment-modal__close"
           onClick={handleClose}
-          disabled={step === 'loading'}
+          disabled={loading || confirming}
+          aria-label="Đóng"
         >
           <X size={18} />
         </button>
 
-        {step === 'select' && (
-          <>
-            <div className="payment-modal__header">
-              <h2 className="payment-modal__title">Thanh toan dong quy</h2>
-              <p className="payment-modal__subtitle">{clubName}</p>
-            </div>
+        <div className="payment-modal__header">
+          <Building2 size={28} />
+          <h2 className="payment-modal__title">Chuyển khoản ngân hàng</h2>
+          <p className="payment-modal__subtitle">{clubName}</p>
+        </div>
 
-            <div className="payment-modal__amount">
-              <span className="payment-modal__amount-label">So tien can thanh toan</span>
-              <span className="payment-modal__amount-value">
-                {typeof amount === 'number' ? amount.toLocaleString('vi-VN') : amount} {currency || 'VND'}
-              </span>
-            </div>
-
-            <div className="payment-modal__method-section">
-              <h3 className="payment-modal__method-title">Chon phuong thuc thanh toan</h3>
-
-              <label className={`payment-modal__method-option ${paymentMethod === 'vnpay' ? 'payment-modal__method-option--active' : ''}`}>
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="vnpay"
-                  checked={paymentMethod === 'vnpay'}
-                  onChange={() => setPaymentMethod('vnpay')}
-                />
-                <div className="payment-modal__method-content">
-                  <div className="payment-modal__method-icon">VNPay</div>
-                  <div className="payment-modal__method-info">
-                    <span className="payment-modal__method-name">VNPay</span>
-                    <span className="payment-modal__method-desc">Thanh toan qua VNPay voi ma QR hoac the</span>
-                  </div>
-                </div>
-              </label>
-
-              <label className={`payment-modal__method-option ${paymentMethod === 'sandbox' ? 'payment-modal__method-option--active' : ''}`}>
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="sandbox"
-                  checked={paymentMethod === 'sandbox'}
-                  onChange={() => setPaymentMethod('sandbox')}
-                />
-                <div className="payment-modal__method-content">
-                  <div className="payment-modal__method-icon">Demo</div>
-                  <div className="payment-modal__method-info">
-                    <span className="payment-modal__method-name">Sandbox (Demo)</span>
-                    <span className="payment-modal__method-desc">Ghi nhan thanh toan ngay lap tuc (khong thuc)</span>
-                  </div>
-                </div>
-              </label>
-            </div>
-
-            <div className="payment-modal__actions">
-              <button type="button" className="payment-modal__btn-secondary" onClick={handleClose}>
-                Huy
-              </button>
-              {paymentMethod === 'vnpay' ? (
-                <button
-                  type="button"
-                  className="payment-modal__btn-primary"
-                  onClick={handlePayWithVNPay}
-                >
-                  <ExternalLink size={16} />
-                  Thanh toan voi VNPay
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="payment-modal__btn-primary"
-                  onClick={handleSandboxPay}
-                >
-                  Xac nhan (Sandbox)
-                </button>
-              )}
-            </div>
-          </>
+        {loading && (
+          <div className="payment-modal__loading">
+            <Loader2 size={36} className="spin" />
+            <span>Đang tạo thông tin thanh toán...</span>
+          </div>
         )}
 
-        {(step === 'loading' || step === 'redirect') && (
-          <div className="payment-modal__loading">
-            <Loader2 size={48} className="payment-modal__loading-icon" />
-            <h3>{step === 'loading' ? 'Dang khoi tao thanh toan VNPay...' : 'Dang chuyen huong den VNPay...'}</h3>
-            {step === 'redirect' && (
-              <p>Neu trang khong tu chuyen, <button type="button" className="payment-modal__retry-link" onClick={handleClose}>click vao day</button> de quay lai.</p>
+        {paymentInfo && (
+          <>
+            <div className="payment-modal__qr">
+              <img
+                src={paymentInfo.qr_url}
+                alt="QR code chuyển khoản"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+              <small>Quét mã bằng app ngân hàng</small>
+            </div>
+
+            <dl className="payment-modal__details">
+              <div>
+                <dt>Ngân hàng</dt>
+                <dd>{paymentInfo.bank_account.bank_name}</dd>
+              </div>
+              <div>
+                <dt>Số tài khoản</dt>
+                <dd className="mono">
+                  {paymentInfo.bank_account.account_number}
+                  <button
+                    type="button"
+                    className="payment-modal__copy"
+                    onClick={() => copy(paymentInfo.bank_account.account_number, 'stk')}
+                    aria-label="Sao chép số tài khoản"
+                  >
+                    {copiedField === 'stk' ? <Check size={14} /> : <Copy size={14} />}
+                  </button>
+                </dd>
+              </div>
+              <div>
+                <dt>Chủ tài khoản</dt>
+                <dd>{paymentInfo.bank_account.account_name}</dd>
+              </div>
+              <div>
+                <dt>Số tiền</dt>
+                <dd className="amount">{formattedAmount} {currency || 'VND'}</dd>
+              </div>
+              <div className="payment-modal__content-row">
+                <dt>Nội dung CK <span className="required">*</span></dt>
+                <dd className="mono highlight">
+                  {paymentInfo.txn_ref}
+                  <button
+                    type="button"
+                    className="payment-modal__copy"
+                    onClick={() => copy(paymentInfo.txn_ref, 'content')}
+                    aria-label="Sao chép nội dung"
+                  >
+                    {copiedField === 'content' ? <Check size={14} /> : <Copy size={14} />}
+                  </button>
+                </dd>
+              </div>
+            </dl>
+
+            <div className="payment-modal__notice">
+              ⚠️ Ghi <strong>đúng nội dung CK</strong> để hệ thống tự xác nhận.
+              Hệ thống sẽ tự động cập nhật trong vài giây sau khi CK thành công.
+            </div>
+
+            {pollError && (
+              <div className="payment-modal__error">
+                {pollError}
+              </div>
             )}
-          </div>
+
+            <div className="payment-modal__actions">
+              <button
+                type="button"
+                className="payment-modal__btn-secondary"
+                onClick={handleClose}
+                disabled={confirming}
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                className="payment-modal__btn-primary"
+                onClick={handleManualConfirm}
+                disabled={confirming}
+              >
+                {confirming ? (
+                  <><Loader2 size={14} className="spin" /> Đang xác nhận...</>
+                ) : (
+                  <><Upload size={14} /> Tôi đã chuyển khoản</>
+                )}
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>

@@ -1,4 +1,4 @@
-/* PaymentModal — VNPay payment flow for club fee payment */
+/* PaymentModal — Manual bank-transfer flow */
 
 .payment-modal {
   position: fixed;
@@ -227,6 +227,141 @@
 
 .payment-modal__btn-primary:hover {
   opacity: 0.92;
+}
+
+.payment-modal__btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* QR code */
+.payment-modal__qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  background: #F4F1EA;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.payment-modal__qr img {
+  width: 200px;
+  height: 200px;
+  background: #fff;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(6, 35, 29, 0.08);
+}
+
+.payment-modal__qr small {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #5A6B62;
+}
+
+/* Details list */
+.payment-modal__details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  background: #F4F1EA;
+  border-radius: 12px;
+}
+
+.payment-modal__details > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.payment-modal__details dt {
+  color: #5A6B62;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.payment-modal__details dd {
+  margin: 0;
+  color: #06231D;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-align: right;
+}
+
+.payment-modal__details dd.mono {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 13px;
+}
+
+.payment-modal__details dd.highlight {
+  color: #0E4B43;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+.payment-modal__details dd.amount {
+  color: #22C55E;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.payment-modal__content-row dt .required {
+  color: #ef4444;
+  margin-left: 2px;
+}
+
+.payment-modal__copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: none;
+  background: rgba(14, 75, 67, 0.08);
+  color: #0E4B43;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.payment-modal__copy:hover {
+  background: rgba(14, 75, 67, 0.18);
+}
+
+/* Notice + error */
+.payment-modal__notice {
+  padding: 10px 12px;
+  background: rgba(245, 158, 11, 0.10);
+  border: 1px solid rgba(245, 158, 11, 0.30);
+  border-radius: 10px;
+  font-size: 12px;
+  color: #92400e;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.payment-modal__error {
+  padding: 10px 12px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.30);
+  border-radius: 10px;
+  font-size: 12px;
+  color: #b91c1c;
+  margin-bottom: 12px;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Loading / Redirect */
