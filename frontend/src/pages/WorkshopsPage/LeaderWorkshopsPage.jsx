@@ -152,14 +152,18 @@ export default function LeaderWorkshopsPage() {
     }));
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedClubId) return;
+    setIsSubmitting(true);
     const payload = {
       club_id: selectedClubId,
       title: formData.title,
       description: formData.description,
       material_url: formData.document,
+      approval_status: "pending_mentor",
     };
     try {
       if (selectedWorkshop) {
@@ -169,13 +173,9 @@ export default function LeaderWorkshopsPage() {
       }
       loadAll();
     } catch (err) {
-      console.warn("Supabase workshop save failed, using fallback state:", err);
-      setWorkshops((prev) =>
-        selectedWorkshop
-          ? prev.map((w) => (w.id === selectedWorkshop.id ? { ...w, ...formData } : w))
-          : [{ id: String(Date.now()), coverColor: "events-cover--blue", ...formData, clubId: selectedClubId, clubName: selectedClub?.name || "" }, ...prev]
-      );
+      console.warn("Supabase workshop save failed:", err);
     }
+    setIsSubmitting(false);
     handleCloseModal();
   };
 
@@ -315,6 +315,9 @@ export default function LeaderWorkshopsPage() {
         onChange={handleInputChange}
         onSubmit={handleSubmit}
         editing={!!selectedWorkshop}
+        documentsList={[]}
+        minutesList={[]}
+        isSubmitting={isSubmitting}
       />
     </div>
   );

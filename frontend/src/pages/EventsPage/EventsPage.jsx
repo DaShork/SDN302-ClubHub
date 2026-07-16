@@ -170,7 +170,9 @@ export default function EventsPageContent() {
     remainingSlots: 50,
     status: "Upcoming",
     document: "",
-    minutes: ""
+    minutes: "",
+    autoRegisterCreator: false,
+    requiresApproval: false,
   });
 
   const handleOpenAddModal = () => {
@@ -187,7 +189,9 @@ export default function EventsPageContent() {
       remainingSlots: 50,
       status: "Upcoming",
       document: documentsList[0],
-      minutes: minutesList[0]
+      minutes: minutesList[0],
+      autoRegisterCreator: false,
+      requiresApproval: false,
     });
     setIsModalOpen(true);
   };
@@ -206,7 +210,9 @@ export default function EventsPageContent() {
       remainingSlots: act.remainingSlots,
       status: act.status,
       document: act.document,
-      minutes: act.minutes
+      minutes: act.minutes,
+      autoRegisterCreator: !!act.autoRegisterCreator,
+      requiresApproval: !!act.requiresApproval,
     });
     setIsModalOpen(true);
   };
@@ -253,14 +259,26 @@ export default function EventsPageContent() {
         end_time: formData.endTime ? new Date(formData.endTime).toISOString() : null,
         max_participants: formData.maxSlots,
         status: formData.status.toLowerCase(),
+        requires_approval: !!formData.requiresApproval,
+        auto_register_creator: !!formData.autoRegisterCreator,
         created_by: profileId || null
       };
 
       try {
+        let createdId = null;
         if (selectedActivity) {
-          await eventService.updateEvent(selectedActivity.id, payload);
+          const updated = await eventService.updateEvent(selectedActivity.id, payload);
+          createdId = selectedActivity.id;
+          void updated;
         } else {
-          await eventService.createEvent(payload);
+          const created = await eventService.createEvent(payload);
+          createdId = created?.id;
+          // Toggle: tự đăng ký người tạo
+          if (createdId && formData.autoRegisterCreator && profileId) {
+            await eventService
+              .registerCreatorForEvent(createdId, profileId)
+              .catch((err) => console.warn("auto-register failed:", err));
+          }
         }
         if (resolvedClubId) fetchActivities(resolvedClubId);
       } catch (err) {
@@ -396,6 +414,7 @@ if (selectedActivity) {
                 <option value="Upcoming">Upcoming</option>
                 <option value="Ongoing">Ongoing</option>
                 <option value="Finished">Finished</option>
+                <option value="Cancelled">Cancelled</option>
               </select>
             </div>
           </div>

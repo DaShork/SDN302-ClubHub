@@ -311,3 +311,146 @@
 @keyframes member-dash-spin {
   to { transform: rotate(360deg); }
 }
+
+/* ── "Sự kiện sắp tới của tôi" embedded section ─────────────────────── */
+
+.member-dashboard__section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.member-dashboard__see-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #16685D;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.member-dashboard__see-all:hover {
+  text-decoration: underline;
+}
+
+.member-dashboard__reg-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(6, 35, 29, 0.05);
+  border-radius: 10px;
+  align-self: flex-start;
+}
+
+.member-dashboard__reg-tab {
+  padding: 7px 14px;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4B5563;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.member-dashboard__reg-tab:hover { color: #06231D; }
+.member-dashboard__reg-tab--active {
+  background: #fff;
+  color: #06231D;
+  box-shadow: 0 1px 2px rgba(6, 35, 29, 0.08);
+}
+
+.member-dashboard__reg-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.member-dashboard__reg-row {
+  padding: 14px 18px !important;
+}
+
+.member-dashboard__reg-row-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.member-dashboard__reg-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 240px;
+}
+
+.member-dashboard__reg-row-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: #06231D;
+  text-decoration: none;
+}
+.member-dashboard__reg-row-title:hover { text-decoration: underline; }
+
+.member-dashboard__reg-row-club {
+  font-size: 12px;
+  color: #6B7280;
+}
+
+.member-dashboard__reg-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 12px;
+  color: #4B5563;
+  margin-top: 2px;
+}
+.member-dashboard__reg-row-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.member-dashboard__reg-row-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.member-dashboard__reg-cancel {
+  color: #B91C1C !important;
+}
+
+.member-dashboard__reg-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  align-self: flex-start;
+}
+.member-dashboard__reg-tag--pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #B45309;
+}
+.member-dashboard__reg-tag--ok {
+  background: rgba(34, 197, 94, 0.15);
+  color: #16685D;
+}
+
+.member-dashboard__reg-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 28px;
+  color: #6B7280;
+  font-size: 14px;
+}
+.member-dashboard__reg-empty svg { color: #9CA3AF; }

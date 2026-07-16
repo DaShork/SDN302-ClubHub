@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  RefreshCw, Building2, Users, Calendar, Megaphone, FileText,
-  BookOpen, Wallet, ChevronRight, Wrench,
+  RefreshCw, Building2, Users, Calendar, Megaphone,
+  BookOpen, Wallet, ChevronRight,
+  CalendarDays, Clock, MapPin, CheckCircle2, Compass,
 } from 'lucide-react';
 import { Card, Button } from '@/components';
 import { useMemberScope } from '@/contexts/MemberScopeContext.jsx';
 import { useAuth } from '@/hooks/useAuth.jsx';
 import { supabase } from '@/services/supabase';
 import { financeService } from '@/services/financeService';
+import { eventService } from '@/services/eventService';
 import './MemberDashboardPage.css';
 
 /* MemberDashboardPage — landing screen for Club Member role.
@@ -35,6 +37,18 @@ export default function MemberDashboardPage() {
   });
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
+
+  // ── "Sự kiện sắp tới của tôi" embedded tab ─────────────────────────────
+  // Reuses getUserRegistrations so the data structure matches /my-registrations.
+  const REG_TABS = [
+    { id: 'upcoming', label: 'Sắp diễn ra' },
+    { id: 'past',     label: 'Đã qua' },
+    { id: 'cancelled',label: 'Đã hủy' },
+  ];
+  const [activeRegTab, setActiveRegTab] = useState('upcoming');
+  const [myRegistrations, setMyRegistrations] = useState([]);
+  const [loadingRegs, setLoadingRegs] = useState(true);
+  const [cancellingRegId, setCancellingRegId] = useState(null);
 
   async function loadStats() {
     if (memberClubIds.length === 0) {
@@ -127,6 +141,45 @@ export default function MemberDashboardPage() {
     loadStats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memberLoading, memberClubIds.join(',')]);
+
+  // ── Load my-registrations whenever the user clicks a reg tab ──────────
+  async function loadMyRegistrations() {
+    if (!profileId) {
+      setMyRegistrations([]);
+      setLoadingRegs(false);
+      return;
+    }
+    try {
+      setLoadingRegs(true);
+      const rows = await eventService.getUserRegistrations(profileId).catch(() => []);
+      const enriched = rows
+        .filter((r) => r.events)
+        .map((r) => ({ ...r.events, registration: r }));
+      setMyRegistrations(enriched);
+    } catch (err) {
+      console.error('[MemberDashboard] load regs failed:', err);
+    } finally {
+      setLoadingRegs(false);
+    }
+  }
+  useEffect(() => {
+    if (profileId) loadMyRegistrations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileId]);
+
+  const handleCancelRegistration = async (event) => {
+    if (!window.confirm(`Hủy đăng ký "${event.title}"?`)) return;
+    try {
+      setCancellingRegId(event.id);
+      await eventService.cancelEventRegistration(event.id, profileId);
+      await Promise.all([loadMyRegistrations(), loadStats()]);
+    } catch (err) {
+      console.error('Cancel failed:', err);
+      window.alert('Không thể hủy đăng ký. Vui lòng thử lại.');
+    } finally {
+      setCancellingRegId(null);
+    }
+  };
 
   if (memberLoading) {
     return (
@@ -266,7 +319,136 @@ export default function MemberDashboardPage() {
           <QuickAction to="/announcements" icon={Megaphone} label="Thông báo" color="#8B5CF6" />
         </div>
       </div>
+
+      <div className="member-dashboard__section">
+        <div className="member-dashboard__section-head">
+          <h2 className="member-dashboard__section-title">Sự kiện sắp tới của tôi</h2>
+          <Link to="/my-registrations" className="member-dashboard__see-all">
+            Xem tất cả <ChevronRight size={14} />
+          </Link>
+        </div>
+
+        <div className="member-dashboard__reg-tabs" role="tablist">
+          {REG_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              role="tab"
+              aria-selected={activeRegTab === tab.id}
+              onClick={() => setActiveRegTab(tab.id)}
+              className={`member-dashboard__reg-tab ${activeRegTab === tab.id ? 'member-dashboard__reg-tab--active' : ''}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <MyRegistrationsPanel
+          tab={activeRegTab}
+          rows={myRegistrations}
+          loading={loadingRegs}
+          cancellingId={cancellingRegId}
+          onCancel={handleCancelRegistration}
+        />
+      </div>
     </div>
+  );
+}
+
+const regNow = () => new Date();
+function filterRegistrations(rows, tab) {
+  const now = regNow();
+  return rows.filter(({ registration: r, start_time }) => {
+    if (tab === 'cancelled') return r.status === 'cancelled';
+    if (r.status === 'cancelled') return false;
+    if (tab === 'upcoming') return new Date(start_time) >= now;
+    return new Date(start_time) < now;
+  });
+}
+
+function MyRegistrationsPanel({ tab, rows, loading, cancellingId, onCancel }) {
+  if (loading) {
+    return (
+      <div className="member-dashboard__loading-inline">
+        <div className="member-dashboard__spinner member-dashboard__spinner--small" />
+        Đang tải sự kiện…
+      </div>
+    );
+  }
+
+  const filtered = filterRegistrations(rows, tab);
+
+  if (filtered.length === 0) {
+    const emptyMessages = {
+      upcoming: 'Bạn chưa đăng ký sự kiện nào sắp tới.',
+      past: 'Chưa có sự kiện đã qua.',
+      cancelled: 'Không có đăng ký nào đã hủy.',
+    };
+    return (
+      <Card>
+        <div className="member-dashboard__reg-empty">
+          <Compass size={32} />
+          <p>{emptyMessages[tab]}</p>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="member-dashboard__reg-list">
+      {filtered.map((event) => (
+        <MyEventRow
+          key={event.id}
+          event={event}
+          cancelling={cancellingId === event.id}
+          onCancel={() => onCancel(event)}
+        />
+      ))}
+    </div>
+  );
+}
+
+function MyEventRow({ event, cancelling, onCancel }) {
+  const { title, start_time, location, clubs, registration } = event;
+  const checkedIn = registration?.status === 'checked_in';
+  const cancelled = registration?.status === 'cancelled';
+  const pending = registration?.status === 'pending';
+
+  return (
+    <Card className="member-dashboard__reg-row">
+      <div className="member-dashboard__reg-row-body">
+        <div className="member-dashboard__reg-row-info">
+          <Link to={`/events/${event.id}`} className="member-dashboard__reg-row-title">
+            {title}
+          </Link>
+          {clubs?.name && (
+            <span className="member-dashboard__reg-row-club">{clubs.name}</span>
+          )}
+          <div className="member-dashboard__reg-row-meta">
+            <span><CalendarDays size={14} /> {new Date(start_time).toLocaleDateString('vi-VN')}</span>
+            <span><Clock size={14} /> {new Date(start_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
+            {location && <span><MapPin size={14} /> {location}</span>}
+          </div>
+          {pending && <span className="member-dashboard__reg-tag member-dashboard__reg-tag--pending">Đang chờ duyệt</span>}
+          {checkedIn && <span className="member-dashboard__reg-tag member-dashboard__reg-tag--ok"><CheckCircle2 size={12} /> Đã check-in</span>}
+        </div>
+        <div className="member-dashboard__reg-row-actions">
+          <Link to={`/events/${event.id}`}>
+            <Button size="sm" variant="secondary">Chi tiết</Button>
+          </Link>
+          {!cancelled && !checkedIn && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="member-dashboard__reg-cancel"
+              disabled={cancelling}
+              onClick={onCancel}
+            >
+              {cancelling ? 'Đang hủy…' : 'Hủy'}
+            </Button>
+          )}
+        </div>
+      </div>
+    </Card>
   );
 }
 

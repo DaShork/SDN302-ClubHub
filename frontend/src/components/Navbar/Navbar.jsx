@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Menu, X, Bell, User, LogOut, Settings, ChevronDown, Building2, CreditCard, LayoutDashboard, Users, Shield, CalendarCheck } from 'lucide-react';
+import { Menu, X, User, LogOut, Settings, ChevronDown, Building2, CreditCard, LayoutDashboard, Users, Shield, CalendarCheck } from 'lucide-react';
+import NotificationBell from '@/components/NotificationBell/NotificationBell.jsx';
 import { cn } from '@/lib/utils.js';
 import { useAuth } from '@/hooks/useAuth.jsx';
 
@@ -168,14 +169,7 @@ export default function Navbar() {
             <>
               {isAuthenticated ? (
                 <>
-                  <button
-                    className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-white/5 transition-colors"
-                    style={{ color: '#D2C7B8' }}
-                    aria-label="Notifications"
-                  >
-                    <Bell size={18} />
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#22C55E]" />
-                  </button>
+                  <NotificationBell />
 
                   <div className="relative" ref={dropdownRef}>
                       <button

@@ -4,7 +4,9 @@ import { Wallet, History, CreditCard, ArrowRight, CheckCircle2, Clock, XCircle, 
 import { Card, Button, toast } from '@/components';
 import { useAuth } from '@/hooks/useAuth.jsx';
 import { financeService } from '@/services/financeService.js';
+import { feeSettingsService } from '@/services/feeSettingsService.js';
 import { ROLES } from '@/auth/rolePermissions.js';
+import PaymentModal from '@/components/PaymentModal/PaymentModal.jsx';
 import './FinancePage.css';
 
 const STATUS_META = {
@@ -35,6 +37,7 @@ export default function FinancePageContent() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [paymentModal, setPaymentModal] = useState(null);
 
   const isLeader = role === ROLES.CLUB_LEADER;
   const isMember = role === ROLES.CLUB_MEMBER;
@@ -51,7 +54,18 @@ export default function FinancePageContent() {
         financeService.getUserClubFees(profile.id),
         financeService.getUserPayments(profile.id),
       ]);
-      setMemberships(feesData || []);
+      const clubIds = (feesData || []).map(m => m.clubs?.id).filter(Boolean);
+      const [feesSettings] = await Promise.all([
+        clubIds.length ? feeSettingsService.getMany(clubIds) : Promise.resolve([]),
+      ]);
+      // Merge fee data into memberships for display
+      const feeMap = {};
+      (feesSettings || []).forEach(f => { feeMap[f.club_id] = f; });
+      const enriched = (feesData || []).map(m => ({
+        ...m,
+        fee: feeMap[m.clubs?.id] || null,
+      }));
+      setMemberships(enriched);
       setPayments(paymentsData || []);
     } catch (err) {
       console.error('Failed to load finance data:', err);
@@ -197,10 +211,19 @@ export default function FinancePageContent() {
                       </div>
                     </div>
 
-                    {isLeader && (
+                    {isMember && (
                       <div className="finance-page__club-actions">
-                        <Button variant="secondary" size="sm">
-                          Ghi nhận thanh toán
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setPaymentModal({
+                            membershipId: m.id,
+                            clubName: m.clubs?.name,
+                            amount: m.fee?.monthly_amount || 0,
+                            currency: m.fee?.currency || 'VND',
+                          })}
+                        >
+                          Thanh toán
                         </Button>
                       </div>
                     )}
@@ -262,6 +285,19 @@ export default function FinancePageContent() {
           </>
         )}
       </div>
+
+      <PaymentModal
+        isOpen={!!paymentModal}
+        onClose={() => setPaymentModal(null)}
+        membership={paymentModal?.membershipId}
+        clubName={paymentModal?.clubName}
+        amount={paymentModal?.amount}
+        currency={paymentModal?.currency}
+        onSuccess={() => {
+          setPaymentModal(null);
+          loadData();
+        }}
+      />
     </div>
   );
 }

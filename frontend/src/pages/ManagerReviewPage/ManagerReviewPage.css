@@ -1,0 +1,305 @@
+/* ManagerReviewPage — final approval stage for events & workshops */
+
+.manager-review {
+  padding: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.manager-review__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.manager-review__title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #06231D;
+  margin: 0 0 4px;
+}
+
+.manager-review__subtitle {
+  font-size: 14px;
+  color: #5A6B62;
+  margin: 0;
+}
+
+.manager-review__loading,
+.manager-review__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.manager-review__loading p,
+.manager-review__empty p {
+  font-size: 14px;
+  color: #5A6B62;
+  margin: 0;
+}
+
+.manager-review__empty h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #06231D;
+  margin: 0;
+}
+
+.manager-review__empty {
+  color: #7C3AED;
+}
+
+.manager-review__spin {
+  animation: mgr-spin 0.7s linear infinite;
+  color: #7C3AED;
+}
+
+@keyframes mgr-spin {
+  to { transform: rotate(360deg); }
+}
+
+.manager-review__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.manager-review__card {
+  padding: 20px;
+  border-left: 4px solid #7C3AED;
+}
+
+.manager-review__card:hover {
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.10);
+}
+
+.manager-review__card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.manager-review__card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.manager-review__type-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.manager-review__type-badge--event {
+  background: rgba(14, 75, 67, 0.10);
+  color: #0E4B43;
+}
+
+.manager-review__type-badge--workshop {
+  background: rgba(124, 58, 237, 0.10);
+  color: #7C3AED;
+}
+
+.manager-review__club-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5A6B62;
+}
+
+.manager-review__date {
+  font-size: 12px;
+  color: #9CA3AF;
+}
+
+.manager-review__card-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #06231D;
+  margin: 0 0 8px;
+}
+
+.manager-review__card-desc {
+  font-size: 14px;
+  color: #5A6B62;
+  line-height: 1.5;
+  margin: 0 0 14px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.manager-review__card-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #F4F1EA;
+  border-radius: 10px;
+}
+
+.manager-review__detail {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #5A6B62;
+}
+
+.manager-review__mentor-stamp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #7C3AED;
+  background: rgba(124, 58, 237, 0.06);
+  padding: 6px 12px;
+  border-radius: 20px;
+  width: fit-content;
+  margin-bottom: 16px;
+}
+
+.manager-review__card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid rgba(6, 35, 29, 0.08);
+}
+
+.manager-review__author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.manager-review__author-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7C3AED, #A78BFA);
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.manager-review__author-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: #5A6B62;
+}
+
+.manager-review__author-info strong {
+  font-size: 13px;
+  color: #06231D;
+}
+
+.manager-review__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.manager-review__actions button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+/* Modal */
+.manager-review__modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(124, 58, 237, 0.30);
+  backdrop-filter: blur(4px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.manager-review__modal {
+  background: white;
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 24px 64px rgba(124, 58, 237, 0.25);
+}
+
+.manager-review__modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #EF4444;
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.manager-review__modal-desc {
+  font-size: 14px;
+  color: #5A6B62;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.manager-review__modal-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid rgba(6, 35, 29, 0.15);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #06231D;
+  resize: vertical;
+  margin-bottom: 16px;
+  box-sizing: border-box;
+}
+
+.manager-review__modal-textarea:focus {
+  outline: none;
+  border-color: #7C3AED;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.10);
+}
+
+.manager-review__modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.manager-review__modal-actions button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}

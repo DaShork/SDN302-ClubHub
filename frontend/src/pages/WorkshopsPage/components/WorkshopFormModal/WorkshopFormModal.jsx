@@ -2,30 +2,31 @@ import { X } from 'lucide-react';
 import './WorkshopFormModal.css';
 
 export default function WorkshopFormModal({
-  isOpen,
+  open,
   selectedWorkshop,
   formData,
+  onChange,
+  onSubmit,
+  onClose,
   documentsList,
   minutesList,
-  handleCloseModal,
-  handleInputChange,
-  handleSubmit
+  isSubmitting,
 }) {
-  if (!isOpen) return null;
+  if (!open) return null;
 
   return (
     <div className="ws-modal">
-      <div className="ws-modal__backdrop" onClick={handleCloseModal} />
+      <div className="ws-modal__backdrop" onClick={onClose} />
 
       <div className="ws-modal__panel">
-        <button type="button" className="ws-modal__close" onClick={handleCloseModal}>
+        <button type="button" className="ws-modal__close" onClick={onClose}>
           <X size={18} />
         </button>
         <h3 className="ws-modal__title">
           {selectedWorkshop ? "✏️ Edit Workshop Info" : "➕ Create Workshop"}
         </h3>
 
-        <form onSubmit={handleSubmit} className="ws-modal__form">
+        <form onSubmit={onSubmit} className="ws-modal__form">
           <div className="ws-modal__field">
             <label className="ws-modal__label">Workshop Name</label>
             <input
@@ -33,7 +34,7 @@ export default function WorkshopFormModal({
               name="title"
               required
               value={formData.title}
-              onChange={handleInputChange}
+              onChange={onChange}
               placeholder="e.g. Intro to Git & Github"
               className="ws-modal__input"
             />
@@ -47,7 +48,7 @@ export default function WorkshopFormModal({
                 name="speaker"
                 required
                 value={formData.speaker}
-                onChange={handleInputChange}
+                onChange={onChange}
                 placeholder="Instructor's name"
                 className="ws-modal__input ws-modal__input--sm"
               />
@@ -59,7 +60,7 @@ export default function WorkshopFormModal({
                 name="location"
                 required
                 value={formData.location}
-                onChange={handleInputChange}
+                onChange={onChange}
                 placeholder="e.g. Lab 301 or online"
                 className="ws-modal__input ws-modal__input--sm"
               />
@@ -82,7 +83,7 @@ export default function WorkshopFormModal({
                 required
                 rows="3"
                 value={formData.description}
-                onChange={handleInputChange}
+                onChange={onChange}
                 placeholder="Explain the workshop agenda, prerequisites, etc."
                 className="ws-modal__textarea"
               />
@@ -97,7 +98,7 @@ export default function WorkshopFormModal({
                 name="startTime"
                 required
                 value={formData.startTime}
-                onChange={handleInputChange}
+                onChange={onChange}
                 className="ws-modal__input ws-modal__input--sm"
               />
             </div>
@@ -108,7 +109,7 @@ export default function WorkshopFormModal({
                 name="endTime"
                 required
                 value={formData.endTime}
-                onChange={handleInputChange}
+                onChange={onChange}
                 className="ws-modal__input ws-modal__input--sm"
               />
             </div>
@@ -123,7 +124,7 @@ export default function WorkshopFormModal({
                 min="1"
                 required
                 value={formData.maxSlots}
-                onChange={handleInputChange}
+                onChange={onChange}
                 className="ws-modal__input ws-modal__input--sm"
               />
             </div>
@@ -136,7 +137,7 @@ export default function WorkshopFormModal({
                 max={formData.maxSlots}
                 required
                 value={formData.remainingSlots}
-                onChange={handleInputChange}
+                onChange={onChange}
                 className="ws-modal__input ws-modal__input--sm"
               />
             </div>
@@ -145,7 +146,7 @@ export default function WorkshopFormModal({
               <select
                 name="status"
                 value={formData.status}
-                onChange={handleInputChange}
+                onChange={onChange}
                 className="ws-modal__input ws-modal__input--sm"
               >
                 <option value="Upcoming">Upcoming</option>
@@ -161,23 +162,25 @@ export default function WorkshopFormModal({
               <select
                 name="document"
                 value={formData.document}
-                onChange={handleInputChange}
+                onChange={onChange}
                 className="ws-modal__input ws-modal__input--sm"
               >
-                {documentsList.map((doc, idx) => (
+                <option value="">-- None --</option>
+                {(documentsList || []).map((doc, idx) => (
                   <option key={idx} value={doc}>{doc}</option>
                 ))}
               </select>
             </div>
             <div className="ws-modal__field">
               <label className="ws-modal__label">Related Minutes</label>
-              <select
+                <select
                 name="minutes"
                 value={formData.minutes}
-                onChange={handleInputChange}
+                onChange={onChange}
                 className="ws-modal__input ws-modal__input--sm"
               >
-                {minutesList.map((min, idx) => (
+                <option value="">-- None --</option>
+                {(minutesList || []).map((min, idx) => (
                   <option key={idx} value={min}>{min}</option>
                 ))}
               </select>
@@ -185,11 +188,11 @@ export default function WorkshopFormModal({
           </div>
 
           <div className="ws-modal__actions">
-            <button type="button" className="ws-modal__btn-secondary" onClick={handleCloseModal}>
+            <button type="button" className="ws-modal__btn-secondary" onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="ws-modal__btn-primary">
-              {selectedWorkshop ? "Save Changes" : "Create Workshop"}
+            <button type="submit" className="ws-modal__btn-primary" disabled={isSubmitting}>
+              {isSubmitting ? "Đang lưu..." : selectedWorkshop ? "Save Changes" : "Create Workshop"}
             </button>
           </div>
         </form>

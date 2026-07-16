@@ -117,10 +117,11 @@ export const eventService = {
             .from("events")
             .select(`
               id, title, description, location, banner_url,
-              start_time, end_time, status,
+              start_time, end_time, status, approval_status,
               clubs ( id, name, slug, logo_url )
             `)
             .eq("status", "upcoming")
+            .eq("approval_status", "approved")
             .gte("start_time", new Date().toISOString())
             .order("start_time", { ascending: true })
             .limit(limit),
@@ -143,25 +144,49 @@ export const eventService = {
     return withFallback(
       () =>
         withTimeout(
-          supabase
-            .from("events")
-            .select(`
-              *,
-              clubs (
-                id,
-                name,
-                logo_url
-              )
-            `)
-            .eq("club_id", clubId)
-            .order("start_time", { ascending: false })
-            .limit(limit),
+          (async () => {
+            const { data, error } = await supabase
+              .from("events")
+              .select(`
+                *,
+                clubs (
+                  id,
+                  name,
+                  logo_url
+                )
+              `)
+              .eq("club_id", clubId)
+              .order("start_time", { ascending: false })
+              .limit(limit);
+            if (error) throw error;
+            if (!data?.length) return [];
+
+            // Attach registrationCount per event.
+            const ids = data.map((e) => e.id);
+            const { data: counts } = await supabase
+              .from("event_registrations")
+              .select("event_id")
+              .in("event_id", ids)
+              .in("status", ["pending", "registered", "checked_in"]);
+
+            const countMap = {};
+            (counts || []).forEach((r) => {
+              countMap[r.event_id] = (countMap[r.event_id] || 0) + 1;
+            });
+            return data.map((e) => ({
+              ...e,
+              registrationCount: countMap[e.id] || 0,
+            }));
+          })(),
           "events.getClubEvents"
-        ).then(({ data, error }) => {
-          if (error) throw error;
-          return data || [];
-        }),
-      () => mockData.getEventsByClub(clubId)
+        ),
+      () => {
+        // Mock fallback: deterministic 0 so remainingSlots is never lying.
+        return mockData.getEventsByClub(clubId).map((e) => ({
+          ...e,
+          registrationCount: 0,
+        }));
+      }
     );
   },
 
@@ -169,31 +194,40 @@ export const eventService = {
     return withFallback(
       () =>
         withTimeout(
-          supabase
-            .from("events")
-            .select(`
-              *,
-              clubs (
-                id,
-                name,
-                logo_url,
-                banner_url
-              )
-            `)
-            .eq("id", id)
-            .maybeSingle(),
+          (async () => {
+            const { data, error } = await supabase
+              .from("events")
+              .select(`
+                *,
+                clubs (
+                  id,
+                  name,
+                  logo_url,
+                  banner_url
+                )
+              `)
+              .eq("id", id)
+              .maybeSingle();
+            if (error) throw error;
+            if (!data) return null;
+
+            const { count, error: cntErr } = await supabase
+              .from("event_registrations")
+              .select("id", { count: "exact", head: true })
+              .eq("event_id", id)
+              .in("status", ["pending", "registered", "checked_in"]);
+            if (cntErr) console.warn("registrationCount fetch failed:", cntErr);
+            return { ...data, registrationCount: count || 0 };
+          })(),
           "events.getById"
-        ).then(({ data, error }) => {
-          if (error) throw error;
-          return data;
-        }),
+        ),
       () => {
         // Match by id (UUID or mock id). Fallback to the first mock event
         // so /events/<any unknown id> renders an honest "no such event"
         // empty state instead of pretending a different event is the one
         // requested. ClubDetailPage already handles null gracefully.
         const mockEvent = MOCK_EVENTS.find((e) => e.id === id);
-        return mockEvent || null;
+        return mockEvent ? { ...mockEvent, registrationCount: 0 } : null;
       }
     );
   },
@@ -215,9 +249,10 @@ export const eventService = {
               .from("events")
               .select(`
                 id, title, description, location, banner_url,
-                start_time, end_time, status, max_participants,
+                start_time, end_time, status, max_participants, approval_status,
                 clubs ( id, name, slug, logo_url )
               `)
+              .eq("approval_status", "approved")
               .order("start_time", { ascending: false })
               .limit(limit);
 
@@ -245,8 +280,6 @@ export const eventService = {
 
             return data.map((e) => ({
               ...e,
-              // Real backend path: registration count joined above
-              // (countMap). Default 0 when an event has no registrations.
               registrationCount: countMap[e.id] || 0,
             }));
           })(),
@@ -264,7 +297,9 @@ export const eventService = {
             .from("event_registrations")
             .select("id", { count: "exact", head: true })
             .eq("event_id", eventId)
-            .neq("status", "cancelled"),
+            // Includes pending so the leader sees accurate "sắp đầy" signal;
+            // excludes cancelled so dropped-out seats free up.
+            .in("status", ["pending", "registered", "checked_in"]),
           "events.getRegistrationCount"
         ).then(({ count, error }) => {
           if (error) throw error;
@@ -274,6 +309,67 @@ export const eventService = {
       // random number when the backend is offline).
       () => 0
     );
+  },
+
+  /**
+   * Soft-cancel the caller's own registration.
+   * Mirrors to the corresponding `join_requests` row via the DB trigger
+   * `trg_sync_event_reg_cancel` so the two tables never drift.
+   */
+  async cancelEventRegistration(eventId, profileId) {
+    if (!eventId || !profileId) throw new Error("missing args");
+    const { error } = await supabase
+      .from("event_registrations")
+      .update({ status: "cancelled" })
+      .eq("event_id", eventId)
+      .eq("profile_id", profileId);
+    if (error) throw error;
+    return true;
+  },
+
+  /**
+   * Cancels an *event_request* (the B-table) without touching the
+   * event_registrations row directly. Use when a student wants to withdraw
+   * before the leader reviews the request. The DB trigger will then mirror
+   * the cancellation onto event_registrations.
+   */
+  async cancelEventRequestByUser(profileId, eventId) {
+    if (!profileId || !eventId) throw new Error("missing args");
+    const { error } = await supabase
+      .from("join_requests")
+      .update({ status: "cancelled" })
+      .eq("profile_id", profileId)
+      .eq("event_id", eventId)
+      .eq("type", "event");
+    if (error) throw error;
+    return true;
+  },
+
+  /**
+   * After a leader creates an event they sometimes want to be registered
+   * automatically. Inserts a `registered` row with qr_code if the event
+   * has `auto_register_creator = true`. Idempotent — re-running won't
+   * duplicate.
+   */
+  async registerCreatorForEvent(eventId, creatorProfileId) {
+    if (!eventId || !creatorProfileId) return null;
+    const qrCode = `CHB-${String(eventId).slice(0, 6)}-${
+      Math.random().toString(36).slice(2, 8).toUpperCase()
+    }`;
+    const { data, error } = await supabase
+      .from("event_registrations")
+      .upsert(
+        [{
+          event_id: eventId,
+          profile_id: creatorProfileId,
+          status: "registered",
+          qr_code: qrCode,
+        }],
+        { onConflict: "event_id,profile_id" }
+      )
+      .select();
+    if (error) throw error;
+    return data?.[0] || null;
   },
 
   async getUserRegistrations(profileId) {
@@ -312,6 +408,9 @@ export const eventService = {
             .select("id, status, qr_code")
             .eq("event_id", eventId)
             .eq("profile_id", profileId)
+            // Ignore cancelled rows so callers can treat `data` as
+            // "active or no registration" without re-checking.
+            .neq("status", "cancelled")
             .maybeSingle(),
           "events.isUserRegistered"
         ).then((data, error) => {
@@ -433,19 +532,33 @@ export const eventService = {
     return true;
   },
 
-  // Register a student for an event
+  // Student self-registers for an event when no join_request flow is needed.
   async registerForEvent(eventId, profileId) {
+    const qrCode = `CHB-${String(eventId).slice(0, 6)}-${
+      Math.random().toString(36).slice(2, 8).toUpperCase()
+    }`;
     const { data, error } = await supabase
       .from("event_registrations")
-      .insert([{ event_id: eventId, profile_id: profileId, status: "registered" }])
+      .upsert(
+        [{
+          event_id: eventId,
+          profile_id: profileId,
+          status: "registered",
+          qr_code: qrCode,
+        }],
+        { onConflict: "event_id,profile_id" }
+      )
       .select();
 
     if (error) throw error;
-    return data[0];
+    return data?.[0];
   },
 
-  // Cancel an event registration
-  async cancelRegistration(eventId, profileId) {
+  // ── DANGER: ADMIN ONLY ────────────────────────────────────────────────────
+  // Removes a registration row outright. Prefer `cancelEventRegistration`
+  // (soft-cancel) for every UI path. This method exists for GDPR/admin
+  // purge workflows and intentionally is not bound to any React component.
+  async adminHardDeleteRegistration(eventId, profileId) {
     const { error } = await supabase
       .from("event_registrations")
       .delete()

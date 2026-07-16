@@ -55,10 +55,13 @@ export async function deleteNotification(notificationId) {
   return { error };
 }
 
-/** Subscribe to realtime notification changes for a profile */
-export function subscribeNotifications(profileId, onChange) {
+/** Subscribe to realtime notification changes for a profile.
+ *  Pass a unique `context` string (e.g. 'bell' | 'page') to avoid channel
+ *  name collisions when multiple components subscribe simultaneously. */
+export function subscribeNotifications(profileId, onChange, context = 'default') {
+  const channelName = `notifications-${context}-${profileId}`;
   const channel = supabase
-    .channel(`notifications-${profileId}`)
+    .channel(channelName)
     .on(
       'postgres_changes',
       {
@@ -84,4 +87,31 @@ export async function createNotification({ profileId, title, content, type = 'sy
     .select()
     .single();
   return { data, error };
+}
+
+/** Create a notification with an optional deep-link URL */
+export async function createNotificationWithLink({
+  profileId,
+  title,
+  content,
+  type = 'system',
+  linkUrl = null,
+}) {
+  const { data, error } = await supabase
+    .from('notifications')
+    .insert({ profile_id: profileId, title, content, type, link_url: linkUrl })
+    .select()
+    .single();
+  return { data, error };
+}
+
+/** Fetch a small set of recent notifications (for bell popover) */
+export async function getRecentNotifications(profileId, { limit = 5 } = {}) {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('id, title, content, type, is_read, link_url, created_at')
+    .eq('profile_id', profileId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  return { data: data || [], error };
 }

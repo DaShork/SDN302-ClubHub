@@ -5,6 +5,7 @@ import { LeaderDashboardHeader, LeaderEmptyState, Loading } from "@/components";
 import { useAuth } from "@/hooks/useAuth.jsx";
 import { useLeaderScope } from "@/contexts/LeaderScopeContext.jsx";
 import EventFormModal from "./components/EventFormModal/EventFormModal.jsx";
+import EventDetailModal from "./components/EventDetailModal/EventDetailModal.jsx";
 import "./EventsPage.css";
 
 /**
@@ -36,6 +37,8 @@ export default function LeaderEventsPage() {
   const [filterStatus, setFilterStatus] = useState("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedDetailActivity, setSelectedDetailActivity] = useState(null);
   const [formData, setFormData] = useState({
     type: "Event",
     title: "",
@@ -49,7 +52,11 @@ export default function LeaderEventsPage() {
     status: "Upcoming",
     document: "",
     minutes: "",
+    autoRegisterCreator: false,
+    requiresApproval: false,
   });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isLeader =
     can("event:create") && can("event:edit") && can("event:delete");
@@ -79,6 +86,9 @@ export default function LeaderEventsPage() {
       maxSlots: e.max_participants || 100,
       remainingSlots: Math.max(0, (e.max_participants || 100) - (e.registrationCount || 0)),
       status: e.status === "upcoming" ? "Upcoming" : e.status === "ongoing" ? "Ongoing" : e.status === "cancelled" ? "Cancelled" : "Finished",
+      approvalStatus: e.approval_status || "pending_mentor",
+      requiresApproval: !!e.requires_approval,
+      autoRegisterCreator: !!e.auto_register_creator,
       document: "",
       minutes: "",
       coverColor: colors[idx % colors.length],
@@ -97,6 +107,7 @@ export default function LeaderEventsPage() {
       maxSlots: w.max_participants || 40,
       remainingSlots: Math.max(0, (w.max_participants || 40) - (w.registrationCount || 0)),
       status: "Upcoming",
+      approvalStatus: w.approval_status || "pending_mentor",
       document: w.material_url || "",
       minutes: "",
       coverColor: colors[(idx + 1) % colors.length],
@@ -147,6 +158,8 @@ export default function LeaderEventsPage() {
       status: "Upcoming",
       document: "",
       minutes: "",
+      autoRegisterCreator: false,
+      requiresApproval: false,
     });
     setIsModalOpen(true);
   };
@@ -170,6 +183,8 @@ export default function LeaderEventsPage() {
       status: act.status,
       document: act.document,
       minutes: act.minutes,
+      autoRegisterCreator: !!act.autoRegisterCreator,
+      requiresApproval: !!act.requiresApproval,
     });
     setIsModalOpen(true);
   };
@@ -177,6 +192,16 @@ export default function LeaderEventsPage() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedActivity(null);
+  };
+
+  const handleOpenDetailModal = (act) => {
+    setSelectedDetailActivity(act);
+    setDetailModalOpen(true);
+  };
+
+  const handleCloseDetailModal = () => {
+    setDetailModalOpen(false);
+    setSelectedDetailActivity(null);
   };
 
   const handleInputChange = (e) => {
@@ -190,6 +215,7 @@ export default function LeaderEventsPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedClubId) return;
+    setIsSubmitting(true);
     if (formData.type === "Event") {
       const payload = {
         club_id: selectedClubId,
@@ -200,11 +226,26 @@ export default function LeaderEventsPage() {
         end_time: formData.endTime ? new Date(formData.endTime).toISOString() : null,
         max_participants: formData.maxSlots,
         status: formData.status.toLowerCase(),
+        requires_approval: !!formData.requiresApproval,
+        auto_register_creator: !!formData.autoRegisterCreator,
+        approval_status: "pending_mentor",
         created_by: profileId || null,
       };
       try {
-        if (selectedActivity) await eventService.updateEvent(selectedActivity.id, payload);
-        else await eventService.createEvent(payload);
+        let createdId = null;
+        if (selectedActivity) {
+          const updated = await eventService.updateEvent(selectedActivity.id, payload);
+          createdId = selectedActivity.id;
+          void updated;
+        } else {
+          const created = await eventService.createEvent(payload);
+          createdId = created?.id;
+          if (createdId && formData.autoRegisterCreator && profileId) {
+            await eventService
+              .registerCreatorForEvent(createdId, profileId)
+              .catch((err) => console.warn("auto-register failed:", err));
+          }
+        }
         loadAll();
       } catch (err) {
         console.warn("Supabase event CRUD failed:", err);
@@ -215,6 +256,7 @@ export default function LeaderEventsPage() {
         title: formData.title,
         description: formData.description,
         material_url: formData.document,
+        approval_status: "pending_mentor",
         created_by: profileId || null,
       };
       try {
@@ -225,6 +267,7 @@ export default function LeaderEventsPage() {
         console.warn("Supabase workshop CRUD failed:", err);
       }
     }
+    setIsSubmitting(false);
     handleCloseModal();
   };
 
@@ -321,6 +364,7 @@ export default function LeaderEventsPage() {
                 <option value="Upcoming">Upcoming</option>
                 <option value="Ongoing">Ongoing</option>
                 <option value="Finished">Finished</option>
+                <option value="Cancelled">Cancelled</option>
               </select>
             </div>
           </div>
@@ -336,10 +380,13 @@ export default function LeaderEventsPage() {
                 <article key={`${act.id}-${act.clubId}-${act.type}`} className="events-card">
                   <div className={`events-card__cover ${act.coverColor}`}>
                     <div className="events-card__cover-head">
-                      <span className="events-card__type">{act.type}</span>
+                      <span className={`events-card__type`}>{act.type}</span>
                       {isAllScope && <span className="events-card__type" style={{ marginLeft: 6 }}>{act.clubName}</span>}
                       <span className={`events-card__status events-card__status--${act.status.toLowerCase()}`}>
                         {act.status}
+                      </span>
+                      <span className={`events-card__approval-badge events-card__approval-badge--${act.approvalStatus}`}>
+                        {act.approvalStatus === 'pending_mentor' ? 'Chờ Mentor' : act.approvalStatus === 'pending_manager' ? 'Chờ Manager' : act.approvalStatus === 'approved' ? 'Đã duyệt' : 'Từ chối'}
                       </span>
                     </div>
                     <h3 className="events-card__title">{act.title}</h3>
@@ -359,6 +406,9 @@ export default function LeaderEventsPage() {
                       <div className="events-card__meta-row"><span>📍</span><span className="events-card__location">{act.location}</span></div>
                     </div>
                     <div className="events-card__footer">
+                      <button type="button" onClick={() => handleOpenDetailModal(act)} className="events-card__btn events-card__btn--ghost">
+                        👁 View Details
+                      </button>
                       <button type="button" onClick={() => handleOpenEditModal(act)} className="events-card__btn events-card__btn--ghost">
                         ✏️ Edit
                       </button>
@@ -380,9 +430,20 @@ export default function LeaderEventsPage() {
         open={isModalOpen}
         onClose={handleCloseModal}
         formData={formData}
+        setFormData={setFormData}
         onChange={handleInputChange}
         onSubmit={handleSubmit}
         editing={!!selectedActivity}
+        documentsList={[]}
+        minutesList={[]}
+        isSubmitting={isSubmitting}
+      />
+
+      <EventDetailModal
+        isOpen={detailModalOpen}
+        onClose={handleCloseDetailModal}
+        activity={selectedDetailActivity}
+        clubId={selectedClubId}
       />
     </div>
   );

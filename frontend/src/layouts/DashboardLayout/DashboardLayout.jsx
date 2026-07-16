@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, Wrench, BookOpen, FileText,
-  Megaphone, ArrowLeft, Shield, BarChart3, Wallet, Building2, Settings,
+  Megaphone, ArrowLeft, Shield, BarChart3, Wallet, Building2, Settings, Bell,
 } from 'lucide-react';
 import { useLeaderClubs } from '@/hooks/useLeaderClubs.jsx';
 import { useMemberClubs } from '@/hooks/useMemberClubs.jsx';
@@ -187,14 +187,15 @@ export default function DashboardLayout({ hideSidebar = false }) {
 
 function buildLeaderNav() {
   return [
-    { name: 'Dashboard',    path: `/leader/dashboard`,     icon: LayoutDashboard },
-    { name: 'Members',      path: `/leader/members`,       icon: Users },
-    { name: 'Events',       path: `/leader/events`,        icon: Calendar },
-    { name: 'Workshops',    path: `/leader/workshops`,     icon: Wrench },
-    { name: 'Knowledge',    path: `/leader/knowledge`,     icon: BookOpen },
-    { name: 'Documents',    path: `/leader/documents`,     icon: FileText },
-    { name: 'Announcements', path: `/leader/announcements`, icon: Megaphone },
-    { name: 'Finance',      path: `/leader/finance`,       icon: Wallet },
+    { name: 'Dashboard',     path: `/leader/dashboard`,      icon: LayoutDashboard },
+    { name: 'Members',       path: `/leader/members`,        icon: Users },
+    { name: 'Events',        path: `/leader/events`,         icon: Calendar },
+    { name: 'Workshops',     path: `/leader/workshops`,      icon: Wrench },
+    { name: 'Knowledge',     path: `/leader/knowledge`,      icon: BookOpen },
+    { name: 'Documents',     path: `/leader/documents`,      icon: FileText },
+    { name: 'Announcements', path: `/leader/announcements`,  icon: Megaphone },
+    { name: 'Finance',       path: `/leader/finance`,        icon: Wallet },
+    { name: 'Notifications', path: `/notifications`,         icon: Bell },
   ];
 }
 
@@ -215,6 +216,7 @@ function buildManagerNav() {
     { name: 'Quản lý CLB',     path: '/manager/clubs',            icon: Building2 },
     { name: 'Thông báo',       path: '/manager/announcements',    icon: Megaphone },
     { name: 'Nhật ký',         path: '/manager/log',              icon: BarChart3 },
+    { name: 'Phe duyet SK',    path: '/manager/review',          icon: Shield },
   ];
 }
 
@@ -222,6 +224,7 @@ function buildMentorNav() {
   return [
     { name: 'Dashboard', path: '/mentor/dashboard', icon: LayoutDashboard },
     { name: 'CLB của tôi', path: '/mentor/clubs',    icon: BookOpen },
+    { name: 'Phe duyet',   path: '/mentor/review',  icon: Shield },
     { name: 'Nhật ký',    path: '/mentor/log',      icon: BarChart3 },
   ];
 }

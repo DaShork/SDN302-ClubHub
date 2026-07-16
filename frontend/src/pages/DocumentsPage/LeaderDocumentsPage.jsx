@@ -24,6 +24,7 @@ export default function LeaderDocumentsPage() {
   const [selectedType, setSelectedType] = useState("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ name: "", type: "PDF" });
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const targetIds = useMemo(() => {
     if (isAllScope) return ledClubIds;
@@ -37,8 +38,9 @@ export default function LeaderDocumentsPage() {
       clubId: uuid,
       clubName,
       name: d.title,
-      size: "2.5 MB",
-      type: d.type === "pdf" ? "PDF" : d.type === "xlsx" ? "Excel" : "Word",
+      fileUrl: d.file_url,
+      size: d.file_size ? `${(d.file_size / 1024 / 1024).toFixed(2)} MB` : '—',
+      type: d.type === "pdf" ? "PDF" : d.type === "xlsx" ? "Excel" : d.type === "docx" ? "Word" : (d.type || 'File').toUpperCase(),
       date: d.uploaded_at ? d.uploaded_at.slice(0, 10) : new Date().toISOString().split("T")[0],
       uploader: d.profiles?.full_name || "—",
     }));
@@ -82,11 +84,24 @@ export default function LeaderDocumentsPage() {
       alert("Vui lòng chọn 1 CLB cụ thể trước khi upload tài liệu.");
       return;
     }
+    setSelectedFile(null);
     setFormData({ name: "", type: "PDF" });
     setIsModalOpen(true);
   };
 
-  const handleCloseModal = () => setIsModalOpen(false);
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedFile(null);
+  };
+
+  const handleFileSelect = (file) => {
+    setSelectedFile(file);
+    // Auto-fill name if empty
+    if (!formData.name) {
+      const baseName = file.name.replace(/\.[^.]+$/, '');
+      setFormData((prev) => ({ ...prev, name: baseName }));
+    }
+  };
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -94,32 +109,20 @@ export default function LeaderDocumentsPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedClubId) return;
-    const extension = formData.type === "PDF" ? ".pdf" : formData.type === "Word" ? ".docx" : ".xlsx";
-    const cleanName = formData.name.endsWith(extension) ? formData.name : formData.name + extension;
-    const payload = {
-      club_id: selectedClubId,
-      title: cleanName,
-      file_url: `https://placeholder.supabase.co/storage/v1/object/public/documents/${cleanName}`,
-      type: formData.type.toLowerCase(),
-      uploaded_by: profileId || null,
-    };
+    if (!selectedClubId || !selectedFile) return;
     try {
-      await documentService.saveDocumentMetadata(payload);
+      await documentService.uploadDocument({
+        clubId: selectedClubId,
+        title: formData.name,
+        file: selectedFile,
+        fileType: formData.type.toLowerCase(),
+        uploaderId: profileId,
+      });
       loadAll();
     } catch (err) {
-      console.warn("Supabase document save failed, using local state fallback:", err);
-      const newDoc = {
-        id: String(Date.now()),
-        clubId: selectedClubId,
-        clubName: selectedClub?.name || "",
-        name: cleanName,
-        size: (Math.random() * (5 - 0.5) + 0.5).toFixed(1) + " MB",
-        type: formData.type,
-        date: new Date().toISOString().split("T")[0],
-        uploader: "—",
-      };
-      setDocuments((prev) => [newDoc, ...prev]);
+      console.error("Document upload failed:", err);
+      alert("Không thể upload tài liệu. Vui lòng thử lại.");
+      return;
     }
     handleCloseModal();
   };
@@ -240,6 +243,17 @@ export default function LeaderDocumentsPage() {
                     </div>
                   </div>
                   <div className="document-row__actions">
+                    {d.fileUrl && (
+                      <a
+                        href={d.fileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="document-row__download"
+                        title="Download document"
+                      >
+                        📥 Download
+                      </a>
+                    )}
                     <button type="button" onClick={() => handleDeleteDoc(d.id)} className="document-row__delete">
                       🗑 Delete
                     </button>
@@ -259,6 +273,8 @@ export default function LeaderDocumentsPage() {
         formData={formData}
         onChange={handleInputChange}
         onSubmit={handleSubmit}
+        selectedFile={selectedFile}
+        onFileSelect={handleFileSelect}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { eventService } from '@/services/eventService'
 import { joinRequestService } from '@/services/joinRequestService'
@@ -28,7 +28,7 @@ function formatTime(dateString) {
 
 export default function EventDetailPageContent() {
   const { id } = useParams()
-  const { profileId, isAuthenticated } = useAuth()
+  const { profile, profileId, isAuthenticated } = useAuth()
   const [event, setEvent] = useState(null)
   const [loading, setLoading] = useState(true)
   const [confirmCancel, setConfirmCancel] = useState(false)
@@ -92,6 +92,7 @@ export default function EventDetailPageContent() {
       clubIdForRequest = resolved || clubIdForRequest;
     }
     try {
+      setRegistering(true);
       await joinRequestService.submitEventRequest({
         eventId: event.id,
         clubId: clubIdForRequest,
@@ -99,27 +100,59 @@ export default function EventDetailPageContent() {
         ...formData
       });
       toast('Đã gửi yêu cầu đăng ký sự kiện!', { variant: 'success' });
-      // Refresh the request status
-      const request = await joinRequestService.getUserEventRequest(profileId, event.id).catch(() => null);
-      setRegistrationRequest(request);
+      // Re-fetch EVERYTHING (registration row, request row, slot count).
+      // Without this refresh the slot count stays stale until next mount.
+      await loadEvent();
+      // Close the modal so we don't keep success-screen visible behind
+      // an event detail page that just refreshed its CTA.
+      setShowRegisterModal(false);
       return true;
     } catch (err) {
       console.error('Submit registration request failed:', err);
       toast('Không thể gửi yêu cầu', { variant: 'error' });
       throw err;
+    } finally {
+      setRegistering(false);
     }
   }
 
+  // Autofill registration form from the user's profile so they don't have
+  // to re-type name, student code, email, phone every time.
+  const registerModalDefaults = useMemo(() => ({
+    fullName: profile?.full_name || '',
+    studentCode: profile?.student_code || '',
+    email: profile?.email || '',
+    phone: profile?.phone || '',
+  }), [profile]);
+
   const handleCancelRequest = async () => {
     try {
-      await eventService.cancelRegistrationByUser(id, profileId)
-      setRegistration((prev) => (prev ? { ...prev, status: 'cancelled' } : null))
-      setCurrentCount((c) => Math.max(0, c - 1))
-      setConfirmCancel(false)
-      toast('Registration cancelled', { variant: 'info' })
+      // ── Optimistic UI clear ──────────────────────────────────────────
+      // Without this, the user can see "You're Registered!" for a beat
+      // between the cancel request and the reload. Hide the CTA card
+      // before the round-trip starts.
+      setRegistration(null);
+      setRegistrationRequest(null);
+      setCurrentCount((c) => Math.max(0, c - 1));
+      setConfirmCancel(false);
+
+      // ── Cancel the matching row (either the request or the row) ────
+      if (registrationRequest && registrationRequest.status === "pending") {
+        await eventService.cancelEventRequestByUser(profileId, id);
+      } else {
+        await eventService.cancelEventRegistration(id, profileId);
+      }
+
+      toast("Registration cancelled", { variant: "info" });
+
+      // ── Re-fetch authoritative state from the DB ────────────────────
+      // loadEvent() also pulls the fresh slot count.
+      await loadEvent();
     } catch (err) {
-      console.error('Cancel registration failed:', err)
-      toast('Không thể hủy đăng ký', { variant: 'error' })
+      console.error("Cancel registration failed:", err);
+      // Rollback optimistic update on failure.
+      await loadEvent();
+      toast("Không thể hủy đăng ký", { variant: "error" });
     }
   }
 
@@ -136,9 +169,14 @@ export default function EventDetailPageContent() {
     )
   }
 
-  const registered = registration && registration.status !== 'cancelled'
-  const checkedIn = registration?.status === 'checked_in'
-  const requestStatus = registrationRequest?.status
+  const registered =
+    registration &&
+    (registration.status === "registered" || registration.status === "checked_in");
+  const pendingRegistration =
+    registration?.status === "pending" || registrationRequest?.status === "pending";
+  const checkedIn = registration?.status === "checked_in";
+  const requestStatus = registrationRequest?.status;
+  const isFull = !!event.max_participants && currentCount >= event.max_participants;
 
   return (
     <div className="min-h-screen">
@@ -281,24 +319,30 @@ export default function EventDetailPageContent() {
                         ? "You're Checked In!"
                         : registered
                         ? "You're Registered!"
-                        : requestStatus === 'pending'
+                        : pendingRegistration
                         ? "Request Pending"
                         : requestStatus === 'rejected'
                         ? "Request Rejected"
+                        : isFull
+                        ? "Event is Full"
                         : 'Interested in this event?'}
                     </h3>
                     <p className="text-sm text-primary-800 mb-4">
-                      {registered
+                      {checkedIn
+                        ? 'See your QR code below for entry.'
+                        : registered
                         ? 'Manage from My Registrations'
-                        : requestStatus === 'pending'
+                        : pendingRegistration
                         ? 'Your registration request is being reviewed'
                         : requestStatus === 'rejected'
                         ? 'Your registration was not approved'
+                        : isFull
+                        ? 'All slots have been taken. Join the waitlist if available.'
                         : 'Register now to secure your spot'}
                     </p>
 
                     {/* Registration status display */}
-                    {requestStatus && !registered && (
+                    {!registered && requestStatus && (
                       <div className={`event-request-status event-request-status--${requestStatus}`}>
                         {requestStatus === 'pending' && (
                           <>
@@ -329,20 +373,39 @@ export default function EventDetailPageContent() {
                       >
                         {checkedIn ? 'View QR Code' : 'Cancel Registration'}
                       </Button>
-                    ) : requestStatus !== 'pending' && (
+                    ) : pendingRegistration ? (
+                      // Don't show a register button while the request is
+                      // pending — they must wait or cancel via My Registrations.
+                      <Button
+                        variant="ghost"
+                        className="w-full"
+                        disabled
+                      >
+                        Đang chờ duyệt...
+                      </Button>
+                    ) : (
                       <Button
                         className="w-full"
                         onClick={handleRegisterClick}
-                        disabled={registering || !isAuthenticated}
+                        disabled={registering || !isAuthenticated || isFull}
                       >
-                        {registering ? 'Đang gửi...' : isAuthenticated ? 'Đăng ký ngay' : 'Đăng nhập để đăng ký'}
+                        {registering
+                          ? 'Đang gửi...'
+                          : isFull
+                          ? 'Đã hết slot'
+                          : isAuthenticated
+                          ? 'Đăng ký ngay'
+                          : 'Đăng nhập để đăng ký'}
                       </Button>
                     )}
 
                     {event.max_participants && (
                       <div className="event-registration-stats">
                         <Users size={14} />
-                        <span>{currentCount} / {event.max_participants} đã đăng ký</span>
+                        <span>
+                          {currentCount} / {event.max_participants} đã đăng ký
+                          {isFull && <strong style={{ marginLeft: 6, color: '#B91C1C' }}>· Hết chỗ</strong>}
+                        </span>
                       </div>
                     )}
                     {registered && registration?.qr_code && (
@@ -381,6 +444,7 @@ export default function EventDetailPageContent() {
         type="event"
         title={event?.title}
         loading={registering}
+        defaultValues={registerModalDefaults}
       />
     </div>
   )

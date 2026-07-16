@@ -1,6 +1,20 @@
 import { supabase } from "./supabase";
 
 export const workshopService = {
+  // Fetch approved workshops for public display
+  async getApproved({ clubId, limit = 20 } = {}) {
+    let query = supabase
+      .from("workshops")
+      .select(`*, clubs (id, name, logo_url), profiles (id, full_name)`)
+      .eq("approval_status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (clubId) query = query.eq("club_id", clubId);
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  },
+
   // Fetch workshops for a specific club
   async getClubWorkshops(clubId) {
     const { data, error } = await supabase

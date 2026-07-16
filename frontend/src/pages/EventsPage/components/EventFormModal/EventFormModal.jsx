@@ -6,31 +6,32 @@ import './EventFormModal.css';
    (EventsPage) controls `isOpen`, `formData` and the submit handler. */
 
 export default function EventFormModal({
-  isOpen,
+  open,
   selectedActivity,
   formData,
   setFormData,
   documentsList,
   minutesList,
-  handleCloseModal,
-  handleInputChange,
-  handleSubmit
+  onChange,
+  onSubmit,
+  onClose,
+  isSubmitting,
 }) {
-  if (!isOpen) return null;
+  if (!open) return null;
 
   return (
     <div className="event-modal">
-      <div className="event-modal__backdrop" onClick={handleCloseModal} />
+      <div className="event-modal__backdrop" onClick={onClose} />
 
       <div className="event-modal__panel">
-        <button type="button" className="event-modal__close" onClick={handleCloseModal} aria-label="Close modal">
+        <button type="button" className="event-modal__close" onClick={onClose} aria-label="Close modal">
           <X size={18} />
         </button>
         <h3 className="event-modal__title">
           {selectedActivity ? `✏️ Edit ${formData.type}` : "➕ Create Event / Workshop"}
         </h3>
 
-        <form onSubmit={handleSubmit} className="event-modal__form">
+        <form onSubmit={onSubmit} className="event-modal__form">
           <div className="event-modal__field">
             <label className="event-modal__label">Type</label>
             <div className="event-modal__type-toggle">
@@ -54,7 +55,7 @@ export default function EventFormModal({
               name="title"
               required
               value={formData.title}
-              onChange={handleInputChange}
+              onChange={onChange}
               placeholder="e.g. Next-gen UI Workshop"
               className="event-modal__input"
             />
@@ -68,7 +69,7 @@ export default function EventFormModal({
                 name="speaker"
                 required
                 value={formData.speaker}
-                onChange={handleInputChange}
+                onChange={onChange}
                 placeholder="Speaker's name"
                 className="event-modal__input event-modal__input--sm"
               />
@@ -80,7 +81,7 @@ export default function EventFormModal({
                 name="location"
                 required
                 value={formData.location}
-                onChange={handleInputChange}
+                onChange={onChange}
                 placeholder="e.g. Room 204 or online"
                 className="event-modal__input event-modal__input--sm"
               />
@@ -103,7 +104,7 @@ export default function EventFormModal({
                 required
                 rows="3"
                 value={formData.description}
-                onChange={handleInputChange}
+                onChange={onChange}
                 placeholder="Explain the workshop agenda, prerequisites, etc."
                 className="event-modal__textarea"
               />
@@ -118,7 +119,7 @@ export default function EventFormModal({
                 name="startTime"
                 required
                 value={formData.startTime}
-                onChange={handleInputChange}
+                onChange={onChange}
                 className="event-modal__input event-modal__input--sm"
               />
             </div>
@@ -129,7 +130,7 @@ export default function EventFormModal({
                 name="endTime"
                 required
                 value={formData.endTime}
-                onChange={handleInputChange}
+                onChange={onChange}
                 className="event-modal__input event-modal__input--sm"
               />
             </div>
@@ -144,7 +145,7 @@ export default function EventFormModal({
                 min="1"
                 required
                 value={formData.maxSlots}
-                onChange={handleInputChange}
+                onChange={onChange}
                 className="event-modal__input event-modal__input--sm"
               />
             </div>
@@ -157,24 +158,70 @@ export default function EventFormModal({
                 max={formData.maxSlots}
                 required
                 value={formData.remainingSlots}
-                onChange={handleInputChange}
+                onChange={onChange}
                 className="event-modal__input event-modal__input--sm"
               />
             </div>
-            <div className="event-modal__field">
-              <label className="event-modal__label">Status</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                className="event-modal__input event-modal__input--sm"
-              >
-                <option value="Upcoming">Upcoming</option>
-                <option value="Ongoing">Ongoing</option>
-                <option value="Finished">Finished</option>
-              </select>
-            </div>
+          <div className="event-modal__field">
+            <label className="event-modal__label">Status</label>
+            <select
+              name="status"
+              value={formData.status}
+              onChange={onChange}
+              className="event-modal__input event-modal__input--sm"
+            >
+              <option value="Upcoming">Upcoming</option>
+              <option value="Ongoing">Ongoing</option>
+              <option value="Finished">Finished</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
           </div>
+        </div>
+
+        <div className="event-modal__field event-modal__field--toggle">
+          <label className="event-modal__checkbox-row">
+            <input
+              type="checkbox"
+              name="autoRegisterCreator"
+              checked={!!formData.autoRegisterCreator}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  autoRegisterCreator: e.target.checked,
+                }))
+              }
+            />
+            <span>
+              <strong>Tự động đăng ký tham gia cho người tạo</strong>
+              <span className="event-modal__help">
+                Tôi (leader) sẽ được đăng ký sự kiện này ngay khi tạo.
+              </span>
+            </span>
+          </label>
+        </div>
+
+        <div className="event-modal__field event-modal__field--toggle">
+          <label className="event-modal__checkbox-row">
+            <input
+              type="checkbox"
+              name="requiresApproval"
+              checked={!!formData.requiresApproval}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  requiresApproval: e.target.checked,
+                }))
+              }
+            />
+            <span>
+              <strong>Yêu cầu Leader duyệt đăng ký</strong>
+              <span className="event-modal__help">
+                Nếu bật, sinh viên gửi yêu cầu sẽ ở trạng thái "chờ duyệt" cho tới khi được duyệt.
+                Nếu tắt, đăng ký được xác nhận ngay.
+              </span>
+            </span>
+          </label>
+        </div>
 
           <div className="event-modal__grid-2">
             <div className="event-modal__field">
@@ -182,9 +229,10 @@ export default function EventFormModal({
               <select
                 name="document"
                 value={formData.document}
-                onChange={handleInputChange}
+                onChange={onChange}
                 className="event-modal__input event-modal__input--sm"
               >
+                <option value="">-- None --</option>
                 {documentsList.map((doc, idx) => (
                   <option key={idx} value={doc}>{doc}</option>
                 ))}
@@ -192,12 +240,13 @@ export default function EventFormModal({
             </div>
             <div className="event-modal__field">
               <label className="event-modal__label">Related Minutes</label>
-              <select
+                <select
                 name="minutes"
                 value={formData.minutes}
-                onChange={handleInputChange}
+                onChange={onChange}
                 className="event-modal__input event-modal__input--sm"
               >
+                <option value="">-- None --</option>
                 {minutesList.map((min, idx) => (
                   <option key={idx} value={min}>{min}</option>
                 ))}
@@ -206,11 +255,11 @@ export default function EventFormModal({
           </div>
 
           <div className="event-modal__actions">
-            <button type="button" className="event-modal__btn-secondary" onClick={handleCloseModal}>
+            <button type="button" className="event-modal__btn-secondary" onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="event-modal__btn-primary">
-              {selectedActivity ? "Save Changes" : "Create Item"}
+            <button type="submit" className="event-modal__btn-primary" disabled={isSubmitting}>
+              {isSubmitting ? "Đang lưu..." : selectedActivity ? "Save Changes" : "Create Item"}
             </button>
           </div>
         </form>

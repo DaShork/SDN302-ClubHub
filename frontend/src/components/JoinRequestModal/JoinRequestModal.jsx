@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, User, Mail, Phone, BookOpen, FileText, Loader2, CheckCircle } from 'lucide-react';
 import './JoinRequestModal.css';
 
@@ -8,18 +8,38 @@ export default function JoinRequestModal({
   onSubmit,
   type = 'club', // 'club' or 'event'
   title = '',
-  loading = false
+  loading = false,
+  defaultValues = null, // { fullName, studentCode, email, phone }
 }) {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    studentCode: '',
-    email: '',
-    phone: '',
+  const initial = {
+    fullName: defaultValues?.fullName || '',
+    studentCode: defaultValues?.studentCode || '',
+    email: defaultValues?.email || '',
+    phone: defaultValues?.phone || '',
     motivation: '',
     notes: ''
-  });
+  };
+  const [formData, setFormData] = useState(initial);
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  // Re-init form whenever modal re-opens so successive opens stay in sync.
+  // Without this the user sees stale state from the previous submission.
+  const lastOpen = useRef(isOpen);
+  useEffect(() => {
+    if (isOpen && !lastOpen.current) {
+      setFormData({
+        fullName: defaultValues?.fullName || '',
+        studentCode: defaultValues?.studentCode || '',
+        email: defaultValues?.email || '',
+        phone: defaultValues?.phone || '',
+        motivation: '',
+        notes: ''
+      });
+      setErrors({});
+      setSubmitted(false);
+    }
+    lastOpen.current = isOpen;
+  }, [isOpen, defaultValues]);
 
   if (!isOpen) return null;
 
@@ -61,11 +81,15 @@ export default function JoinRequestModal({
   };
 
   const handleClose = () => {
+    // Don't allow closing while a request is in flight; otherwise the
+    // modal shows the success-screen UI but `submitted` state evaporates
+    // and the user can re-open the modal to "submit again".
+    if (loading) return;
     setFormData({
-      fullName: '',
-      studentCode: '',
-      email: '',
-      phone: '',
+      fullName: defaultValues?.fullName || '',
+      studentCode: defaultValues?.studentCode || '',
+      email: defaultValues?.email || '',
+      phone: defaultValues?.phone || '',
       motivation: '',
       notes: ''
     });

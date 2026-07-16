@@ -41,7 +41,7 @@ export default function NotificationsPageContent() {
     if (!profileId) return undefined;
     const unsub = subscribeNotifications(profileId, () => {
       fetchNotifications();
-    });
+    }, 'page');
     return unsub;
   }, [profileId, fetchNotifications]);
 

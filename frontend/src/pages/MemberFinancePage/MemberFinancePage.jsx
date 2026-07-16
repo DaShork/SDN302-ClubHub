@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth.jsx';
 import { useMemberScope } from '@/contexts/MemberScopeContext.jsx';
 import { feeSettingsService } from '@/services/feeSettingsService';
 import { financeService } from '@/services/financeService';
+import PaymentModal from '@/components/PaymentModal/PaymentModal.jsx';
 import './MemberFinancePage.css';
 
 /* MemberFinancePage — shows the current month fee status for each of the
@@ -25,7 +26,7 @@ export default function MemberFinancePage() {
   const [rows, setRows] = useState([]);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [payingMembershipId, setPayingMembershipId] = useState(null);
+  const [paymentModal, setPaymentModal] = useState(null); // { membershipId, clubName, amount, currency }
 
   async function loadAll() {
     if (memberClubs.length === 0) {
@@ -96,28 +97,17 @@ export default function MemberFinancePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memberLoading, memberClubs.length, profileId]);
 
-  async function handlePay(row) {
+  function handlePay(row) {
     if (row.monthlyAmount <= 0) {
       toast('CLB này chưa thiết lập mệnh giá quỹ.', { variant: 'error' });
       return;
     }
-    try {
-      setPayingMembershipId(row.membershipId);
-      await financeService.recordPayment(
-        row.membershipId,
-        row.monthlyAmount,
-        'sandbox',
-        `Auto-pay tháng ${new Date().toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' })}`
-      );
-      toast(`Đã ghi nhận đóng quỹ cho ${row.clubName}.`, { variant: 'success' });
-      loadAll();
-      refresh();
-    } catch (err) {
-      console.error(err);
-      toast('Không thể đóng quỹ. Vui lòng thử lại.', { variant: 'error' });
-    } finally {
-      setPayingMembershipId(null);
-    }
+    setPaymentModal({
+      membershipId: row.membershipId,
+      clubName: row.clubName,
+      amount: row.monthlyAmount,
+      currency: row.currency,
+    });
   }
 
   if (memberLoading || loading) {
@@ -138,6 +128,7 @@ export default function MemberFinancePage() {
     .reduce((s, r) => s + r.monthlyAmount, 0);
 
   return (
+    <>
     <div className="member-finance">
       <div className="member-finance__header">
         <div>
@@ -224,11 +215,8 @@ export default function MemberFinancePage() {
                   </div>
                   <div className="member-finance__row-action">
                     {!row.paid && row.monthlyAmount > 0 && (
-                      <Button
-                        onClick={() => handlePay(row)}
-                        disabled={payingMembershipId === row.membershipId}
-                      >
-                        {payingMembershipId === row.membershipId ? 'Đang xử lý…' : 'Đóng quỹ'}
+                      <Button onClick={() => handlePay(row)}>
+                        Thanh toán
                       </Button>
                     )}
                     {row.paid && row.lastPayment && (
@@ -287,5 +275,20 @@ export default function MemberFinancePage() {
         </>
       )}
     </div>
+
+    <PaymentModal
+      isOpen={!!paymentModal}
+      onClose={() => setPaymentModal(null)}
+      membership={paymentModal?.membershipId}
+      clubName={paymentModal?.clubName}
+      amount={paymentModal?.amount}
+      currency={paymentModal?.currency}
+      onSuccess={() => {
+        setPaymentModal(null);
+        loadAll();
+        refresh();
+      }}
+    />
+    </>
   );
 }

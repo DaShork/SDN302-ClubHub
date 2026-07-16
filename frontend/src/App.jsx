@@ -31,6 +31,7 @@ import ManagerDashboardPage from '@/pages/ManagerDashboardPage/ManagerDashboardP
 import ManagerClubsPage from '@/pages/ManagerClubsPage/ManagerClubsPage.jsx';
 import ManagerAnnouncementsPage from '@/pages/ManagerAnnouncementsPage/ManagerAnnouncementsPage.jsx';
 import ManagerActivityLogPage from '@/pages/ManagerActivityLogPage/ManagerActivityLogPage.jsx';
+import ManagerReviewPage from '@/pages/ManagerReviewPage/ManagerReviewPage.jsx';
 import AlumniPage from '@/pages/Alumni/AlumniPage.jsx';
 import NotificationsPage from '@/pages/Notifications/NotificationsPage.jsx';
 import PaymentPage from '@/pages/Payment/PaymentPage.jsx';
@@ -38,6 +39,7 @@ import ReportsPage from '@/pages/Reports/ReportsPage.jsx';
 import MentorDashboardPage from '@/pages/MentorDashboardPage/MentorDashboardPage.jsx';
 import MentorClubsPage from '@/pages/MentorClubsPage/MentorClubsPage.jsx';
 import MentorActivityLogPage from '@/pages/MentorActivityLogPage/MentorActivityLogPage.jsx';
+import MentorReviewPage from '@/pages/MentorReviewPage/MentorReviewPage.jsx';
 import LeaderDashboardPage from '@/pages/DashboardPage/LeaderDashboardPage.jsx';
 import LeaderMembersPage from '@/pages/MembersPage/LeaderMembersPage.jsx';
 import LeaderEventsPage from '@/pages/EventsPage/LeaderEventsPage.jsx';
@@ -49,6 +51,7 @@ import LeaderFinancePage from '@/pages/FinancePage/LeaderFinancePage.jsx';
 import MemberDashboardPage from '@/pages/MemberDashboardPage/MemberDashboardPage.jsx';
 import MemberMyClubPage from '@/pages/MemberMyClubPage/MemberMyClubPage.jsx';
 import MemberFinancePage from '@/pages/MemberFinancePage/MemberFinancePage.jsx';
+import PaymentReturnPage from '@/pages/PaymentReturnPage/PaymentReturnPage.jsx';
 import DashboardLayout from '@/layouts/DashboardLayout/DashboardLayout.jsx';
 import PublicLayout from '@/layouts/PublicLayout/PublicLayout.jsx';
 import { ROLES } from '@/auth/rolePermissions';
@@ -152,6 +155,7 @@ export default function App() {
         <Route path="clubs" element={<ManagerClubsPage />} />
         <Route path="announcements" element={<ManagerAnnouncementsPage />} />
         <Route path="log" element={<ManagerActivityLogPage />} />
+        <Route path="review" element={<ManagerReviewPage />} />
         <Route path="*" element={<Navigate to="/manager" replace />} />
       </Route>
 
@@ -169,6 +173,7 @@ export default function App() {
         <Route path="dashboard" element={<MentorDashboardPage />} />
         <Route path="clubs" element={<MentorClubsPage />} />
         <Route path="log" element={<MentorActivityLogPage />} />
+        <Route path="review" element={<MentorReviewPage />} />
         <Route path="*" element={<Navigate to="/mentor/dashboard" replace />} />
       </Route>
 
@@ -222,6 +227,7 @@ export default function App() {
         <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
         <Route path="/payment" element={<ProtectedRoute requiredRole={[ROLES.CLUB_MEMBER, ROLES.CLUB_LEADER]}><PaymentPage /></ProtectedRoute>} />
+        <Route path="/payment/return" element={<PaymentReturnPage />} />
         <Route path="/finance" element={<ProtectedRoute requiredRole={[ROLES.CLUB_MEMBER, ROLES.CLUB_LEADER]}><FinancePage /></ProtectedRoute>} />
       </Route>
 
