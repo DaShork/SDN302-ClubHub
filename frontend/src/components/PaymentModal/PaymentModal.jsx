@@ -99,7 +99,7 @@ export default function PaymentModal({
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const r = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/payment-manual-confirm`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/payment-check`,
         {
           method: 'POST',
           headers: {
@@ -109,16 +109,25 @@ export default function PaymentModal({
           body: JSON.stringify({ payment_id: paymentInfo.payment.id }),
         },
       );
-      if (!r.ok) {
-        const err = await r.json().catch(() => ({}));
-        throw new Error(err.error || `HTTP ${r.status}`);
+      const body = await r.json().catch(() => ({}));
+
+      // payment-check returns 200 even when "pending" — status is in body.status
+      if (!r.ok || body.error) {
+        throw new Error(body.error || `HTTP ${r.status}`);
       }
-      toast('Đã xác nhận thanh toán', { variant: 'success' });
-      if (onSuccess) {
-        const json = await r.json();
-        onSuccess(json.payment);
+
+      // Any 2xx + status=completed means success
+      if (body.status === 'completed') {
+        toast('Thanh toán đã được xác nhận!', { variant: 'success' });
+        if (onSuccess) onSuccess(body.payment ?? paymentInfo.payment);
+        onClose();
+        return;
       }
-      onClose();
+
+      // status=pending — show message to user
+      toast(body.message || 'Chưa tìm thấy giao dịch. Vui lòng thử lại sau vài giây.', {
+        variant: 'warning',
+      });
     } catch (err) {
       toast(err.message, { variant: 'error' });
     } finally {
