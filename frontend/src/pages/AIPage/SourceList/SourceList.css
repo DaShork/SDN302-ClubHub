@@ -1,0 +1,66 @@
+.source-list {
+  padding: 0 4px;
+}
+
+.source-list__title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(244, 241, 234, 0.4);
+}
+
+.source-list__items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.source-list__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.source-list__type {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.source-list__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.source-list__heading {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #F4F1EA;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.source-list__snippet {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: rgba(244, 241, 234, 0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.source-list__club {
+  color: rgba(244, 241, 234, 0.45);
+  font-weight: 400;
+}

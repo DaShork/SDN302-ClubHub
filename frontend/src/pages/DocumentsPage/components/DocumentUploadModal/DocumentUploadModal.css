@@ -1,0 +1,199 @@
+.doc-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.doc-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 35, 29, 0.40);
+  backdrop-filter: blur(4px);
+}
+
+.doc-modal__panel {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid rgba(6, 35, 29, 0.10);
+  border-radius: 16px;
+  max-width: 448px;
+  width: 100%;
+  padding: 24px;
+  z-index: 1;
+  box-shadow: 0 24px 64px rgba(6, 35, 29, 0.30);
+  animation: doc-modal-in 0.18s ease;
+}
+
+@keyframes doc-modal-in {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.doc-modal__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: #5A6B62;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.doc-modal__close:hover {
+  background: rgba(6, 35, 29, 0.05);
+  color: #06231D;
+}
+
+.doc-modal__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #06231D;
+  margin: 0 0 16px;
+}
+
+.doc-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.doc-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.doc-modal__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #5A6B62;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.doc-modal__input {
+  width: 100%;
+  background: #F4F1EA;
+  border: 1px solid rgba(6, 35, 29, 0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #06231D;
+  transition: border-color 0.15s ease;
+}
+
+.doc-modal__input:focus {
+  outline: none;
+  border-color: #22C55E;
+}
+
+.doc-modal__type-row {
+  display: flex;
+  gap: 8px;
+}
+
+.doc-modal__type-btn {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid rgba(6, 35, 29, 0.12);
+  background: #F4F1EA;
+  color: #5A6B62;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.doc-modal__type-btn:hover {
+  color: #06231D;
+}
+
+.doc-modal__type-btn--active {
+  background: rgba(34, 197, 94, 0.10);
+  color: #0E4B43;
+  border-color: rgba(34, 197, 94, 0.30);
+}
+
+.doc-modal__dropzone {
+  border: 2px dashed rgba(6, 35, 29, 0.12);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  background: rgba(244, 241, 234, 0.50);
+  transition: border-color 0.15s ease;
+}
+
+.doc-modal__dropzone:hover {
+  border-color: rgba(34, 197, 94, 0.50);
+}
+
+.doc-modal__dropzone-icon {
+  font-size: 32px;
+  display: block;
+}
+
+.doc-modal__dropzone-text {
+  font-size: 12px;
+  color: #06231D;
+  font-weight: 600;
+  margin: 8px 0 4px;
+}
+
+.doc-modal__dropzone-hint {
+  font-size: 10px;
+  color: #5A6B62;
+  margin: 0;
+}
+
+.doc-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid rgba(6, 35, 29, 0.06);
+  padding-top: 16px;
+  margin-top: 8px;
+}
+
+.doc-modal__btn-secondary {
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(6, 35, 29, 0.12);
+  background: transparent;
+  color: #5A6B62;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.doc-modal__btn-secondary:hover {
+  background: #F4F1EA;
+  color: #06231D;
+}
+
+.doc-modal__btn-primary {
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #0E4B43, #22C55E);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.doc-modal__btn-primary:hover {
+  opacity: 0.92;
+}

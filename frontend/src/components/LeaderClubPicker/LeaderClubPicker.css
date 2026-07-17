@@ -1,0 +1,48 @@
+.leader-club-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid rgba(6, 35, 29, 0.12);
+  color: #06231d;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.leader-club-picker:hover {
+  border-color: rgba(34, 197, 94, 0.55);
+  background: rgba(34, 197, 94, 0.04);
+}
+
+.leader-club-picker__icon {
+  display: inline-flex;
+  color: #ca8a04;
+}
+
+.leader-club-picker__label {
+  color: #4a5d59;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.leader-club-picker__select {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #06231d;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 140px;
+  padding-right: 4px;
+}
+
+.leader-club-picker__select option {
+  background: #ffffff;
+  color: #06231d;
+}

@@ -1,0 +1,317 @@
+/* MemberFinancePage — fee summary + per-club pay rows + history table. */
+
+.member-finance {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.member-finance__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.member-finance__title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #06231D;
+  margin: 0 0 6px;
+}
+
+.member-finance__subtitle {
+  font-size: 14px;
+  color: #16685D;
+  margin: 0;
+}
+
+/* Summary cards */
+
+.member-finance__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.member-finance__summary-card {
+  display: flex !important;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px !important;
+}
+
+.member-finance__summary-label {
+  font-size: 12px;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.member-finance__summary-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #06231D;
+}
+
+.member-finance__summary-value--green { color: #16685D; }
+.member-finance__summary-value--red { color: #B91C1C; }
+
+/* Per-club rows */
+
+.member-finance__list {
+  padding: 8px 0;
+}
+
+.member-finance__row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.4fr) minmax(120px, 1fr) minmax(140px, 1fr) minmax(140px, auto);
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.member-finance__row:last-child {
+  border-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .member-finance__row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.member-finance__row-club {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.member-finance__row-logo,
+.member-finance__row-logo-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.member-finance__row-logo-placeholder {
+  background: linear-gradient(135deg, #0E4B43, #22C55E);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.member-finance__row-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #06231D;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.member-finance__row-position {
+  font-size: 12px;
+  color: #6B7280;
+  margin-top: 2px;
+}
+
+.member-finance__row-amount {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.member-finance__row-amount-label {
+  font-size: 11px;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.member-finance__row-amount-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: #06231D;
+}
+
+.member-finance__row-status {
+  display: flex;
+  align-items: center;
+}
+
+.member-finance__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.member-finance__status--paid {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16685D;
+}
+
+.member-finance__status--unpaid {
+  background: rgba(239, 68, 68, 0.12);
+  color: #B91C1C;
+}
+
+.member-finance__status--none {
+  background: rgba(107, 114, 128, 0.18);
+  color: #6B7280;
+}
+
+.member-finance__row-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.member-finance__row-last {
+  font-size: 12px;
+  color: #6B7280;
+}
+
+/* History */
+
+.member-finance__history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.member-finance__history-head h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #06231D;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.member-finance__count {
+  font-size: 13px;
+  color: #6B7280;
+}
+
+.member-finance__history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.member-finance__history-table thead th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 20px;
+  background: #F8FAF8;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.member-finance__history-table tbody td {
+  padding: 12px 20px;
+  border-bottom: 1px solid #F3F4F6;
+  vertical-align: middle;
+  color: #06231D;
+}
+
+.member-finance__history-amount {
+  font-weight: 600;
+}
+
+.member-finance__history-table code {
+  font-size: 12px;
+  background: #F3F4F6;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.member-finance__history-status {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.member-finance__history-status--completed { background: rgba(34, 197, 94, 0.12); color: #16685D; }
+.member-finance__history-status--pending   { background: rgba(245, 158, 11, 0.12); color: #B45309; }
+.member-finance__history-status--failed    { background: rgba(239, 68, 68, 0.12);  color: #B91C1C; }
+.member-finance__history-status--refunded  { background: rgba(107, 114, 128, 0.18); color: #6B7280; }
+
+/* Empty / loading */
+
+.member-finance__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 40px 20px;
+  color: #4B5563;
+}
+
+.member-finance__empty h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #06231D;
+}
+
+.member-finance__empty p {
+  margin: 0;
+  font-size: 14px;
+  color: #6B7280;
+}
+
+.member-finance__state {
+  padding: 32px 16px;
+  text-align: center;
+  color: #6B7280;
+  font-size: 14px;
+}
+
+.member-finance__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 96px 16px;
+  color: #16685D;
+}
+
+.member-finance__spinner {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid rgba(34, 197, 94, 0.2);
+  border-top-color: #22C55E;
+  animation: member-finance-spin 0.9s linear infinite;
+}
+
+@keyframes member-finance-spin {
+  to { transform: rotate(360deg); }
+}

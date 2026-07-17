@@ -1,0 +1,119 @@
+/* PaymentReturnPage — displayed after VNPay redirect */
+
+.payment-return {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(14, 75, 67, 0.05), rgba(34, 197, 94, 0.05));
+}
+
+.payment-return__card {
+  max-width: 480px;
+  width: 100%;
+  padding: 40px;
+}
+
+.payment-return__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px;
+  color: #5A6B62;
+}
+
+.payment-return__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(14, 75, 67, 0.10);
+  border-top-color: #0E4B43;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.payment-return__result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+}
+
+.payment-return__icon {
+  margin-bottom: 8px;
+}
+
+.payment-return__result--success .payment-return__icon {
+  color: #22C55E;
+}
+
+.payment-return__result--failed .payment-return__icon {
+  color: #EF4444;
+}
+
+.payment-return__title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #06231D;
+  margin: 0;
+}
+
+.payment-return__message {
+  font-size: 15px;
+  color: #5A6B62;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.payment-return__details {
+  width: 100%;
+  padding: 16px;
+  background: #F4F1EA;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.payment-return__detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.payment-return__detail-row span:first-child {
+  color: #5A6B62;
+}
+
+.payment-return__detail-row code {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0E4B43;
+  background: rgba(14, 75, 67, 0.08);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.payment-return__detail-row strong {
+  color: #06231D;
+  font-weight: 700;
+}
+
+.payment-return__actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.payment-return__actions > * {
+  flex: 1;
+}

@@ -101,14 +101,13 @@ Club Leaders can:
 
 ## Knowledge Base
 
-Members can:
+> **Access:** Club Leader only (inside club dashboard at `/club/:clubId/knowledge`)
+
+Club Leaders can:
 
 - Browse Knowledge Articles
 - View Knowledge Details
 - Search Knowledge
-
-Club Leaders can:
-
 - Create Articles
 - Update Articles
 - Delete Articles

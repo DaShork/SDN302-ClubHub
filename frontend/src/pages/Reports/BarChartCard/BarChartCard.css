@@ -1,0 +1,31 @@
+.bar-chart-card {
+  background: #0D1824;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.bar-chart-card__title {
+  margin: 0 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #F4F1EA;
+}
+
+.bar-tooltip {
+  background-color: #0D1824;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.bar-tooltip__label {
+  margin: 0 0 4px;
+  font-weight: 500;
+  color: #F4F1EA;
+}
+
+.bar-tooltip__value {
+  margin: 0;
+}

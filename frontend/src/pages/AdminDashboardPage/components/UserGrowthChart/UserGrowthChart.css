@@ -1,0 +1,66 @@
+.admin-user-growth {
+  background: #0D1824;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-user-growth__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  gap: 16px;
+}
+
+.admin-user-growth__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #F4F1EA;
+  margin: 0 0 4px;
+}
+
+.admin-user-growth__title svg { color: #22C55E; }
+
+.admin-user-growth__subtitle {
+  font-size: 12px;
+  color: #94A3B8;
+  margin: 0;
+}
+
+.admin-user-growth__total {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-user-growth__total-label {
+  font-size: 11px;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-user-growth__total-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #22C55E;
+  line-height: 1;
+}
+
+.admin-user-growth__chart { flex: 1; min-height: 240px; }
+
+.admin-user-growth__empty {
+  height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748B;
+  font-size: 13px;
+}

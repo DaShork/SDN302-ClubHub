@@ -1,0 +1,586 @@
+/* MemberMyClubPage — picker + tabbed read-only overview of a single club. */
+
+.member-clubs {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.member-clubs__header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.member-clubs__h-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #06231D;
+  margin: 0;
+}
+
+.member-clubs__h-subtitle {
+  font-size: 14px;
+  color: #16685D;
+  margin: 0;
+}
+
+/* Picker (no club selected) */
+
+.member-clubs__picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.member-clubs__picker-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid rgba(6, 35, 29, 0.08);
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+
+.member-clubs__picker-card:hover {
+  border-color: rgba(34, 197, 94, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
+}
+
+.member-clubs__picker-logo,
+.member-clubs__picker-logo-placeholder {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.member-clubs__picker-logo-placeholder {
+  background: linear-gradient(135deg, #0E4B43, #22C55E);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.member-clubs__picker-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.member-clubs__picker-info h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #06231D;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.member-clubs__picker-info p {
+  margin: 0;
+  font-size: 12px;
+  color: #6B7280;
+}
+
+/* Selected club head */
+
+.member-clubs__club-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  background: #fff;
+  border: 1px solid rgba(6, 35, 29, 0.08);
+  border-radius: 12px;
+}
+
+.member-clubs__club-logo,
+.member-clubs__club-logo-placeholder {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.member-clubs__club-logo-placeholder {
+  background: linear-gradient(135deg, #0E4B43, #22C55E);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.member-clubs__club-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.member-clubs__club-name {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #06231D;
+}
+
+.member-clubs__club-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #6B7280;
+}
+
+.member-clubs__portal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #16685D;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.member-clubs__portal-link:hover {
+  background: rgba(34, 197, 94, 0.22);
+}
+
+/* Tabs */
+
+.member-clubs__tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid #E5E7EB;
+  padding-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.member-clubs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6B7280;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.member-clubs__tab:hover {
+  color: #06231D;
+}
+
+.member-clubs__tab--active {
+  color: #16685D;
+  border-bottom-color: #22C55E;
+}
+
+/* Toolbar */
+
+.member-clubs__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.member-clubs__search {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #F8FAF8;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  color: #9CA3AF;
+  min-width: 0;
+}
+
+.member-clubs__search:focus-within {
+  border-color: #22C55E;
+  background: #fff;
+}
+
+.member-clubs__search input {
+  flex: 1 1 auto;
+  border: 0;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: #06231D;
+  min-width: 0;
+}
+
+.member-clubs__count {
+  font-size: 13px;
+  color: #6B7280;
+  flex-shrink: 0;
+}
+
+/* Table */
+
+.member-clubs__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.member-clubs__table thead th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 20px;
+  background: #F8FAF8;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.member-clubs__table tbody td {
+  padding: 12px 20px;
+  border-bottom: 1px solid #F3F4F6;
+  vertical-align: middle;
+  color: #06231D;
+}
+
+.member-clubs__member-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.member-clubs__avatar,
+.member-clubs__avatar-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.member-clubs__avatar-placeholder {
+  background: linear-gradient(135deg, #0E4B43, #22C55E);
+  color: #fff;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+
+.member-clubs__member-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.member-clubs__member-email {
+  font-size: 12px;
+  color: #6B7280;
+}
+
+.member-clubs__role-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #16685D;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Events */
+
+.member-clubs__events {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.member-clubs__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.member-clubs__section-head h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #06231D;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.member-clubs__event-list {
+  padding: 8px 0;
+}
+
+.member-clubs__event-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  text-decoration: none;
+  color: inherit;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.member-clubs__event-row:last-child {
+  border-bottom: 0;
+}
+
+.member-clubs__event-row:hover {
+  background: #F8FAF8;
+}
+
+.member-clubs__event-date {
+  width: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(34, 197, 94, 0.1);
+  color: #16685D;
+  padding: 6px 4px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.member-clubs__event-day {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.member-clubs__event-month {
+  font-size: 10px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.member-clubs__event-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.member-clubs__event-info h4 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #06231D;
+}
+
+.member-clubs__event-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #6B7280;
+}
+
+.member-clubs__event-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.member-clubs__status {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.member-clubs__status--upcoming  { background: rgba(59, 130, 246, 0.12); color: #1E40AF; }
+.member-clubs__status--ongoing   { background: rgba(34, 197, 94, 0.12);  color: #16685D; }
+.member-clubs__status--finished  { background: rgba(107, 114, 128, 0.18); color: #6B7280; }
+.member-clubs__status--cancelled { background: rgba(239, 68, 68, 0.12);  color: #B91C1C; }
+
+/* Documents */
+
+.member-clubs__doc-list {
+  padding: 8px 0;
+}
+
+.member-clubs__doc-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.member-clubs__doc-row:last-child {
+  border-bottom: 0;
+}
+
+.member-clubs__doc-icon {
+  color: #16685D;
+  flex-shrink: 0;
+}
+
+.member-clubs__doc-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.member-clubs__doc-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #06231D;
+}
+
+.member-clubs__doc-meta {
+  font-size: 12px;
+  color: #6B7280;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.member-clubs__doc-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #16685D;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.member-clubs__doc-download:hover {
+  background: rgba(34, 197, 94, 0.22);
+}
+
+/* Knowledge */
+
+.member-clubs__know-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.member-clubs__know-row {
+  padding: 18px 20px;
+}
+
+.member-clubs__know-cat {
+  display: inline-block;
+  background: rgba(139, 92, 246, 0.12);
+  color: #6D28D9;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+  margin-bottom: 8px;
+}
+
+.member-clubs__know-title {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #06231D;
+}
+
+.member-clubs__know-content {
+  margin: 0 0 10px;
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.member-clubs__know-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6B7280;
+  flex-wrap: wrap;
+}
+
+.member-clubs__know-meta a {
+  color: #16685D;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* States */
+
+.member-clubs__state,
+.member-clubs__empty-tab {
+  padding: 40px 16px;
+  text-align: center;
+  color: #6B7280;
+  font-size: 14px;
+}
+
+.member-clubs__empty-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 20px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px dashed rgba(6, 35, 29, 0.12);
+}
+
+.member-clubs__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 60px 16px;
+  color: #16685D;
+}
+
+.member-clubs__spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid rgba(34, 197, 94, 0.2);
+  border-top-color: #22C55E;
+  animation: member-clubs-spin 0.9s linear infinite;
+}
+
+@keyframes member-clubs-spin {
+  to { transform: rotate(360deg); }
+}
