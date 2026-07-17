@@ -1,19 +1,26 @@
 import { supabase } from "./supabase";
 
 export const financeService = {
-  // Get all memberships with payments for the current user
+  // Get all memberships with payments for the current user.
+  // SECURITY: filtered server-side by memberships.profile_id AND client-side
+  // by short-circuiting when profileId is missing. RLS (migration 002)
+  // additionally ensures users only see their own payments.
   async getUserPayments(profileId) {
+    if (!profileId) return [];
     const { data, error } = await supabase
       .from("payments")
       .select(`
         id,
         amount,
+        currency,
         payment_date,
         payment_method,
+        transaction_code,
         status,
         note,
-        memberships (
+        memberships!inner (
           id,
+          profile_id,
           position,
           clubs (
             id,
@@ -26,11 +33,12 @@ export const financeService = {
       .order("payment_date", { ascending: false });
 
     if (error) throw error;
-    return data;
+    return data || [];
   },
 
-  // Get club fee info for a user's memberships
+  // Get club fee info for a user's memberships.
   async getUserClubFees(profileId) {
+    if (!profileId) return [];
     const { data, error } = await supabase
       .from("memberships")
       .select(`
@@ -47,7 +55,7 @@ export const financeService = {
       .eq("status", "active");
 
     if (error) throw error;
-    return data;
+    return data || [];
   },
 
   // Record a new payment (Club Leader action)
@@ -79,8 +87,13 @@ export const financeService = {
     return data[0];
   },
 
-  // Get all payments for a club (Club Leader)
+  // Get all payments for a club (Club Leader).
+  // SECURITY: server-side filter by memberships.club_id and RLS via
+  // is_club_leader(m.club_id). Always pass an explicit clubId — calling
+  // without one returns all payments the caller can see, which is fine for
+  // Admin/Manager but should never be used on member-facing routes.
   async getClubPayments(clubId) {
+    if (!clubId) return [];
     const { data, error } = await supabase
       .from("payments")
       .select(`
@@ -90,8 +103,9 @@ export const financeService = {
         payment_method,
         status,
         note,
-        memberships (
+        memberships!inner (
           id,
+          club_id,
           position,
           profiles (
             id,
@@ -105,6 +119,6 @@ export const financeService = {
       .order("payment_date", { ascending: false });
 
     if (error) throw error;
-    return data;
+    return data || [];
   },
 };

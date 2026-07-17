@@ -3,41 +3,53 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle2, Clock } from 'lucide-react';
 import { Card, Button } from '@/components';
 import { supabase } from '@/services/supabase';
+import { useAuth } from '@/hooks/useAuth.jsx';
 import './PaymentReturnPage.css';
 
 export default function PaymentReturnPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState('checking'); // 'checking' | 'completed' | 'pending'
+  const { profileId } = useAuth();
+  const [status, setStatus] = useState('checking'); // 'checking' | 'completed' | 'pending' | 'forbidden'
   const [payment, setPayment] = useState(null);
 
-  // With manual bank transfer there's no VNPay-style redirect back.
-  // We just check the latest pending payment for this user and report
-  // whether it's been confirmed yet. The modal already does this with
-  // realtime polling — this page is here in case the user lands here
-  // by some other path.
+  // Resolve current user via RLS-scoped lookup of own payment by txn_ref.
+  // RLS enforces ownership (migration 002) so users can't see other
+  // people's payment rows even if they guess the transfer_content.
   useEffect(() => {
     const txnRef = searchParams.get('txn_ref');
+    if (!profileId) {
+      setStatus('pending');
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
         let query = supabase
           .from('payments')
-          .select('id, status, amount, transfer_content, payment_date')
+          .select('id, status, amount, transfer_content, payment_date, memberships!inner(profile_id)')
           .order('created_at', { ascending: false })
+          .eq('memberships.profile_id', profileId)
           .limit(1);
         if (txnRef) query = query.eq('transfer_content', txnRef);
-        const { data } = await query.maybeSingle();
+        const { data, error } = await query.maybeSingle();
         if (cancelled) return;
+        if (error) {
+          setStatus('pending');
+          return;
+        }
+        if (!data) {
+          setStatus('forbidden');
+          return;
+        }
         setPayment(data);
-        if (data?.status === 'completed') setStatus('completed');
-        else setStatus('pending');
+        setStatus(data.status === 'completed' ? 'completed' : 'pending');
       } catch {
         if (!cancelled) setStatus('pending');
       }
     })();
     return () => { cancelled = true; };
-  }, [searchParams]);
+  }, [searchParams, profileId]);
 
   if (status === 'checking') {
     return (
@@ -65,16 +77,22 @@ export default function PaymentReturnPage() {
           </div>
 
           <h1 className="payment-return__title">
-            {status === 'completed' ? 'Thanh toán thành công!' : 'Đang chờ xác nhận'}
+            {status === 'completed'
+              ? 'Thanh toán thành công!'
+              : status === 'forbidden'
+                ? 'Không tìm thấy giao dịch'
+                : 'Đang chờ xác nhận'}
           </h1>
 
           <p className="payment-return__message">
             {status === 'completed'
               ? 'Khoản thanh toán của bạn đã được ghi nhận. Cảm ơn bạn đã đóng quỹ!'
-              : 'Chúng tôi đang chờ ngân hàng xác nhận giao dịch của bạn. Thường mất vài giây đến vài phút. Bạn có thể đóng trang này và quay lại sau.'}
+              : status === 'forbidden'
+                ? 'Không tìm thấy giao dịch nào thuộc tài khoản của bạn với mã này.'
+                : 'Chúng tôi đang chờ ngân hàng xác nhận giao dịch của bạn. Thường mất vài giây đến vài phút. Bạn có thể đóng trang này và quay lại sau.'}
           </p>
 
-          {payment && (
+          {payment && status !== 'forbidden' && (
             <div className="payment-return__details">
               <div className="payment-return__detail-row">
                 <span>Mã giao dịch:</span>

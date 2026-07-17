@@ -7,6 +7,8 @@ import {
   getOverviewStats, getEventsPerMonth, getAttendanceTrend,
   getMembersPerClub, getRevenuePerMonth, getCumulativeRevenue,
 } from '@/services/reportService';
+import { useAuth } from '@/hooks/useAuth.jsx';
+import { ROLES } from '@/auth/rolePermissions.js';
 import { StatCard } from './StatCard/StatCard.jsx';
 import { BarChartCard } from './BarChartCard/BarChartCard.jsx';
 import { LineChartCard } from './LineChartCard/LineChartCard.jsx';
@@ -30,6 +32,7 @@ const ICONS = {
 const MEMBER_COLORS = ['#22C55E', '#3B82F6', '#F59E0B', '#8B5CF6', '#EC4899'];
 
 export default function ReportsPageContent() {
+  const { role } = useAuth();
   const [tab, setTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
@@ -39,7 +42,16 @@ export default function ReportsPageContent() {
   const [revenueData, setRevenueData] = useState([]);
   const [cumulativeData, setCumulativeData] = useState([]);
 
+  // Role guard: this page aggregates payments and other cross-club
+  // metrics. RLS would also block non-leaders from seeing other clubs'
+  // payments, but we want a clear UX rather than silently empty data.
+  const isAdminLike = role === ROLES.ADMINISTRATOR || role === ROLES.MANAGER;
+
   useEffect(() => {
+    if (!isAdminLike) {
+      setLoading(false);
+      return;
+    }
     const load = async () => {
       setLoading(true);
       const [s, evts, att, mbrs, rev, cum] = await Promise.all([
@@ -59,7 +71,7 @@ export default function ReportsPageContent() {
       setLoading(false);
     };
     load();
-  }, []);
+  }, [isAdminLike]);
 
   const fmtCurrency = (v) =>
     new Intl.NumberFormat('vi-VN', {
@@ -93,7 +105,15 @@ export default function ReportsPageContent() {
         ))}
       </div>
 
-      {loading ? (
+      {!isAdminLike ? (
+        <Card className="reports-page__forbidden">
+          <h2>Không có quyền truy cập</h2>
+          <p>
+            Trang báo cáo chỉ dành cho Admin và Manager. Nếu bạn là Leader/Mentor
+            của CLB cụ thể, vui lòng dùng trang Finance của CLB đó.
+          </p>
+        </Card>
+      ) : loading ? (
         <div className="reports-page__loading">
           <Loading />
         </div>

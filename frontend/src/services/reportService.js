@@ -14,7 +14,13 @@ async function safeQuery(queryFn) {
   }
 }
 
-/** Overview: key metrics */
+/** Overview: key metrics.
+ *
+ * NOTE: This service is intended for Admin/Manager only — RLS restricts
+ * payments to "own or club-leader-of" scope. The caller (ReportsPage)
+ * enforces the role check before calling; if reached by a Member the
+ * numbers will be silently empty thanks to RLS.
+ */
 export async function getOverviewStats() {
   const [members, events, payments, articles] = await Promise.all([
     safeQuery(() => supabase.from('memberships').select('*', { count: 'exact', head: true }).eq('status', 'active')),
@@ -101,7 +107,10 @@ export async function getMembersPerClub() {
   return { data, error };
 }
 
-/** Revenue per month (last 6 months) */
+/** Revenue per month (last 6 months).
+ *
+ * Same scope rule as getOverviewStats: intended for Admin/Manager.
+ */
 export async function getRevenuePerMonth() {
   const { data, error } = await safeQuery(async () => {
     const { data: payments } = await supabase

@@ -299,14 +299,14 @@ export default function Navbar() {
                   <Link
                     to="/login"
                     className="px-5 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]"
-                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
+                    style={{ background: 'rgba(73, 255, 85, 0.26)', border: '1px solid rgba(255,255,255,0.15)', color: '#ffffff' }}
                   >
                     Log in
                   </Link>
                   <Link
                     to="/signup"
                     className="px-5 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]"
-                    style={{ background: 'linear-gradient(90deg,#0E4B43,#22C55E)' }}
+                    style={{ background: 'linear-gradient(90deg,#0E4B43,#22C55E)', color: '#ffffff' }}
                   >
                     Sign up
                   </Link>

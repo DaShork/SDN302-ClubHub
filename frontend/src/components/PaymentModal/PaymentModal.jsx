@@ -3,6 +3,7 @@ import {
   X, Copy, Check, Loader2, Building2, Upload,
 } from 'lucide-react';
 import { supabase } from '@/services/supabase';
+import { useAuth } from '@/hooks/useAuth.jsx';
 import { toast } from '@/components';
 import { createManualBankPayment } from '@/services/manualPaymentService';
 import './PaymentModal.css';
@@ -19,6 +20,7 @@ export default function PaymentModal({
   currency,
   onSuccess,
 }) {
+  const { profileId } = useAuth();
   const [paymentInfo, setPaymentInfo] = useState(null); // { bank_account, txn_ref, qr_url, payment }
   const [loading, setLoading] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -57,8 +59,10 @@ export default function PaymentModal({
 
   // Poll the payments table once the user has been shown the QR.
   // Casso/Sepay webhook updates the row; we just wait for it to flip.
+  // SECURITY: scope to the caller's profile_id via memberships join so that
+  // even if RLS were misconfigured, a guessed paymentId wouldn't leak.
   useEffect(() => {
-    if (!isOpen || !paymentInfo?.payment?.id) return;
+    if (!isOpen || !paymentInfo?.payment?.id || !profileId) return;
 
     const paymentId = paymentInfo.payment.id;
     const deadline = Date.now() + POLL_TIMEOUT_MS;
@@ -71,11 +75,16 @@ export default function PaymentModal({
       }
       const { data, error } = await supabase
         .from('payments')
-        .select('id, status, payment_date')
+        .select('id, status, payment_date, memberships!inner(profile_id)')
         .eq('id', paymentId)
+        .eq('memberships.profile_id', profileId)
         .maybeSingle();
       if (error) {
         setPollError(error.message);
+        return;
+      }
+      if (!data) {
+        setPollError('Không tìm thấy giao dịch thuộc tài khoản của bạn.');
         return;
       }
       if (data?.status === 'completed') {
@@ -91,7 +100,7 @@ export default function PaymentModal({
     return () => {
       if (timerId) clearTimeout(timerId);
     };
-  }, [isOpen, paymentInfo, onSuccess, onClose]);
+  }, [isOpen, paymentInfo, profileId, onSuccess, onClose]);
 
   async function handleManualConfirm() {
     if (!paymentInfo?.payment?.id) return;

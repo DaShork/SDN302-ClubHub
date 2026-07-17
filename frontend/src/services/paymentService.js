@@ -5,20 +5,26 @@ import { supabase } from './supabase';
  * Sandbox payment: insert as pending, then simulate async completion.
  */
 
-export async function listPaymentsByMembership(membershipId, { limit = 20 } = {}) {
-  const { data, error } = await supabase
+export async function listPaymentsByMembership(membershipId, { limit = 20, profileId } = {}) {
+  if (!membershipId) return { data: [], error: null };
+  let query = supabase
     .from('payments')
-    .select('*, memberships(profile_id, clubs(name))')
+    .select('*, memberships!inner(id, profile_id, clubs(name))')
     .eq('membership_id', membershipId)
     .order('payment_date', { ascending: false })
     .limit(limit);
+  // Defence-in-depth: enforce caller-owns-membership on the client side too.
+  // RLS already covers this, but if profileId is provided we narrow further.
+  if (profileId) query = query.eq('memberships.profile_id', profileId);
+  const { data, error } = await query;
   return { data: data || [], error };
 }
 
 export async function listPaymentsByProfile(profileId, { limit = 20 } = {}) {
+  if (!profileId) return { data: [], error: null };
   const { data, error } = await supabase
     .from('payments')
-    .select('*, memberships(id, club_id, clubs(name))')
+    .select('*, memberships(id, club_id, profile_id, clubs(name))')
     .eq('memberships.profile_id', profileId)
     .order('payment_date', { ascending: false })
     .limit(limit);
